@@ -17,13 +17,11 @@
         .input-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; }
         .input-group input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 16px; margin-bottom: 5px;}
         
-        /* Botão de ligar a câmera */
-        .btn-camera { width: 100%; padding: 10px; background-color: #7f8c8d; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; margin-bottom: 10px;}
+        button { width: 100%; padding: 15px; border: none; border-radius: 5px; color: white; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
+        .btn-camera { background-color: #7f8c8d; padding: 10px; }
+        .btn-acessar { background-color: #2c3e50; }
         
-        /* Caixa onde o vídeo da câmera vai aparecer */
-        #leitor-camera { width: 100%; display: none; margin-bottom: 15px; }
-
-        .botoes-status button { width: 100%; padding: 15px; margin-bottom: 10px; border: none; border-radius: 5px; color: white; font-size: 16px; font-weight: bold; cursor: pointer; }
+        /* Cores dos status */
         .btn-separado { background-color: #f39c12; } 
         .btn-conferido { background-color: #8e44ad; } 
         .btn-recebido { background-color: #3498db; } 
@@ -31,88 +29,182 @@
 
         #historico { margin-top: 30px; }
         .registro { background: #ecf0f1; padding: 10px; margin-bottom: 8px; border-radius: 5px; font-size: 13px; line-height: 1.4; }
+        
+        /* Caixas que começam escondidas */
+        #tela-logistica { display: none; }
+        #caixa-destino { display: none; background: #e8f6f3; padding: 15px; border-radius: 8px; border: 2px dashed #1abc9c; margin-bottom: 15px;}
+        #leitor-camera { width: 100%; display: none; margin-bottom: 15px; }
+        
+        .saudacao { text-align: center; color: #27ae60; font-weight: bold; margin-bottom: 15px; }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h1>Logística - Checkpoint</h1>
+        <h1>Logística Interna</h1>
         
-        <div class="input-group">
-            <label for="idMatricula">1. Matrícula do Funcionário:</label>
-            <input type="number" id="idMatricula" placeholder="Digite sua matrícula">
-        </div>
-
-        <div class="input-group">
-            <label for="idRequisicao">2. Requisição Tasy (7 dígitos):</label>
-            <input type="number" id="idRequisicao" placeholder="Ex: 1234567">
-            <button class="btn-camera" onclick="iniciarCamera()">📷 Escanear Código</button>
+        <div id="tela-login">
+            <div class="input-group">
+                <label for="idMatricula">Matrícula do Funcionário:</label>
+                <input type="number" id="idMatricula" placeholder="Digite sua matrícula">
+                <button class="btn-acessar" onclick="validarAcesso()">Acessar Sistema</button>
+            </div>
         </div>
 
         <div id="leitor-camera"></div>
 
-        <h3>3. Registrar Evento</h3>
-        <div class="botoes-status">
-            <button class="btn-separado" onclick="registrarEvento('Separado (Almox Apoio)')">📦 Separado</button>
-            <button class="btn-conferido" onclick="registrarEvento('Conferido (Almox Apoio)')">🔍 Conferido</button>
-            <button class="btn-recebido" onclick="registrarEvento('Recebido (Almox Central)')">📥 Recebido</button>
-            <button class="btn-entregue" onclick="registrarEvento('Entregue (Setor Destino)')">✅ Entregue</button>
-        </div>
+        <div id="tela-logistica">
+            <div class="saudacao" id="mensagemSaudacao"></div>
 
-        <div id="historico">
-            <h3>Histórico de Eventos</h3>
-            <div id="listaRegistros"></div>
+            <div class="input-group">
+                <label for="idRequisicao">Requisição Tasy (7 dígitos):</label>
+                <input type="number" id="idRequisicao" placeholder="Ex: 1234567">
+                <button class="btn-camera" onclick="iniciarCamera('requisicao')">📷 Escanear Requisição</button>
+            </div>
+
+            <div id="caixa-destino">
+                <label style="font-weight:bold; margin-bottom:5px; display:block;">Confirme o Setor Destino:</label>
+                <input type="text" id="idSetorDestino" placeholder="Digite ou escaneie o setor" style="width:100%; padding:10px; margin-bottom:10px; box-sizing:border-box;">
+                <button class="btn-camera" onclick="iniciarCamera('setor')">📷 Escanear QR do Setor</button>
+                <button class="btn-entregue" onclick="finalizarEntrega()">Gravar Entrega Final</button>
+            </div>
+
+            <h3>Registrar Evento</h3>
+            <div class="botoes-status" id="botoes-padrao">
+                <button class="btn-separado" onclick="registrarEvento('Separado (Almox Apoio)')">📦 Separado</button>
+                <button class="btn-conferido" onclick="registrarEvento('Conferido (Almox Apoio)')">🔍 Conferido</button>
+                <button class="btn-recebido" onclick="registrarEvento('Recebido (Almox Central)')">📥 Recebido</button>
+                <button class="btn-entregue" onclick="abrirCaixaDestino()">✅ Entregue (Setor Destino)</button>
+            </div>
+
+            <div id="historico">
+                <h3>Histórico de Eventos</h3>
+                <div id="listaRegistros"></div>
+            </div>
         </div>
     </div>
 
     <script>
+        // 1. BANCO DE DADOS DE COLABORADORES (Extraído do seu PDF)
+        const listaColaboradores = {
+            "144006": "BRUNA DANUNCIACAO",
+            "1249": "BRUNA QUEVEDO",
+            "168314": "CAIO MATHEUS",
+            "233": "CHARLINE GARLET",
+            "167407": "ENI DUARTE",
+            "1764": "GUILHERME HENCKE",
+            "163591": "HENZO DO NASCIMENTO",
+            "167702": "JOAO GUSTAVO",
+            "167586": "LUCAS KLEIN",
+            "151357": "LUIZ HENRIQUE",
+            "90348": "MARCOS ROGERIO",
+            "54976": "MAURO DOS SANTOS",
+            "500008": "OTAVIO OLIVEIRA",
+            "76988": "ROSELIA CARMONE",
+            "168297": "STEFANI SORIANO",
+            "168604": "ALESSANDRO ROSA",
+            "162513": "DANIEL BENTIVOGLIO",
+            "166732": "ENYELBER ARMANDO",
+            "168313": "ERICK GUARIENTE",
+            "104602": "EVANDRO CHARAO",
+            "164846": "FERNANDA MACHADO",
+            "147628": "GABRIEL SIQUEIRA",
+            "292": "IDERALDO LUIS",
+            "166913": "LUIS GUSTAVO",
+            "167733": "RAFAEL NOGUEIRA",
+            "139320": "RENAN RIBEIRO"
+        };
+
+        let nomeOperadorAtual = "";
+        let modoCamera = ""; // Pode ser 'requisicao' ou 'setor'
+        let leitorHtml5Qrcode;
+
         window.onload = function() {
             carregarHistorico();
         };
 
-        // --- NOVA PARTE: LÓGICA DA CÂMERA ---
-        let leitorHtml5Qrcode; // Variável para guardar o controle da câmera
+        // --- LÓGICA DE VALIDAÇÃO (LOGIN) ---
+        function validarAcesso() {
+            const matriculaDigitada = document.getElementById('idMatricula').value.trim();
+            
+            // Verifica se a matrícula digitada existe na nossa lista
+            if (listaColaboradores[matriculaDigitada]) {
+                nomeOperadorAtual = listaColaboradores[matriculaDigitada];
+                
+                // Esconde a tela de login e mostra a tela de logística
+                document.getElementById('tela-login').style.display = 'none';
+                document.getElementById('tela-logistica').style.display = 'block';
+                
+                // Mostra uma saudação amigável
+                document.getElementById('mensagemSaudacao').innerText = `Operador: ${nomeOperadorAtual}`;
+            } else {
+                alert("Matrícula não encontrada. Verifique o número e tente novamente.");
+            }
+        }
 
-        function iniciarCamera() {
-            // Mostra a área da câmera na tela
+        // --- LÓGICA DA CÂMERA DUPLA ---
+        function iniciarCamera(modo) {
+            modoCamera = modo; // Informa à câmera o que estamos procurando
             document.getElementById('leitor-camera').style.display = 'block';
 
-            // Configura a biblioteca (fps = quadros por segundo, qrbox = tamanho do quadrado de leitura)
+            if(leitorHtml5Qrcode) { leitorHtml5Qrcode.clear(); } // Limpa se já tiver uma câmera rodando
+
             leitorHtml5Qrcode = new Html5QrcodeScanner("leitor-camera", { fps: 10, qrbox: {width: 250, height: 250} });
-            
-            // Liga a câmera e diz o que fazer se ler com sucesso ou der erro
             leitorHtml5Qrcode.render(aoLerComSucesso, aoDarErro);
         }
 
         function aoLerComSucesso(textoDecodificado) {
-            // Verifica se o código lido tem 7 números (Regra do Tasy)
-            if (textoDecodificado.length === 7 && !isNaN(textoDecodificado)) {
-                // Preenche o campo
-                document.getElementById('idRequisicao').value = textoDecodificado;
-                
-                // Desliga e esconde a câmera
-                leitorHtml5Qrcode.clear();
-                document.getElementById('leitor-camera').style.display = 'none';
-                
-                alert("Código lido com sucesso!");
-            } else {
-                // Se ler algo errado (como uma embalagem de salgadinho), não preenche e avisa
-                alert("Atenção: O código lido não parece ser uma requisição Tasy válida (7 dígitos). Código lido: " + textoDecodificado);
+            // Se a câmera foi chamada para ler a Requisição Tasy
+            if (modoCamera === 'requisicao') {
+                if (textoDecodificado.length === 7 && !isNaN(textoDecodificado)) {
+                    document.getElementById('idRequisicao').value = textoDecodificado;
+                    desligarCamera();
+                } else {
+                    alert("Atenção: O código lido não é uma requisição Tasy (7 dígitos).");
+                }
+            } 
+            // Se a câmera foi chamada para ler o Setor Destino
+            else if (modoCamera === 'setor') {
+                document.getElementById('idSetorDestino').value = textoDecodificado;
+                desligarCamera();
             }
         }
 
-        function aoDarErro(mensagemErro) {
-            // A biblioteca dispara erros o tempo todo enquanto tenta focar, então deixamos essa função vazia para não incomodar o usuário.
+        function desligarCamera() {
+            leitorHtml5Qrcode.clear();
+            document.getElementById('leitor-camera').style.display = 'none';
         }
-        // --- FIM DA NOVA PARTE ---
+
+        function aoDarErro(mensagemErro) { /* Silencia erros de foco da câmera */ }
 
 
-        // --- LÓGICA ANTIGA (Registro de Checkpoints) ---
-        function registrarEvento(status) {
+        // --- LÓGICA DE CHECKPOINTS ---
+        function abrirCaixaDestino() {
+            // Esconde os botões normais e mostra a caixa de perguntar o setor
+            document.getElementById('botoes-padrao').style.display = 'none';
+            document.getElementById('caixa-destino').style.display = 'block';
+        }
+
+        function finalizarEntrega() {
+            const setorDestino = document.getElementById('idSetorDestino').value.trim();
+            if (setorDestino === '') {
+                alert("Por favor, informe ou escaneie o setor destino.");
+                return;
+            }
+            
+            // Registra o evento juntando a palavra "Entregue" com o setor informado
+            registrarEvento(`Entregue (${setorDestino})`);
+            
+            // Voltar a tela ao normal para o próximo pacote
+            document.getElementById('idSetorDestino').value = '';
+            document.getElementById('caixa-destino').style.display = 'none';
+            document.getElementById('botoes-padrao').style.display = 'block';
+        }
+
+        function registrarEvento(statusFinal) {
             const matricula = document.getElementById('idMatricula').value.trim();
             const requisicao = document.getElementById('idRequisicao').value.trim();
 
-            if (matricula === '') { alert("Por favor, informe a Matrícula."); return; }
             if (requisicao.length !== 7) { alert("Aviso: A requisição Tasy deve conter exatamente 7 dígitos numéricos!"); return; }
 
             const dataAtual = new Date();
@@ -120,8 +212,9 @@
 
             const novoEvento = {
                 matricula: matricula,
+                nome: nomeOperadorAtual, // Salvando o nome também!
                 requisicao: requisicao,
-                status: status, 
+                status: statusFinal, 
                 data: timestamp
             };
 
@@ -132,6 +225,7 @@
             document.getElementById('idRequisicao').focus(); 
         }
 
+        // --- SALVAMENTO E HISTÓRICO ---
         function salvarNoStorage(evento) {
             let historico = JSON.parse(localStorage.getItem('historicoLogistica')) || [];
             historico.push(evento);
@@ -149,10 +243,11 @@
             const divLista = document.getElementById('listaRegistros');
             const novoItem = document.createElement('div');
             novoItem.className = 'registro';
+            // Agora mostramos o NOME do funcionário em vez de só o número da matrícula
             novoItem.innerHTML = `
                 <strong>Req:</strong> ${evento.requisicao} <br>
-                <strong>Status/Local:</strong> ${evento.status} <br>
-                <strong>Matrícula:</strong> ${evento.matricula} <br>
+                <strong>Status:</strong> ${evento.status} <br>
+                <strong>Operador:</strong> ${evento.nome} (${evento.matricula}) <br>
                 <em>🕒 ${evento.data}</em>
             `;
             divLista.prepend(novoItem);
