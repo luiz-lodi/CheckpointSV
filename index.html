@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logística - Checkpoints</title>
+    
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f4f4f9; color: #333; }
+        .container { max-width: 400px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #2c3e50; font-size: 24px; }
+        h3 { color: #34495e; border-bottom: 2px solid #eee; padding-bottom: 5px; }
+
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; }
+        .input-group input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 16px; margin-bottom: 5px;}
+        
+        /* Botão de ligar a câmera */
+        .btn-camera { width: 100%; padding: 10px; background-color: #7f8c8d; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; margin-bottom: 10px;}
+        
+        /* Caixa onde o vídeo da câmera vai aparecer */
+        #leitor-camera { width: 100%; display: none; margin-bottom: 15px; }
+
+        .botoes-status button { width: 100%; padding: 15px; margin-bottom: 10px; border: none; border-radius: 5px; color: white; font-size: 16px; font-weight: bold; cursor: pointer; }
+        .btn-separado { background-color: #f39c12; } 
+        .btn-conferido { background-color: #8e44ad; } 
+        .btn-recebido { background-color: #3498db; } 
+        .btn-entregue { background-color: #2ecc71; } 
+
+        #historico { margin-top: 30px; }
+        .registro { background: #ecf0f1; padding: 10px; margin-bottom: 8px; border-radius: 5px; font-size: 13px; line-height: 1.4; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Logística - Checkpoint</h1>
+        
+        <div class="input-group">
+            <label for="idMatricula">1. Matrícula do Funcionário:</label>
+            <input type="number" id="idMatricula" placeholder="Digite sua matrícula">
+        </div>
+
+        <div class="input-group">
+            <label for="idRequisicao">2. Requisição Tasy (7 dígitos):</label>
+            <input type="number" id="idRequisicao" placeholder="Ex: 1234567">
+            <button class="btn-camera" onclick="iniciarCamera()">📷 Escanear Código</button>
+        </div>
+
+        <div id="leitor-camera"></div>
+
+        <h3>3. Registrar Evento</h3>
+        <div class="botoes-status">
+            <button class="btn-separado" onclick="registrarEvento('Separado (Almox Apoio)')">📦 Separado</button>
+            <button class="btn-conferido" onclick="registrarEvento('Conferido (Almox Apoio)')">🔍 Conferido</button>
+            <button class="btn-recebido" onclick="registrarEvento('Recebido (Almox Central)')">📥 Recebido</button>
+            <button class="btn-entregue" onclick="registrarEvento('Entregue (Setor Destino)')">✅ Entregue</button>
+        </div>
+
+        <div id="historico">
+            <h3>Histórico de Eventos</h3>
+            <div id="listaRegistros"></div>
+        </div>
+    </div>
+
+    <script>
+        window.onload = function() {
+            carregarHistorico();
+        };
+
+        // --- NOVA PARTE: LÓGICA DA CÂMERA ---
+        let leitorHtml5Qrcode; // Variável para guardar o controle da câmera
+
+        function iniciarCamera() {
+            // Mostra a área da câmera na tela
+            document.getElementById('leitor-camera').style.display = 'block';
+
+            // Configura a biblioteca (fps = quadros por segundo, qrbox = tamanho do quadrado de leitura)
+            leitorHtml5Qrcode = new Html5QrcodeScanner("leitor-camera", { fps: 10, qrbox: {width: 250, height: 250} });
+            
+            // Liga a câmera e diz o que fazer se ler com sucesso ou der erro
+            leitorHtml5Qrcode.render(aoLerComSucesso, aoDarErro);
+        }
+
+        function aoLerComSucesso(textoDecodificado) {
+            // Verifica se o código lido tem 7 números (Regra do Tasy)
+            if (textoDecodificado.length === 7 && !isNaN(textoDecodificado)) {
+                // Preenche o campo
+                document.getElementById('idRequisicao').value = textoDecodificado;
+                
+                // Desliga e esconde a câmera
+                leitorHtml5Qrcode.clear();
+                document.getElementById('leitor-camera').style.display = 'none';
+                
+                alert("Código lido com sucesso!");
+            } else {
+                // Se ler algo errado (como uma embalagem de salgadinho), não preenche e avisa
+                alert("Atenção: O código lido não parece ser uma requisição Tasy válida (7 dígitos). Código lido: " + textoDecodificado);
+            }
+        }
+
+        function aoDarErro(mensagemErro) {
+            // A biblioteca dispara erros o tempo todo enquanto tenta focar, então deixamos essa função vazia para não incomodar o usuário.
+        }
+        // --- FIM DA NOVA PARTE ---
+
+
+        // --- LÓGICA ANTIGA (Registro de Checkpoints) ---
+        function registrarEvento(status) {
+            const matricula = document.getElementById('idMatricula').value.trim();
+            const requisicao = document.getElementById('idRequisicao').value.trim();
+
+            if (matricula === '') { alert("Por favor, informe a Matrícula."); return; }
+            if (requisicao.length !== 7) { alert("Aviso: A requisição Tasy deve conter exatamente 7 dígitos numéricos!"); return; }
+
+            const dataAtual = new Date();
+            const timestamp = dataAtual.toLocaleString('pt-BR'); 
+
+            const novoEvento = {
+                matricula: matricula,
+                requisicao: requisicao,
+                status: status, 
+                data: timestamp
+            };
+
+            salvarNoStorage(novoEvento);
+            adicionarRegistroNaTela(novoEvento);
+
+            document.getElementById('idRequisicao').value = '';
+            document.getElementById('idRequisicao').focus(); 
+        }
+
+        function salvarNoStorage(evento) {
+            let historico = JSON.parse(localStorage.getItem('historicoLogistica')) || [];
+            historico.push(evento);
+            localStorage.setItem('historicoLogistica', JSON.stringify(historico));
+        }
+
+        function carregarHistorico() {
+            let historico = JSON.parse(localStorage.getItem('historicoLogistica')) || [];
+            historico.reverse().forEach(evento => {
+                adicionarRegistroNaTela(evento);
+            });
+        }
+
+        function adicionarRegistroNaTela(evento) {
+            const divLista = document.getElementById('listaRegistros');
+            const novoItem = document.createElement('div');
+            novoItem.className = 'registro';
+            novoItem.innerHTML = `
+                <strong>Req:</strong> ${evento.requisicao} <br>
+                <strong>Status/Local:</strong> ${evento.status} <br>
+                <strong>Matrícula:</strong> ${evento.matricula} <br>
+                <em>🕒 ${evento.data}</em>
+            `;
+            divLista.prepend(novoItem);
+        }
+    </script>
+
+</body>
+</html>
