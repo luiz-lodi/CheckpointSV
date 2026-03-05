@@ -41,12 +41,12 @@
 <body>
 
     <div class="container">
-        <h1>Logística Interna</h1>
+        <h1>CHECKPOINT DE PEDIDOS - HSVP</h1>
         
         <div id="tela-login">
             <div class="input-group">
-                <label for="idMatricula">Matrícula do Funcionário:</label>
-                <input type="number" id="idMatricula" placeholder="Digite sua matrícula">
+                <label for="idMatricula">Matrícula:</label>
+                <input type="number" id="idMatricula" placeholder="Digite seu número de matrícula">
                 <button class="btn-acessar" onclick="validarAcesso()">Acessar Sistema</button>
             </div>
         </div>
@@ -71,8 +71,8 @@
 
             <h3>Registrar Evento</h3>
             <div class="botoes-status" id="botoes-padrao">
-                <button class="btn-separado" onclick="registrarEvento('Separado (Almox Apoio)')">📦 Separado</button>
-                <button class="btn-conferido" onclick="registrarEvento('Conferido (Almox Apoio)')">🔍 Conferido</button>
+                <button class="btn-separado" onclick="registrarEvento('Separado')">📦 Separado</button>
+                <button class="btn-conferido" onclick="registrarEvento('Conferido')">🔍 Conferido</button>
                 <button class="btn-recebido" onclick="registrarEvento('Recebido (Almox Central)')">📥 Recebido</button>
                 <button class="btn-entregue" onclick="abrirCaixaDestino()">✅ Entregue (Setor Destino)</button>
             </div>
@@ -87,32 +87,29 @@
     <script>
         // 1. BANCO DE DADOS DE COLABORADORES (Extraído do seu PDF)
         const listaColaboradores = {
-            "144006": "BRUNA DANUNCIACAO",
+            "144006": "BRUNA LOURENCO",
             "1249": "BRUNA QUEVEDO",
             "168314": "CAIO MATHEUS",
-            "233": "CHARLINE GARLET",
-            "167407": "ENI DUARTE",
-            "1764": "GUILHERME HENCKE",
-            "163591": "HENZO DO NASCIMENTO",
+            "167407": "ENI",
+            "1764": "GUILHERME",
+            "163591": "HENZO",
             "167702": "JOAO GUSTAVO",
-            "167586": "LUCAS KLEIN",
             "151357": "LUIZ HENRIQUE",
-            "90348": "MARCOS ROGERIO",
-            "54976": "MAURO DOS SANTOS",
-            "500008": "OTAVIO OLIVEIRA",
-            "76988": "ROSELIA CARMONE",
-            "168297": "STEFANI SORIANO",
-            "168604": "ALESSANDRO ROSA",
-            "162513": "DANIEL BENTIVOGLIO",
-            "166732": "ENYELBER ARMANDO",
-            "168313": "ERICK GUARIENTE",
-            "104602": "EVANDRO CHARAO",
-            "164846": "FERNANDA MACHADO",
-            "147628": "GABRIEL SIQUEIRA",
-            "292": "IDERALDO LUIS",
+            "54976": "MAURO",
+            "500008": "OTAVIO",
+            "76988": "ROSELIA",
+            "168297": "STEFANI",
+            "168604": "ALESSANDRO",
+            "162513": "DANIEL",
+            "166732": "ARMANDO",
+            "168313": "ERICK",
+            "104602": "EVANDRO",
+            "164846": "FERNANDA",
+            "147628": "GABRIEL",
+            "292": "IDERALDO",
             "166913": "LUIS GUSTAVO",
-            "167733": "RAFAEL NOGUEIRA",
-            "139320": "RENAN RIBEIRO"
+            "167733": "RAFAEL",
+            "139320": "RENAN"
         };
 
         let nomeOperadorAtual = "";
