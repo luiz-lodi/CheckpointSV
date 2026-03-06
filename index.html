@@ -3,10 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CHECKPOINT DE PEDIDOS - ALMOXARIFADOS HSVP</title>
+    <title>CHECKPOINT DE PEDIDOS - ALMOXARIFADOS</title>
     
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     
+    <script src="https://www.gstatic.com/firebasejs/10.10.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore-compat.js"></script>
+
     <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f4f4f9; color: #333; }
         .container { max-width: 400px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
@@ -28,7 +31,7 @@
         .btn-entregue { background-color: #2ecc71; } 
 
         #historico { margin-top: 30px; }
-        .registro { background: #ecf0f1; padding: 10px; margin-bottom: 8px; border-radius: 5px; font-size: 13px; line-height: 1.4; }
+        .registro { background: #ecf0f1; padding: 10px; margin-bottom: 8px; border-radius: 5px; font-size: 13px; line-height: 1.4; border-left: 4px solid #3498db; }
         
         /* Caixas que começam escondidas */
         #tela-logistica { display: none; }
@@ -41,7 +44,7 @@
 <body>
 
     <div class="container">
-        <h1>CHECKPOINT DE PEDIDOS - ALMOXARIFADOS HSVP</h1>
+        <h1>CHECKPOINT DE PEDIDOS - ALMOXARIFADOS</h1>
         
         <div id="tela-login">
             <div class="input-group">
@@ -72,86 +75,78 @@
             <h3>Registrar Evento</h3>
             <div class="botoes-status" id="botoes-padrao">
                 <button class="btn-separado" onclick="registrarEvento('Separado')">📦 Separado</button>
-                <button class="btn-conferido" onclick="registrarEvento('Conferido')">🔍 Conferido</button>
+                <button class="btn-conferido" onclick="registrarEvento('Conferido (Almox Apoio)')">🔍 Conferido</button>
                 <button class="btn-recebido" onclick="registrarEvento('Recebido (Almox Central)')">📥 Recebido</button>
                 <button class="btn-entregue" onclick="abrirCaixaDestino()">✅ Entregue (Setor Destino)</button>
             </div>
 
             <div id="historico">
-                <h3>Histórico de Eventos</h3>
+                <h3>Histórico de Eventos (Nuvem)</h3>
                 <div id="listaRegistros"></div>
             </div>
         </div>
     </div>
 
     <script>
-        // 1. BANCO DE DADOS DE COLABORADORES (Extraído do seu PDF)
+        // ==========================================
+        // 1. CONFIGURAÇÃO DO FIREBASE
+        // ==========================================
+        const firebaseConfig = {
+  		apiKey: "AIzaSyDHUlqzRw_vSyp9livOvQ0rjBYT9l_yofs",
+  		authDomain: "checkpoint-pedidos.firebaseapp.com",
+  		projectId: "checkpoint-pedidos",
+  		storageBucket: "checkpoint-pedidos.firebasestorage.app",
+  		messagingSenderId: "890832634523",
+  		appId: "1:890832634523:web:7f8fa0ee6a2a9c60e27c3e"
+        };
+
+        // Inicializa o Firebase e o Banco de Dados
+        firebase.initializeApp(firebaseConfig);
+        const bancoDeDados = firebase.firestore();
+        // ==========================================
+
+
+        // 2. BANCO DE DADOS DE COLABORADORES
         const listaColaboradores = {
-            "144006": "BRUNA LOURENCO",
-            "1249": "BRUNA QUEVEDO",
-            "168314": "CAIO MATHEUS",
-            "167407": "ENI",
-            "1764": "GUILHERME",
-            "163591": "HENZO",
-            "167702": "JOAO GUSTAVO",
-            "151357": "LUIZ HENRIQUE",
-            "54976": "MAURO",
-            "500008": "OTAVIO",
-            "76988": "ROSELIA",
-            "168297": "STEFANI",
-            "168604": "ALESSANDRO",
-            "162513": "DANIEL",
-            "166732": "ARMANDO",
-            "168313": "ERICK",
-            "104602": "EVANDRO",
-            "164846": "FERNANDA",
-            "147628": "GABRIEL",
-            "292": "IDERALDO",
-            "166913": "LUIS GUSTAVO",
-            "167733": "RAFAEL",
-            "139320": "RENAN"
+            "144006": "BRUNA LOURENCO", "1249": "BRUNA QUEVEDO", "168314": "CAIO MATHEUS", "167407": "ENI", 
+            "1764": "GUILHERME", "163591": "HENZO", "167702": "JOAO GUSTAVO", "151357": "LUIZ HENRIQUE", 
+            "54976": "MAURO", "500008": "OTÁVIO", "76988": "ROSELIA", "168297": "STEFANI", "168604": "ALESSANDRO", 
+            "162513": "DANIEL", "166732": "ARMANDO", "168313": "ERICK", "104602": "EVANDRO", "164846": "FERNANDA", 
+            "147628": "GABRIEL", "292": "IDERALDO", "166913": "LUIS GUSTAVO", "167733": "RAFAEL", "139320": "RENAN"
         };
 
         let nomeOperadorAtual = "";
-        let modoCamera = ""; // Pode ser 'requisicao' ou 'setor'
+        let modoCamera = ""; 
         let leitorHtml5Qrcode;
 
         window.onload = function() {
-            carregarHistorico();
+            // Agora o histórico é carregado da Nuvem!
+            carregarHistoricoDoFirebase();
         };
 
         // --- LÓGICA DE VALIDAÇÃO (LOGIN) ---
         function validarAcesso() {
             const matriculaDigitada = document.getElementById('idMatricula').value.trim();
-            
-            // Verifica se a matrícula digitada existe na nossa lista
             if (listaColaboradores[matriculaDigitada]) {
                 nomeOperadorAtual = listaColaboradores[matriculaDigitada];
-                
-                // Esconde a tela de login e mostra a tela de logística
                 document.getElementById('tela-login').style.display = 'none';
                 document.getElementById('tela-logistica').style.display = 'block';
-                
-                // Mostra uma saudação amigável
                 document.getElementById('mensagemSaudacao').innerText = `Operador: ${nomeOperadorAtual}`;
             } else {
                 alert("Matrícula não encontrada. Verifique o número e tente novamente.");
             }
         }
 
-        // --- LÓGICA DA CÂMERA DUPLA ---
+        // --- LÓGICA DA CÂMERA ---
         function iniciarCamera(modo) {
-            modoCamera = modo; // Informa à câmera o que estamos procurando
+            modoCamera = modo; 
             document.getElementById('leitor-camera').style.display = 'block';
-
-            if(leitorHtml5Qrcode) { leitorHtml5Qrcode.clear(); } // Limpa se já tiver uma câmera rodando
-
+            if(leitorHtml5Qrcode) { leitorHtml5Qrcode.clear(); } 
             leitorHtml5Qrcode = new Html5QrcodeScanner("leitor-camera", { fps: 10, qrbox: {width: 250, height: 250} });
             leitorHtml5Qrcode.render(aoLerComSucesso, aoDarErro);
         }
 
         function aoLerComSucesso(textoDecodificado) {
-            // Se a câmera foi chamada para ler a Requisição Tasy
             if (modoCamera === 'requisicao') {
                 if (textoDecodificado.length === 7 && !isNaN(textoDecodificado)) {
                     document.getElementById('idRequisicao').value = textoDecodificado;
@@ -159,9 +154,7 @@
                 } else {
                     alert("Atenção: O código lido não é uma requisição Tasy (7 dígitos).");
                 }
-            } 
-            // Se a câmera foi chamada para ler o Setor Destino
-            else if (modoCamera === 'setor') {
+            } else if (modoCamera === 'setor') {
                 document.getElementById('idSetorDestino').value = textoDecodificado;
                 desligarCamera();
             }
@@ -172,27 +165,18 @@
             document.getElementById('leitor-camera').style.display = 'none';
         }
 
-        function aoDarErro(mensagemErro) { /* Silencia erros de foco da câmera */ }
-
+        function aoDarErro(mensagemErro) { }
 
         // --- LÓGICA DE CHECKPOINTS ---
         function abrirCaixaDestino() {
-            // Esconde os botões normais e mostra a caixa de perguntar o setor
             document.getElementById('botoes-padrao').style.display = 'none';
             document.getElementById('caixa-destino').style.display = 'block';
         }
 
         function finalizarEntrega() {
             const setorDestino = document.getElementById('idSetorDestino').value.trim();
-            if (setorDestino === '') {
-                alert("Por favor, informe ou escaneie o setor destino.");
-                return;
-            }
-            
-            // Registra o evento juntando a palavra "Entregue" com o setor informado
+            if (setorDestino === '') { alert("Por favor, informe ou escaneie o setor destino."); return; }
             registrarEvento(`Entregue (${setorDestino})`);
-            
-            // Voltar a tela ao normal para o próximo pacote
             document.getElementById('idSetorDestino').value = '';
             document.getElementById('caixa-destino').style.display = 'none';
             document.getElementById('botoes-padrao').style.display = 'block';
@@ -206,47 +190,71 @@
 
             const dataAtual = new Date();
             const timestamp = dataAtual.toLocaleString('pt-BR'); 
+            
+            // Variável extra para o Firebase conseguir ordenar por ordem de chegada (tempo real do computador)
+            const timestampInterno = dataAtual.getTime(); 
 
             const novoEvento = {
                 matricula: matricula,
-                nome: nomeOperadorAtual, // Salvando o nome também!
+                nome: nomeOperadorAtual,
                 requisicao: requisicao,
                 status: statusFinal, 
-                data: timestamp
+                data: timestamp,
+                ordem: timestampInterno 
             };
 
-            salvarNoStorage(novoEvento);
-            adicionarRegistroNaTela(novoEvento);
+            // NOVA FUNÇÃO: Envia para a nuvem
+            salvarNoFirebase(novoEvento);
 
             document.getElementById('idRequisicao').value = '';
             document.getElementById('idRequisicao').focus(); 
         }
 
-        // --- SALVAMENTO E HISTÓRICO ---
-        function salvarNoStorage(evento) {
-            let historico = JSON.parse(localStorage.getItem('historicoLogistica')) || [];
-            historico.push(evento);
-            localStorage.setItem('historicoLogistica', JSON.stringify(historico));
+        // --- INTEGRAÇÃO COM FIREBASE (SALVAR E LER) ---
+        function salvarNoFirebase(evento) {
+            // Cria um novo registro na coleção chamada "checkpoints_logistica"
+            bancoDeDados.collection("checkpoints_logistica").add(evento)
+            .then(() => {
+                // Sucesso! Mostramos na tela imediatamente
+                adicionarRegistroNaTela(evento);
+            })
+            .catch((erro) => {
+                console.error("Erro ao salvar: ", erro);
+                alert("Ocorreu um erro ao salvar na nuvem. Verifique a internet.");
+            });
         }
 
-        function carregarHistorico() {
-            let historico = JSON.parse(localStorage.getItem('historicoLogistica')) || [];
-            historico.reverse().forEach(evento => {
-                adicionarRegistroNaTela(evento);
-            });
+        function carregarHistoricoDoFirebase() {
+            // Pega os últimos 20 registros ordenados pelo tempo
+            bancoDeDados.collection("checkpoints_logistica")
+                .orderBy("ordem", "asc") // asc = ascendente (do mais antigo pro mais novo)
+                .limit(20)
+                .get()
+                .then((resultado) => {
+                    const divLista = document.getElementById('listaRegistros');
+                    divLista.innerHTML = ''; // Limpa a lista antes de carregar
+                    
+                    resultado.forEach((documento) => {
+                        const evento = documento.data();
+                        adicionarRegistroNaTela(evento);
+                    });
+                })
+                .catch((erro) => {
+                    console.log("Erro ao carregar histórico: ", erro);
+                });
         }
 
         function adicionarRegistroNaTela(evento) {
             const divLista = document.getElementById('listaRegistros');
             const novoItem = document.createElement('div');
             novoItem.className = 'registro';
-            // Agora mostramos o NOME do funcionário em vez de só o número da matrícula
             novoItem.innerHTML = `
                 <strong>Req:</strong> ${evento.requisicao} <br>
                 <strong>Status:</strong> ${evento.status} <br>
                 <strong>Operador:</strong> ${evento.nome} (${evento.matricula}) <br>
                 <em>🕒 ${evento.data}</em>
             `;
+            // Coloca sempre no topo
             divLista.prepend(novoItem);
         }
     </script>
