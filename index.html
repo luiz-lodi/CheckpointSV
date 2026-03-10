@@ -3,8 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CHECKPOINT DE PEDIDOS - ALMOXARIFADOS</title>
+    <title>CHECKPOINT DE PEDIDOS</title>
     
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
     <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f4f4f9; color: #333; }
         .container { max-width: 400px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
@@ -68,7 +71,7 @@
             </div>
 
             <div id="historico">
-                <h3>Histórico de Eventos (Sessão Atual)</h3>
+                <h3>Histórico de Eventos</h3>
                 <div id="listaRegistros"></div>
             </div>
         </div>
@@ -76,14 +79,22 @@
 
     <script>
         // ==========================================
-        // CONFIGURAÇÃO DIRETA (REST API)
+        // CONFIGURAÇÃO DO FIREBASE (SDK V8)
         // ==========================================
-        var projectId = "checkpoint-pedidos"; 
-        var apiKey = "AIzaSyDHUlqzRw_vSyp9livOvQ0rjBYT9l_yofs"; 
+        var firebaseConfig = {
+  		        apiKey: "AIzaSyDHUlqzRw_vSyp9livOvQ0rjBYT9l_yofs",
+  		        authDomain: "checkpoint-pedidos.firebaseapp.com",
+  		        projectId: "checkpoint-pedidos",
+  		        storageBucket: "checkpoint-pedidos.firebasestorage.app",
+  		        messagingSenderId: "890832634523",
+  		        appId: "1:890832634523:web:7f8fa0ee6a2a9c60e27c3e"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        var bancoDeDados = firebase.firestore();
         // ==========================================
 
         var nomeOperadorAtual = "";
-
         var listaColaboradores = {
             "144006": "BRUNA LOURENCO", "1249": "BRUNA QUEVEDO", "168314": "CAIO MATHEUS", "167407": "ENI", 
             "1764": "GUILHERME", "163591": "HENZO", "167702": "JOAO GUSTAVO", "151357": "LUIZ HENRIQUE", 
@@ -99,7 +110,6 @@
                 document.getElementById('tela-login').style.display = 'none';
                 document.getElementById('tela-logistica').style.display = 'block';
                 document.getElementById('mensagemSaudacao').innerText = "Operador: " + nomeOperadorAtual;
-                
                 document.getElementById('idRequisicao').focus();
             } else {
                 alert("Matrícula não encontrada. Verifique o número e tente novamente.");
@@ -115,9 +125,7 @@
         function finalizarEntrega() {
             var setorDestino = document.getElementById('idSetorDestino').value.trim();
             if (setorDestino === '') { alert("Por favor, informe ou escaneie o setor destino."); return; }
-            
             registrarEvento("Entregue (" + setorDestino + ")");
-            
             document.getElementById('idSetorDestino').value = '';
             document.getElementById('caixa-destino').style.display = 'none';
             document.getElementById('botoes-padrao').style.display = 'block';
@@ -130,66 +138,40 @@
             if (requisicao.length !== 7) { alert("Aviso: A requisição Tasy deve conter exatamente 7 dígitos numéricos!"); return; }
 
             var dataAtual = new Date();
-            var timestamp = dataAtual.toLocaleString('pt-BR'); 
-            var timestampInterno = dataAtual.getTime(); 
-
+            
             var novoEvento = {
                 matricula: matricula,
                 nome: nomeOperadorAtual,
                 requisicao: requisicao,
                 status: statusFinal, 
-                data: timestamp,
-                ordem: timestampInterno 
+                data: dataAtual.toLocaleString('pt-BR'),
+                ordem: dataAtual.getTime()
             };
 
-            // Muda o texto para mostrar que está pensando
-            document.getElementById('mensagemSaudacao').innerText = "Salvando na nuvem... ⏳";
+            document.getElementById('mensagemSaudacao').innerText = "Enviando dados... ⏳";
             document.getElementById('mensagemSaudacao').style.color = "#f39c12";
 
-            salvarNoFirebaseREST(novoEvento);
+            salvarNoFirebase(novoEvento);
         }
 
-        function salvarNoFirebaseREST(evento) {
-            var url = "https://firestore.googleapis.com/v1/projects/" + projectId + "/databases/(default)/documents/checkpoints_logistica?key=" + apiKey;
-            
-            var payload = {
-                "fields": {
-                    "matricula": { "stringValue": evento.matricula },
-                    "nome": { "stringValue": evento.nome },
-                    "requisicao": { "stringValue": evento.requisicao },
-                    "status": { "stringValue": evento.status },
-                    "data": { "stringValue": evento.data },
-                    "ordem": { "integerValue": evento.ordem.toString() }
-                }
-            };
-
-            var xhr = new XMLHttpRequest();
-            xhr.open("POST", url, true);
-            xhr.setRequestHeader("Content-Type", "application/json");
-
-            // NOVA FUNÇÃO: O Alarme de Incêndio (Cai aqui se o Google rejeitar o SSL/TLS antigo)
-            xhr.onerror = function() {
+        function salvarNoFirebase(evento) {
+            bancoDeDados.collection("checkpoints_logistica").add(evento)
+            .then(function() { 
                 document.getElementById('mensagemSaudacao').innerText = "Operador: " + nomeOperadorAtual;
                 document.getElementById('mensagemSaudacao').style.color = "#27ae60";
-                alert("ERRO FATAL DE REDE: O Palmtop não conseguiu estabelecer uma conexão segura com o Google (Provável bloqueio de SSL/TLS do Android 4.4).");
-            };
-
-            xhr.onreadystatechange = function () {
-                if (xhr.readyState === 4) { 
-                    document.getElementById('mensagemSaudacao').innerText = "Operador: " + nomeOperadorAtual;
-                    document.getElementById('mensagemSaudacao').style.color = "#27ae60";
-
-                    if (xhr.status === 200 || xhr.status === 201) {
-                        adicionarRegistroNaTela(evento);
-                        document.getElementById('idRequisicao').value = '';
-                        document.getElementById('idRequisicao').focus(); 
-                    } else if (xhr.status !== 0) { // status 0 já é pego pelo onerror acima
-                        alert("Ops! O Google recusou a gravação.\nCódigo: " + xhr.status);
-                    }
-                }
-            };
-
-            xhr.send(JSON.stringify(payload));
+                
+                adicionarRegistroNaTela(evento);
+                document.getElementById('idRequisicao').value = '';
+                document.getElementById('idRequisicao').focus(); 
+            })
+            .catch(function(erro) {
+                document.getElementById('mensagemSaudacao').innerText = "Operador: " + nomeOperadorAtual;
+                document.getElementById('mensagemSaudacao').style.color = "#27ae60";
+                
+                // MENSAGEM DE ERRO DEDO-DURO DO FIREBASE
+                alert("Erro ao salvar no banco. Motivo técnico: " + erro.message);
+                console.error(erro);
+            });
         }
 
         function adicionarRegistroNaTela(evento) {
@@ -208,6 +190,5 @@
             }
         }
     </script>
-
 </body>
 </html>
