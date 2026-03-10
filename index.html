@@ -5,11 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CHECKPOINT DE PEDIDOS - ALMOXARIFADOS</title>
     
-    <script src="https://cdn.jsdelivr.net/npm/promise-polyfill@8/dist/polyfill.min.js"></script>
-
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-
     <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f4f4f9; color: #333; }
         .container { max-width: 400px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
@@ -73,36 +68,24 @@
             </div>
 
             <div id="historico">
-                <h3>Histórico de Eventos (Nuvem)</h3>
+                <h3>Histórico de Eventos (Sessão Atual)</h3>
                 <div id="listaRegistros"></div>
             </div>
         </div>
     </div>
 
     <script>
-        var bancoDeDados = null;
+        // ==========================================
+        // CONFIGURAÇÃO DIRETA (REST API)
+        // ==========================================
+        // COLE SUA API KEY AQUI DENTRO DAS ASPAS:
+        var apiKey = "AIzaSyDHUlqzRw_vSyp9livOvQ0rjBYT9l_yofs"; 
+        
+        // COLE O NOME DO SEU PROJETO AQUI (Provavelmente é checkpoint-pedidos):
+        var projectId = "checkpoint-pedidos"; 
+        // ==========================================
+
         var nomeOperadorAtual = "";
-
-        // ==========================================
-        // CONFIGURAÇÃO DO FIREBASE (COM ESCUDO ANTI-ERRO)
-        // ==========================================
-        try {
-            var firebaseConfig = {
-                // COLE SUAS CHAVES AQUI:
-  		        apiKey: "AIzaSyDHUlqzRw_vSyp9livOvQ0rjBYT9l_yofs",
-  		        authDomain: "checkpoint-pedidos.firebaseapp.com",
-  		        projectId: "checkpoint-pedidos",
-  		        storageBucket: "checkpoint-pedidos.firebasestorage.app",
-  		        messagingSenderId: "890832634523",
-  		        appId: "1:890832634523:web:7f8fa0ee6a2a9c60e27c3e"
-            };
-
-            firebase.initializeApp(firebaseConfig);
-            bancoDeDados = firebase.firestore();
-        } catch (erro) {
-            // Se o Firebase travar, ele avisa na tela em vez de matar o botão
-            alert("Aviso: Falha ao conectar na Nuvem. O coletor pode estar sem internet ou incompatível. Erro: " + erro.message);
-        }
 
         var listaColaboradores = {
             "144006": "BRUNA LOURENCO", "1249": "BRUNA QUEVEDO", "168314": "CAIO MATHEUS", "167407": "ENI", 
@@ -110,12 +93,6 @@
             "54976": "MAURO", "500008": "OTÁVIO", "76988": "ROSELIA", "168297": "STEFANI", "168604": "ALESSANDRO", 
             "162513": "DANIEL", "166732": "ARMANDO", "168313": "ERICK", "104602": "EVANDRO", "164846": "FERNANDA", 
             "147628": "GABRIEL", "292": "IDERALDO", "166913": "LUIS GUSTAVO", "167733": "RAFAEL", "139320": "RENAN"
-        };
-
-        window.onload = function() {
-            if (bancoDeDados !== null) {
-                carregarHistoricoDoFirebase();
-            }
         };
 
         function validarAcesso() {
@@ -126,7 +103,6 @@
                 document.getElementById('tela-logistica').style.display = 'block';
                 document.getElementById('mensagemSaudacao').innerText = "Operador: " + nomeOperadorAtual;
                 
-                // Foca para o laser do Palmtop
                 document.getElementById('idRequisicao').focus();
             } else {
                 alert("Matrícula não encontrada. Verifique o número e tente novamente.");
@@ -169,45 +145,47 @@
                 ordem: timestampInterno 
             };
 
-            salvarNoFirebase(novoEvento);
+            salvarNoFirebaseREST(novoEvento);
 
             document.getElementById('idRequisicao').value = '';
             document.getElementById('idRequisicao').focus(); 
         }
 
-        function salvarNoFirebase(evento) {
-            if (bancoDeDados === null) {
-                alert("Não foi possível salvar na nuvem pois o banco de dados não iniciou.");
-                return;
-            }
+        // A MÁGICA ACONTECE AQUI: Comunicação Direta com o Servidor (AJAX)
+        function salvarNoFirebaseREST(evento) {
+            // Montamos o endereço do servidor do Google
+            var url = "https://firestore.googleapis.com/v1/projects/" + projectId + "/databases/(default)/documents/checkpoints_logistica?key=" + apiKey;
+            
+            // Formatamos os dados do jeito que o banco de dados gosta de ler
+            var payload = {
+                "fields": {
+                    "matricula": { "stringValue": evento.matricula },
+                    "nome": { "stringValue": evento.nome },
+                    "requisicao": { "stringValue": evento.requisicao },
+                    "status": { "stringValue": evento.status },
+                    "data": { "stringValue": evento.data },
+                    "ordem": { "integerValue": evento.ordem.toString() }
+                }
+            };
 
-            bancoDeDados.collection("checkpoints_logistica").add(evento)
-            .then(function() { 
-                adicionarRegistroNaTela(evento);
-            })
-            .catch(function(erro) {
-                console.error("Erro ao salvar: ", erro);
-                alert("Ocorreu um erro ao salvar na nuvem. Verifique a internet.");
-            });
-        }
+            // Criamos a requisição no padrão antigo (que o Android 4.4 aceita muito bem)
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", url, true);
+            xhr.setRequestHeader("Content-Type", "application/json");
 
-        function carregarHistoricoDoFirebase() {
-            bancoDeDados.collection("checkpoints_logistica")
-                .orderBy("ordem", "asc")
-                .limit(20)
-                .get()
-                .then(function(resultado) {
-                    var divLista = document.getElementById('listaRegistros');
-                    divLista.innerHTML = ''; 
-                    
-                    resultado.forEach(function(documento) {
-                        var evento = documento.data();
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4) { // 4 significa que a resposta chegou
+                    if (xhr.status === 200 || xhr.status === 201) {
+                        // Sucesso total! Salvo na nuvem.
                         adicionarRegistroNaTela(evento);
-                    });
-                })
-                .catch(function(erro) {
-                    console.log("Erro ao carregar histórico: ", erro);
-                });
+                    } else {
+                        alert("Erro ao salvar na nuvem. Código do erro: " + xhr.status);
+                    }
+                }
+            };
+
+            // Dispara o dado para a nuvem
+            xhr.send(JSON.stringify(payload));
         }
 
         function adicionarRegistroNaTela(evento) {
