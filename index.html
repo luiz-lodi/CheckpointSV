@@ -78,11 +78,8 @@
         // ==========================================
         // CONFIGURAÇÃO DIRETA (REST API)
         // ==========================================
-        // COLE SUA API KEY AQUI DENTRO DAS ASPAS:
-        var apiKey = "AIzaSyDHUlqzRw_vSyp9livOvQ0rjBYT9l_yofs"; 
-        
-        // COLE O NOME DO SEU PROJETO AQUI (Provavelmente é checkpoint-pedidos):
         var projectId = "checkpoint-pedidos"; 
+        var apiKey = "AIzaSyDHUlqzRw_vSyp9livOvQ0rjBYT9l_yofs"; 
         // ==========================================
 
         var nomeOperadorAtual = "";
@@ -145,18 +142,16 @@
                 ordem: timestampInterno 
             };
 
-            salvarNoFirebaseREST(novoEvento);
+            // Muda o texto para mostrar que está pensando
+            document.getElementById('mensagemSaudacao').innerText = "Salvando na nuvem... ⏳";
+            document.getElementById('mensagemSaudacao').style.color = "#f39c12";
 
-            document.getElementById('idRequisicao').value = '';
-            document.getElementById('idRequisicao').focus(); 
+            salvarNoFirebaseREST(novoEvento);
         }
 
-        // A MÁGICA ACONTECE AQUI: Comunicação Direta com o Servidor (AJAX)
         function salvarNoFirebaseREST(evento) {
-            // Montamos o endereço do servidor do Google
             var url = "https://firestore.googleapis.com/v1/projects/" + projectId + "/databases/(default)/documents/checkpoints_logistica?key=" + apiKey;
             
-            // Formatamos os dados do jeito que o banco de dados gosta de ler
             var payload = {
                 "fields": {
                     "matricula": { "stringValue": evento.matricula },
@@ -168,23 +163,29 @@
                 }
             };
 
-            // Criamos a requisição no padrão antigo (que o Android 4.4 aceita muito bem)
             var xhr = new XMLHttpRequest();
             xhr.open("POST", url, true);
             xhr.setRequestHeader("Content-Type", "application/json");
 
             xhr.onreadystatechange = function () {
-                if (xhr.readyState === 4) { // 4 significa que a resposta chegou
+                if (xhr.readyState === 4) { 
+                    // Volta o texto ao normal
+                    document.getElementById('mensagemSaudacao').innerText = "Operador: " + nomeOperadorAtual;
+                    document.getElementById('mensagemSaudacao').style.color = "#27ae60";
+
                     if (xhr.status === 200 || xhr.status === 201) {
-                        // Sucesso total! Salvo na nuvem.
+                        // DEU CERTO! Agora sim limpamos a tela e adicionamos na lista.
                         adicionarRegistroNaTela(evento);
+                        document.getElementById('idRequisicao').value = '';
+                        document.getElementById('idRequisicao').focus(); 
                     } else {
-                        alert("Erro ao salvar na nuvem. Código do erro: " + xhr.status);
+                        // DEU ERRO! Ele mostra a verdade na tela.
+                        alert("Ops! O Google recusou a gravação.\nCódigo: " + xhr.status + "\nMotivo: " + xhr.responseText);
                     }
                 }
             };
 
-            // Dispara o dado para a nuvem
+            // Dispara para a nuvem
             xhr.send(JSON.stringify(payload));
         }
 
