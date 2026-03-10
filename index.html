@@ -167,25 +167,28 @@
             xhr.open("POST", url, true);
             xhr.setRequestHeader("Content-Type", "application/json");
 
+            // NOVA FUNÇÃO: O Alarme de Incêndio (Cai aqui se o Google rejeitar o SSL/TLS antigo)
+            xhr.onerror = function() {
+                document.getElementById('mensagemSaudacao').innerText = "Operador: " + nomeOperadorAtual;
+                document.getElementById('mensagemSaudacao').style.color = "#27ae60";
+                alert("ERRO FATAL DE REDE: O Palmtop não conseguiu estabelecer uma conexão segura com o Google (Provável bloqueio de SSL/TLS do Android 4.4).");
+            };
+
             xhr.onreadystatechange = function () {
                 if (xhr.readyState === 4) { 
-                    // Volta o texto ao normal
                     document.getElementById('mensagemSaudacao').innerText = "Operador: " + nomeOperadorAtual;
                     document.getElementById('mensagemSaudacao').style.color = "#27ae60";
 
                     if (xhr.status === 200 || xhr.status === 201) {
-                        // DEU CERTO! Agora sim limpamos a tela e adicionamos na lista.
                         adicionarRegistroNaTela(evento);
                         document.getElementById('idRequisicao').value = '';
                         document.getElementById('idRequisicao').focus(); 
-                    } else {
-                        // DEU ERRO! Ele mostra a verdade na tela.
-                        alert("Ops! O Google recusou a gravação.\nCódigo: " + xhr.status + "\nMotivo: " + xhr.responseText);
+                    } else if (xhr.status !== 0) { // status 0 já é pego pelo onerror acima
+                        alert("Ops! O Google recusou a gravação.\nCódigo: " + xhr.status);
                     }
                 }
             };
 
-            // Dispara para a nuvem
             xhr.send(JSON.stringify(payload));
         }
 
