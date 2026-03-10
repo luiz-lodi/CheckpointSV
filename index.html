@@ -5,8 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CHECKPOINT DE PEDIDOS - ALMOXARIFADOS</title>
     
-    <script src="https://www.gstatic.com/firebasejs/10.10.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/promise-polyfill@8/dist/polyfill.min.js"></script>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
     <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f4f4f9; color: #333; }
@@ -21,7 +23,6 @@
         button { width: 100%; padding: 15px; border: none; border-radius: 5px; color: white; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
         .btn-acessar { background-color: #2c3e50; }
         
-        /* Cores dos status */
         .btn-separado { background-color: #f39c12; } 
         .btn-conferido { background-color: #8e44ad; } 
         .btn-recebido { background-color: #3498db; } 
@@ -30,7 +31,6 @@
         #historico { margin-top: 30px; }
         .registro { background: #ecf0f1; padding: 10px; margin-bottom: 8px; border-radius: 5px; font-size: 13px; line-height: 1.4; border-left: 4px solid #3498db; }
         
-        /* Caixas que começam escondidas */
         #tela-logistica { display: none; }
         #caixa-destino { display: none; background: #e8f6f3; padding: 15px; border-radius: 8px; border: 2px dashed #1abc9c; margin-bottom: 15px;}
         
@@ -80,24 +80,30 @@
     </div>
 
     <script>
+        var bancoDeDados = null;
+        var nomeOperadorAtual = "";
+
         // ==========================================
-        // 1. CONFIGURAÇÃO DO FIREBASE 
+        // CONFIGURAÇÃO DO FIREBASE (COM ESCUDO ANTI-ERRO)
         // ==========================================
-        var firebaseConfig = {
+        try {
+            var firebaseConfig = {
+                // COLE SUAS CHAVES AQUI:
   		        apiKey: "AIzaSyDHUlqzRw_vSyp9livOvQ0rjBYT9l_yofs",
   		        authDomain: "checkpoint-pedidos.firebaseapp.com",
   		        projectId: "checkpoint-pedidos",
   		        storageBucket: "checkpoint-pedidos.firebasestorage.app",
   		        messagingSenderId: "890832634523",
   		        appId: "1:890832634523:web:7f8fa0ee6a2a9c60e27c3e"
-        };
+            };
 
-        firebase.initializeApp(firebaseConfig);
-        var bancoDeDados = firebase.firestore();
-        // ==========================================
+            firebase.initializeApp(firebaseConfig);
+            bancoDeDados = firebase.firestore();
+        } catch (erro) {
+            // Se o Firebase travar, ele avisa na tela em vez de matar o botão
+            alert("Aviso: Falha ao conectar na Nuvem. O coletor pode estar sem internet ou incompatível. Erro: " + erro.message);
+        }
 
-
-        // 2. BANCO DE DADOS DE COLABORADORES
         var listaColaboradores = {
             "144006": "BRUNA LOURENCO", "1249": "BRUNA QUEVEDO", "168314": "CAIO MATHEUS", "167407": "ENI", 
             "1764": "GUILHERME", "163591": "HENZO", "167702": "JOAO GUSTAVO", "151357": "LUIZ HENRIQUE", 
@@ -106,23 +112,21 @@
             "147628": "GABRIEL", "292": "IDERALDO", "166913": "LUIS GUSTAVO", "167733": "RAFAEL", "139320": "RENAN"
         };
 
-        var nomeOperadorAtual = "";
-
         window.onload = function() {
-            carregarHistoricoDoFirebase();
+            if (bancoDeDados !== null) {
+                carregarHistoricoDoFirebase();
+            }
         };
 
         function validarAcesso() {
-            // Nota: usamos 'var' no lugar de 'const' para o Android 4.4 aceitar
             var matriculaDigitada = document.getElementById('idMatricula').value.trim();
             if (listaColaboradores[matriculaDigitada]) {
                 nomeOperadorAtual = listaColaboradores[matriculaDigitada];
                 document.getElementById('tela-login').style.display = 'none';
                 document.getElementById('tela-logistica').style.display = 'block';
-                // Concatenando textos à moda antiga:
                 document.getElementById('mensagemSaudacao').innerText = "Operador: " + nomeOperadorAtual;
                 
-                // MÁGICA DO PALMTOP: Coloca o cursor piscando na requisição automaticamente!
+                // Foca para o laser do Palmtop
                 document.getElementById('idRequisicao').focus();
             } else {
                 alert("Matrícula não encontrada. Verifique o número e tente novamente.");
@@ -132,8 +136,6 @@
         function abrirCaixaDestino() {
             document.getElementById('botoes-padrao').style.display = 'none';
             document.getElementById('caixa-destino').style.display = 'block';
-            
-            // Foca na caixinha do setor para o laser bipar o QR Code direto lá
             document.getElementById('idSetorDestino').focus();
         }
 
@@ -170,13 +172,17 @@
             salvarNoFirebase(novoEvento);
 
             document.getElementById('idRequisicao').value = '';
-            document.getElementById('idRequisicao').focus(); // Foca de novo para a próxima requisição
+            document.getElementById('idRequisicao').focus(); 
         }
 
         function salvarNoFirebase(evento) {
+            if (bancoDeDados === null) {
+                alert("Não foi possível salvar na nuvem pois o banco de dados não iniciou.");
+                return;
+            }
+
             bancoDeDados.collection("checkpoints_logistica").add(evento)
             .then(function() { 
-                // Função clássica no lugar da "arrow function (=>)"
                 adicionarRegistroNaTela(evento);
             })
             .catch(function(erro) {
@@ -208,14 +214,11 @@
             var divLista = document.getElementById('listaRegistros');
             var novoItem = document.createElement('div');
             novoItem.className = 'registro';
-            
-            // Texto formatado à moda antiga para o Android 4.4 não chorar
             novoItem.innerHTML = '<strong>Req:</strong> ' + evento.requisicao + ' <br>' +
                                  '<strong>Status:</strong> ' + evento.status + ' <br>' +
                                  '<strong>Operador:</strong> ' + evento.nome + ' (' + evento.matricula + ') <br>' +
                                  '<em>🕒 ' + evento.data + '</em>';
             
-            // Android antigo as vezes não suporta o '.prepend()', então usamos o irmão mais velho dele:
             if (divLista.firstChild) {
                 divLista.insertBefore(novoItem, divLista.firstChild);
             } else {
