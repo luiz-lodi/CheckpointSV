@@ -23,8 +23,9 @@
         
         .btn-separado { background-color: #f39c12; } 
         .btn-conferido { background-color: #8e44ad; } 
+        .btn-carregado { background-color: #d35400; }
         .btn-recebido { background-color: #3498db; } 
-        .btn-entregue { background-color: #2ecc71; } 
+        .btn-entregue { background-color: #05eb4a; } 
 
         #historico { margin-top: 30px; }
         .registro { background: #ecf0f1; padding: 10px; margin-bottom: 8px; border-radius: 5px; font-size: 13px; line-height: 1.4; border-left: 4px solid #3498db; }
@@ -65,8 +66,9 @@
             <h3>Registrar Evento</h3>
             <div class="botoes-status" id="botoes-padrao">
                 <button class="btn-separado" onclick="registrarEvento('Separado')">📦 Separado</button>
-                <button class="btn-conferido" onclick="registrarEvento('Conferido (Almox Apoio)')">🔍 Conferido</button>
-                <button class="btn-recebido" onclick="registrarEvento('Recebido (Almox Central)')">📥 Recebido</button>
+                <button class="btn-conferido" onclick="registrarEvento('Conferido (Almox Apoio)')">🔍 Conferido (Almox Apoio)</button>
+                <button class="btn-carregado" onclick="registrarEvento('Carregado (Transporte)')">🚚 Carregado (Trasnporte)</button>
+                <button class="btn-recebido" onclick="registrarEvento('Recebido (Almox Central)')">📥 Recebido (Almox Central)</button>
                 <button class="btn-entregue" onclick="abrirCaixaDestino()">✅ Entregue (Setor Destino)</button>
             </div>
 
