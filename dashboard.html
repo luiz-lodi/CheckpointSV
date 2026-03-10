@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Gerencial - Logística</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        
+        h1 { color: #2c3e50; text-align: center; margin-bottom: 5px; }
+        .subtitulo { text-align: center; color: #7f8c8d; margin-bottom: 30px; }
+
+        /* Filtro de Data */
+        .filtro-container { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 30px; }
+        .filtro-container label { font-weight: bold; color: #2c3e50; }
+        .filtro-container input[type="date"] { padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
+        .btn-filtrar { background-color: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-filtrar:hover { background-color: #2980b9; }
+
+        /* Cards Totalizadores */
+        .cards-grid { display: flex; gap: 15px; margin-bottom: 30px; flex-wrap: wrap; justify-content: space-between; }
+        .card { background: white; flex: 1; min-width: 150px; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-align: center; border-bottom: 4px solid #bdc3c7; }
+        .card h3 { margin: 0; font-size: 14px; color: #7f8c8d; text-transform: uppercase; }
+        .card .numero { font-size: 32px; font-weight: bold; color: #2c3e50; margin-top: 10px; }
+        
+        /* Cores da Borda dos Cards */
+        #card-separado { border-color: #f39c12; }
+        #card-conferido { border-color: #8e44ad; }
+        #card-carregado { border-color: #d35400; }
+        #card-recebido { border-color: #3498db; }
+        #card-entregue { border-color: #2ecc71; }
+
+        /* Tabela de Produtividade */
+        .tabela-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow-x: auto; }
+        .tabela-container h2 { margin-top: 0; color: #2c3e50; font-size: 18px; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 12px 15px; text-align: center; border-bottom: 1px solid #ecf0f1; }
+        th { background-color: #f8f9fa; color: #2c3e50; font-weight: bold; text-transform: uppercase; font-size: 13px; }
+        td { font-size: 14px; color: #34495e; }
+        tr:hover { background-color: #f1f2f6; }
+        .col-nome { text-align: left; font-weight: bold; }
+        .col-total { font-weight: bold; background-color: #f8f9fa; }
+        
+        .loading { text-align: center; color: #e67e22; font-weight: bold; display: none; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>📊 Dashboard de Produtividade</h1>
+        <div class="subtitulo">Monitoramento de Entregas e Performance por Colaborador</div>
+
+        <div class="filtro-container">
+            <label for="filtroData">Data do Relatório:</label>
+            <input type="date" id="filtroData">
+            <button class="btn-filtrar" onclick="carregarDados()">Buscar Dados</button>
+            <span class="loading" id="msg-loading">Processando dados... ⏳</span>
+        </div>
+
+        <div class="cards-grid">
+            <div class="card" id="card-separado">
+                <h3>📦 Separado</h3>
+                <div class="numero" id="tot-separado">0</div>
+            </div>
+            <div class="card" id="card-conferido">
+                <h3>🔍 Conferido</h3>
+                <div class="numero" id="tot-conferido">0</div>
+            </div>
+            <div class="card" id="card-carregado">
+                <h3>🚚 Carregado</h3>
+                <div class="numero" id="tot-carregado">0</div>
+            </div>
+            <div class="card" id="card-recebido">
+                <h3>📥 Recebido</h3>
+                <div class="numero" id="tot-recebido">0</div>
+            </div>
+            <div class="card" id="card-entregue">
+                <h3>✅ Entregue</h3>
+                <div class="numero" id="tot-entregue">0</div>
+            </div>
+        </div>
+
+        <div class="tabela-container">
+            <h2>Produtividade por Colaborador</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th class="col-nome">Colaborador</th>
+                        <th>Separado</th>
+                        <th>Conferido</th>
+                        <th>Carregado</th>
+                        <th>Recebido</th>
+                        <th>Entregue</th>
+                        <th class="col-total">Total de Bipes</th>
+                    </tr>
+                </thead>
+                <tbody id="corpo-tabela">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // CONFIGURAÇÃO DO FIREBASE (SDK V8)
+        // ==========================================
+        var firebaseConfig = {
+  		    apiKey: "AIzaSyDHUlqzRw_vSyp9livOvQ0rjBYT9l_yofs",
+  		    authDomain: "checkpoint-pedidos.firebaseapp.com",
+  		    projectId: "checkpoint-pedidos",
+  		    storageBucket: "checkpoint-pedidos.firebasestorage.app",
+  		    messagingSenderId: "890832634523",
+  		    appId: "1:890832634523:web:7f8fa0ee6a2a9c60e27c3e"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        var bancoDeDados = firebase.firestore();
+        // ==========================================
+
+        // Ao abrir a página, preenche a data de hoje automaticamente e já busca os dados
+        window.onload = function() {
+            var hoje = new Date();
+            var dia = String(hoje.getDate()).padStart(2, '0');
+            var mes = String(hoje.getMonth() + 1).padStart(2, '0');
+            var ano = hoje.getFullYear();
+            
+            document.getElementById('filtroData').value = ano + '-' + mes + '-' + dia;
+            carregarDados();
+        };
+
+        function carregarDados() {
+            var dataInput = document.getElementById('filtroData').value;
+            if (!dataInput) { alert("Por favor, selecione uma data!"); return; }
+
+            document.getElementById('msg-loading').style.display = 'inline-block';
+
+            // Mágica do Tempo: Pega a data escolhida e cria um "Início" (00:00:00) e um "Fim" (23:59:59)
+            // Lembre-se: o nosso aplicativo salva a "ordem" em milissegundos (getTime), então vamos buscar por esse número!
+            var dataEscolhida = new Date(dataInput + "T00:00:00"); 
+            var inicioDoDia = dataEscolhida.getTime();
+            var fimDoDia = inicioDoDia + (24 * 60 * 60 * 1000) - 1;
+
+            bancoDeDados.collection("checkpoints_logistica")
+                .where("ordem", ">=", inicioDoDia)
+                .where("ordem", "<=", fimDoDia)
+                .get()
+                .then(function(resultado) {
+                    processarRelatorio(resultado);
+                })
+                .catch(function(erro) {
+                    console.error("Erro ao buscar dados:", erro);
+                    alert("Ocorreu um erro ao buscar os dados da nuvem.");
+                    document.getElementById('msg-loading').style.display = 'none';
+                });
+        }
+
+        function processarRelatorio(resultado) {
+            // 1. Dicionários (Gavetas) para guardar as nossas contas
+            var totais = { separado: 0, conferido: 0, carregado: 0, recebido: 0, entregue: 0 };
+            var colaboradores = {};
+
+            // 2. Lendo bipe por bipe da nuvem
+            resultado.forEach(function(documento) {
+                var evento = documento.data();
+                var nome = evento.nome || "DESCONHECIDO";
+                var status = evento.status || "";
+
+                // Se o colaborador ainda não existe na nossa lista, criamos a linha dele zerada
+                if (!colaboradores[nome]) {
+                    colaboradores[nome] = { separado: 0, conferido: 0, carregado: 0, recebido: 0, entregue: 0, total: 0 };
+                }
+
+                // Conta que tipo de status foi esse e soma nas gavetas
+                if (status.indexOf("Separado") !== -1) {
+                    totais.separado++;
+                    colaboradores[nome].separado++;
+                    colaboradores[nome].total++;
+                } else if (status.indexOf("Conferido") !== -1) {
+                    totais.conferido++;
+                    colaboradores[nome].conferido++;
+                    colaboradores[nome].total++;
+                } else if (status.indexOf("Carregado") !== -1) {
+                    totais.carregado++;
+                    colaboradores[nome].carregado++;
+                    colaboradores[nome].total++;
+                } else if (status.indexOf("Recebido") !== -1) {
+                    totais.recebido++;
+                    colaboradores[nome].recebido++;
+                    colaboradores[nome].total++;
+                } else if (status.indexOf("Entregue") !== -1) {
+                    totais.entregue++;
+                    colaboradores[nome].entregue++;
+                    colaboradores[nome].total++;
+                }
+            });
+
+            // 3. Atualiza os Totalizadores na Tela
+            document.getElementById('tot-separado').innerText = totais.separado;
+            document.getElementById('tot-conferido').innerText = totais.conferido;
+            document.getElementById('tot-carregado').innerText = totais.carregado;
+            document.getElementById('tot-recebido').innerText = totais.recebido;
+            document.getElementById('tot-entregue').innerText = totais.entregue;
+
+            // 4. Monta a Tabela de Colaboradores
+            var corpoTabela = document.getElementById('corpo-tabela');
+            corpoTabela.innerHTML = ''; // Limpa a tabela anterior
+
+            // Transforma o nosso dicionário em uma lista, para podermos colocar em ordem alfabética
+            var listaNomes = Object.keys(colaboradores).sort();
+
+            if (listaNomes.length === 0) {
+                corpoTabela.innerHTML = '<tr><td colspan="7" style="color: #e74c3c;">Nenhum registro encontrado para esta data.</td></tr>';
+            } else {
+                listaNomes.forEach(function(nome) {
+                    var dados = colaboradores[nome];
+                    var linhaHTML = '<tr>' +
+                                        '<td class="col-nome">' + nome + '</td>' +
+                                        '<td>' + dados.separado + '</td>' +
+                                        '<td>' + dados.conferido + '</td>' +
+                                        '<td>' + dados.carregado + '</td>' +
+                                        '<td>' + dados.recebido + '</td>' +
+                                        '<td>' + dados.entregue + '</td>' +
+                                        '<td class="col-total">' + dados.total + '</td>' +
+                                    '</tr>';
+                    corpoTabela.innerHTML += linhaHTML;
+                });
+            }
+
+            // Esconde a mensagem de loading
+            document.getElementById('msg-loading').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

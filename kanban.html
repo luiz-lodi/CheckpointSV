@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Kanban - Logística em Tempo Real</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #ecf0f1; margin: 0; padding: 20px; color: #333; }
+        h1 { text-align: center; color: #2c3e50; margin-bottom: 5px; }
+        .subtitulo { text-align: center; color: #7f8c8d; margin-bottom: 20px; }
+        
+        /* Filtro de Data (Estilo importado do Dashboard) */
+        .filtro-container { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 25px; max-width: 600px; margin-left: auto; margin-right: auto;}
+        .filtro-container label { font-weight: bold; color: #2c3e50; }
+        .filtro-container input[type="date"] { padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
+        .btn-filtrar { background-color: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-filtrar:hover { background-color: #2980b9; }
+
+        /* O Quadro Kanban */
+        .kanban-board {
+            display: flex;
+            gap: 15px;
+            overflow-x: auto;
+            padding-bottom: 20px;
+            align-items: flex-start;
+        }
+
+        /* As Colunas */
+        .coluna {
+            background-color: #dfe6e9;
+            min-width: 250px;
+            flex: 1;
+            border-radius: 8px;
+            padding: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .coluna h3 { text-align: center; margin-top: 0; padding-bottom: 10px; border-bottom: 2px solid #b2bec3; }
+
+        #col-separado h3 { color: #f39c12; border-color: #f39c12; }
+        #col-conferido h3 { color: #8e44ad; border-color: #8e44ad; }
+        #col-carregado h3 { color: #d35400; border-color: #d35400; }
+        #col-recebido h3 { color: #3498db; border-color: #3498db; }
+        #col-entregue h3 { color: #2ecc71; border-color: #2ecc71; }
+
+        /* Os Cartões (Requisições) */
+        .cartao {
+            background-color: white;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-left: 5px solid #bdc3c7;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .cartao strong { display: block; font-size: 16px; margin-bottom: 5px; color: #2c3e50; }
+        .cartao span { display: block; color: #7f8c8d; font-size: 12px; margin-top: 5px;}
+        
+        .contador { font-size: 12px; background: #fff; padding: 2px 8px; border-radius: 10px; margin-left: 5px; color: #333;}
+    </style>
+</head>
+<body>
+
+    <h1>🚥 Monitoramento Kanban</h1>
+    <div class="subtitulo">Acompanhamento de requisições em Tempo Real</div>
+
+    <div class="filtro-container">
+        <label for="filtroData">Data Operacional:</label>
+        <input type="date" id="filtroData">
+        <button class="btn-filtrar" onclick="carregarKanbanTempoReal()">Carregar Painel</button>
+    </div>
+
+    <div class="kanban-board">
+        <div class="coluna" id="col-separado">
+            <h3>Separado <span class="contador" id="count-separado">0</span></h3>
+            <div class="lista-cartoes"></div>
+        </div>
+        <div class="coluna" id="col-conferido">
+            <h3>Conferido <span class="contador" id="count-conferido">0</span></h3>
+            <div class="lista-cartoes"></div>
+        </div>
+        <div class="coluna" id="col-carregado">
+            <h3>Carregado <span class="contador" id="count-carregado">0</span></h3>
+            <div class="lista-cartoes"></div>
+        </div>
+        <div class="coluna" id="col-recebido">
+            <h3>Recebido <span class="contador" id="count-recebido">0</span></h3>
+            <div class="lista-cartoes"></div>
+        </div>
+        <div class="coluna" id="col-entregue">
+            <h3>Entregue <span class="contador" id="count-entregue">0</span></h3>
+            <div class="lista-cartoes"></div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // CONFIGURAÇÃO DO FIREBASE
+        // ==========================================
+        var firebaseConfig = {
+  		    apiKey: "AIzaSyDHUlqzRw_vSyp9livOvQ0rjBYT9l_yofs",
+  		    authDomain: "checkpoint-pedidos.firebaseapp.com",
+  		    projectId: "checkpoint-pedidos",
+  		    storageBucket: "checkpoint-pedidos.firebasestorage.app",
+  		    messagingSenderId: "890832634523",
+  		    appId: "1:890832634523:web:7f8fa0ee6a2a9c60e27c3e"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        var bancoDeDados = firebase.firestore();
+        // ==========================================
+
+        var ouvinteNuvem = null; // A variável que vai guardar o nosso "rádio comunicador"
+
+        window.onload = function() {
+            var hoje = new Date();
+            var dia = String(hoje.getDate()).padStart(2, '0');
+            var mes = String(hoje.getMonth() + 1).padStart(2, '0');
+            var ano = hoje.getFullYear();
+            
+            document.getElementById('filtroData').value = ano + '-' + mes + '-' + dia;
+            carregarKanbanTempoReal();
+        };
+
+        function carregarKanbanTempoReal() {
+            var dataInput = document.getElementById('filtroData').value;
+            if (!dataInput) { alert("Por favor, selecione uma data!"); return; }
+
+            // SEGREDO DO KANBAN: Desliga o ouvinte anterior se ele existir, para não duplicar dados!
+            if (ouvinteNuvem !== null) {
+                ouvinteNuvem(); 
+            }
+
+            var dataEscolhida = new Date(dataInput + "T00:00:00"); 
+            var inicioDoDia = dataEscolhida.getTime();
+            var fimDoDia = inicioDoDia + (24 * 60 * 60 * 1000) - 1;
+
+            // Liga o novo ouvinte filtrando apenas a data selecionada
+            ouvinteNuvem = bancoDeDados.collection("checkpoints_logistica")
+                .where("ordem", ">=", inicioDoDia)
+                .where("ordem", "<=", fimDoDia)
+                .orderBy("ordem", "asc")
+                .onSnapshot(function(resultado) {
+                    
+                    var requisicoesAtuais = {};
+
+                    resultado.forEach(function(documento) {
+                        var evento = documento.data();
+                        requisicoesAtuais[evento.requisicao] = evento;
+                    });
+
+                    limparColunas();
+
+                    var contagens = { separado: 0, conferido: 0, carregado: 0, recebido: 0, entregue: 0 };
+
+                    for (var req in requisicoesAtuais) {
+                        var dados = requisicoesAtuais[req];
+                        var status = dados.status || "";
+                        var cartaoHTML = criarCartao(dados);
+
+                        if (status.indexOf("Separado") !== -1) {
+                            document.querySelector('#col-separado .lista-cartoes').innerHTML += cartaoHTML;
+                            contagens.separado++;
+                        } else if (status.indexOf("Conferido") !== -1) {
+                            document.querySelector('#col-conferido .lista-cartoes').innerHTML += cartaoHTML;
+                            contagens.conferido++;
+                        } else if (status.indexOf("Carregado") !== -1) {
+                            document.querySelector('#col-carregado .lista-cartoes').innerHTML += cartaoHTML;
+                            contagens.carregado++;
+                        } else if (status.indexOf("Recebido") !== -1) {
+                            document.querySelector('#col-recebido .lista-cartoes').innerHTML += cartaoHTML;
+                            contagens.recebido++;
+                        } else if (status.indexOf("Entregue") !== -1) {
+                            document.querySelector('#col-entregue .lista-cartoes').innerHTML += cartaoHTML;
+                            contagens.entregue++;
+                        }
+                    }
+
+                    document.getElementById('count-separado').innerText = contagens.separado;
+                    document.getElementById('count-conferido').innerText = contagens.conferido;
+                    document.getElementById('count-carregado').innerText = contagens.carregado;
+                    document.getElementById('count-recebido').innerText = contagens.recebido;
+                    document.getElementById('count-entregue').innerText = contagens.entregue;
+                }, function(erro) {
+                    console.error("Erro no Kanban Tempo Real: ", erro);
+                    // Ocasionalmente o Firebase pode pedir a criação de um "Índice", e o link aparecerá no console.
+                });
+        }
+
+        function limparColunas() {
+            var listas = document.querySelectorAll('.lista-cartoes');
+            for (var i = 0; i < listas.length; i++) {
+                listas[i].innerHTML = '';
+            }
+        }
+
+        function criarCartao(dados) {
+            var infoExtra = "";
+            if(dados.status.indexOf("Entregue") !== -1) {
+                infoExtra = "<br>📍 " + dados.status;
+            }
+
+            return '<div class="cartao">' +
+                        '<strong>Req: ' + dados.requisicao + '</strong>' +
+                        '👤 ' + dados.nome + infoExtra +
+                        '<span>🕒 ' + dados.data + '</span>' +
+                   '</div>';
+        }
+    </script>
+</body>
+</html>
