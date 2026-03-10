@@ -15,12 +15,16 @@
         h1 { color: #2c3e50; text-align: center; margin-bottom: 5px; }
         .subtitulo { text-align: center; color: #7f8c8d; margin-bottom: 30px; }
 
-        /* Filtro de Data */
-        .filtro-container { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 30px; }
+        /* Filtro de Data e Exportação */
+        .filtro-container { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 30px; flex-wrap: wrap;}
         .filtro-container label { font-weight: bold; color: #2c3e50; }
         .filtro-container input[type="date"] { padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
         .btn-filtrar { background-color: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.2s; }
         .btn-filtrar:hover { background-color: #2980b9; }
+        
+        /* Botão do Excel */
+        .btn-exportar { background-color: #27ae60; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-exportar:hover { background-color: #2ecc71; }
 
         /* Cards Totalizadores */
         .cards-grid { display: flex; gap: 15px; margin-bottom: 30px; flex-wrap: wrap; justify-content: space-between; }
@@ -28,7 +32,6 @@
         .card h3 { margin: 0; font-size: 14px; color: #7f8c8d; text-transform: uppercase; }
         .card .numero { font-size: 32px; font-weight: bold; color: #2c3e50; margin-top: 10px; }
         
-        /* Cores da Borda dos Cards */
         #card-separado { border-color: #f39c12; }
         #card-conferido { border-color: #8e44ad; }
         #card-carregado { border-color: #d35400; }
@@ -47,11 +50,10 @@
         .col-nome { text-align: left; font-weight: bold; }
         .col-total { font-weight: bold; background-color: #f8f9fa; }
         
-        .loading { text-align: center; color: #e67e22; font-weight: bold; display: none; margin-top: 10px; }
+        .loading { text-align: center; color: #e67e22; font-weight: bold; display: none; margin-top: 10px; width: 100%; }
     </style>
 </head>
 <body>
-
 
     <div style="background-color: #2c3e50; padding: 15px; text-align: center; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
         <a href="index.html" style="color: #ecf0f1; text-decoration: none; margin: 0 15px; font-weight: bold; font-size: 16px;">📱 Tela do Operador</a>
@@ -67,7 +69,8 @@
             <label for="filtroData">Data do Relatório:</label>
             <input type="date" id="filtroData">
             <button class="btn-filtrar" onclick="carregarDados()">Buscar Dados</button>
-            <span class="loading" id="msg-loading">Processando dados... ⏳</span>
+            <button class="btn-exportar" onclick="exportarParaExcel()">📥 Exportar Excel</button>
+            <div class="loading" id="msg-loading">Processando dados... ⏳</div>
         </div>
 
         <div class="cards-grid">
@@ -130,7 +133,10 @@
         var bancoDeDados = firebase.firestore();
         // ==========================================
 
-        // Ao abrir a página, preenche a data de hoje automaticamente e já busca os dados
+        // VARIÁVEIS GLOBAIS PARA A EXPORTAÇÃO
+        var dadosParaExportar = {}; 
+        var dataExportacao = "";
+
         window.onload = function() {
             var hoje = new Date();
             var dia = String(hoje.getDate()).padStart(2, '0');
@@ -145,10 +151,8 @@
             var dataInput = document.getElementById('filtroData').value;
             if (!dataInput) { alert("Por favor, selecione uma data!"); return; }
 
-            document.getElementById('msg-loading').style.display = 'inline-block';
+            document.getElementById('msg-loading').style.display = 'block';
 
-            // Mágica do Tempo: Pega a data escolhida e cria um "Início" (00:00:00) e um "Fim" (23:59:59)
-            // Lembre-se: o nosso aplicativo salva a "ordem" em milissegundos (getTime), então vamos buscar por esse número!
             var dataEscolhida = new Date(dataInput + "T00:00:00"); 
             var inicioDoDia = dataEscolhida.getTime();
             var fimDoDia = inicioDoDia + (24 * 60 * 60 * 1000) - 1;
@@ -158,6 +162,7 @@
                 .where("ordem", "<=", fimDoDia)
                 .get()
                 .then(function(resultado) {
+                    dataExportacao = dataInput; // Salva a data para o nome do arquivo Excel
                     processarRelatorio(resultado);
                 })
                 .catch(function(erro) {
@@ -168,57 +173,43 @@
         }
 
         function processarRelatorio(resultado) {
-            // 1. Dicionários (Gavetas) para guardar as nossas contas
             var totais = { separado: 0, conferido: 0, carregado: 0, recebido: 0, entregue: 0 };
             var colaboradores = {};
 
-            // 2. Lendo bipe por bipe da nuvem
             resultado.forEach(function(documento) {
                 var evento = documento.data();
                 var nome = evento.nome || "DESCONHECIDO";
                 var status = evento.status || "";
 
-                // Se o colaborador ainda não existe na nossa lista, criamos a linha dele zerada
                 if (!colaboradores[nome]) {
                     colaboradores[nome] = { separado: 0, conferido: 0, carregado: 0, recebido: 0, entregue: 0, total: 0 };
                 }
 
-                // Conta que tipo de status foi esse e soma nas gavetas
                 if (status.indexOf("Separado") !== -1) {
-                    totais.separado++;
-                    colaboradores[nome].separado++;
-                    colaboradores[nome].total++;
+                    totais.separado++; colaboradores[nome].separado++; colaboradores[nome].total++;
                 } else if (status.indexOf("Conferido") !== -1) {
-                    totais.conferido++;
-                    colaboradores[nome].conferido++;
-                    colaboradores[nome].total++;
+                    totais.conferido++; colaboradores[nome].conferido++; colaboradores[nome].total++;
                 } else if (status.indexOf("Carregado") !== -1) {
-                    totais.carregado++;
-                    colaboradores[nome].carregado++;
-                    colaboradores[nome].total++;
+                    totais.carregado++; colaboradores[nome].carregado++; colaboradores[nome].total++;
                 } else if (status.indexOf("Recebido") !== -1) {
-                    totais.recebido++;
-                    colaboradores[nome].recebido++;
-                    colaboradores[nome].total++;
+                    totais.recebido++; colaboradores[nome].recebido++; colaboradores[nome].total++;
                 } else if (status.indexOf("Entregue") !== -1) {
-                    totais.entregue++;
-                    colaboradores[nome].entregue++;
-                    colaboradores[nome].total++;
+                    totais.entregue++; colaboradores[nome].entregue++; colaboradores[nome].total++;
                 }
             });
 
-            // 3. Atualiza os Totalizadores na Tela
+            // Salva os dados processados na variável global para o botão do Excel usar
+            dadosParaExportar = colaboradores;
+
             document.getElementById('tot-separado').innerText = totais.separado;
             document.getElementById('tot-conferido').innerText = totais.conferido;
             document.getElementById('tot-carregado').innerText = totais.carregado;
             document.getElementById('tot-recebido').innerText = totais.recebido;
             document.getElementById('tot-entregue').innerText = totais.entregue;
 
-            // 4. Monta a Tabela de Colaboradores
             var corpoTabela = document.getElementById('corpo-tabela');
-            corpoTabela.innerHTML = ''; // Limpa a tabela anterior
+            corpoTabela.innerHTML = ''; 
 
-            // Transforma o nosso dicionário em uma lista, para podermos colocar em ordem alfabética
             var listaNomes = Object.keys(colaboradores).sort();
 
             if (listaNomes.length === 0) {
@@ -239,8 +230,42 @@
                 });
             }
 
-            // Esconde a mensagem de loading
             document.getElementById('msg-loading').style.display = 'none';
+        }
+
+        // ==========================================
+        // FUNÇÃO DE EXPORTAÇÃO PARA EXCEL (CSV)
+        // ==========================================
+        function exportarParaExcel() {
+            var listaNomes = Object.keys(dadosParaExportar);
+            
+            if (listaNomes.length === 0) {
+                alert("Não há dados na tabela para exportar. Faça uma busca primeiro.");
+                return;
+            }
+
+            // Cria o cabeçalho do arquivo (usando ponto e vírgula para o Excel entender as colunas)
+            var conteudoCSV = "Colaborador;Separado;Conferido;Carregado;Recebido;Entregue;Total_Bipes\n";
+
+            // Preenche as linhas com os dados
+            listaNomes.sort().forEach(function(nome) {
+                var d = dadosParaExportar[nome];
+                conteudoCSV += nome + ";" + d.separado + ";" + d.conferido + ";" + d.carregado + ";" + d.recebido + ";" + d.entregue + ";" + d.total + "\n";
+            });
+
+            // Adiciona um código especial no início (BOM) para o Excel ler acentos do português corretamente
+            var blob = new Blob(["\uFEFF" + conteudoCSV], { type: 'text/csv;charset=utf-8;' });
+            
+            // Cria um link invisível e clica nele para forçar o download
+            var link = document.createElement("a");
+            var url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", "Produtividade_Logistica_" + dataExportacao + ".csv");
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
     </script>
 </body>
