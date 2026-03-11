@@ -15,36 +15,65 @@
         h3 { color: #34495e; border-bottom: 2px solid #eee; padding-bottom: 5px; }
 
         .input-group { margin-bottom: 15px; }
-        .input-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; }
-        .input-group input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 16px; margin-bottom: 5px;}
+        .input-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; color: #2c3e50;}
+        .input-group input { width: 100%; padding: 15px; border: 2px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 18px; margin-bottom: 5px; transition: 0.3s;}
         
+        /* Destaque visual para a caixa selecionada */
+        .input-group input:focus { border-color: #3498db; outline: none; box-shadow: 0 0 8px rgba(52, 152, 219, 0.3); }
+
         button { width: 100%; padding: 15px; border: none; border-radius: 5px; color: white; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
         .btn-acessar { background-color: #2c3e50; }
-        
-        .btn-separado { background-color: #f39c12; } 
-        .btn-conferido { background-color: #8e44ad; } 
-        .btn-carregado { background-color: #d35400; }
-        .btn-recebido { background-color: #3498db; } 
-        .btn-entregue { background-color: #2ecc71; } 
+        .btn-manual { background-color: #95a5a6; margin-top: 15px;}
 
         #historico { margin-top: 30px; }
         .registro { background: #ecf0f1; padding: 10px; margin-bottom: 8px; border-radius: 5px; font-size: 13px; line-height: 1.4; border-left: 4px solid #3498db; }
         
         #tela-logistica { display: none; }
-        #caixa-destino { display: none; background: #e8f6f3; padding: 15px; border-radius: 8px; border: 2px dashed #1abc9c; margin-bottom: 15px;}
+        
+        /* Nova área de Scan duplo */
+        .area-scan { background: #e8f6f3; padding: 15px; border-radius: 8px; border: 2px dashed #1abc9c; margin-bottom: 15px;}
+        .instrucao { font-size: 12px; color: #7f8c8d; text-align: center; margin-bottom: 10px; font-weight: bold;}
         
         .saudacao { text-align: center; color: #27ae60; font-weight: bold; margin-bottom: 15px; }
+
+        /* O Balãozinho de Sucesso (Toast) */
+        #toast-sucesso {
+            visibility: hidden;
+            min-width: 200px;
+            background-color: #2ecc71;
+            color: #fff;
+            text-align: center;
+            border-radius: 8px;
+            padding: 15px;
+            position: fixed;
+            z-index: 999;
+            left: 50%;
+            bottom: 20px;
+            transform: translateX(-50%);
+            font-size: 16px;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            opacity: 0;
+            transition: opacity 0.3s, bottom 0.3s;
+        }
+        #toast-sucesso.mostrar {
+            visibility: visible;
+            opacity: 1;
+            bottom: 50px;
+        }
     </style>
 </head>
 <body>
 
+    <div id="toast-sucesso">✅ Salvo na Nuvem!</div>
+
     <div class="container">
-        <h1>CHECKPOINT - ALMOXARIFADOS</h1>
+        <h1>CHECKPOINT LOGÍSTICA</h1>
         
         <div id="tela-login">
             <div class="input-group">
-                <label for="idMatricula">Matrícula:</label>
-                <input type="number" id="idMatricula" placeholder="Digite seu número de matrícula">
+                <label for="idMatricula">Matrícula do Operador:</label>
+                <input type="number" id="idMatricula" placeholder="Digite e aperte Enter">
                 <button class="btn-acessar" onclick="validarAcesso()">Acessar Sistema</button>
             </div>
         </div>
@@ -52,28 +81,22 @@
         <div id="tela-logistica">
             <div class="saudacao" id="mensagemSaudacao"></div>
 
-            <div class="input-group">
-                <label for="idRequisicao">Requisição Tasy (7 dígitos):</label>
-                <input type="number" id="idRequisicao" placeholder="Use o leitor do Palmtop">
-            </div>
+            <div class="area-scan">
+                <div class="instrucao">BIPE A REQUISIÇÃO E DEPOIS O LOCAL</div>
+                
+                <div class="input-group">
+                    <label for="idRequisicao">1. Requisição Tasy (7 dígitos):</label>
+                    <input type="number" id="idRequisicao" placeholder="Bipe o código de barras">
+                </div>
 
-            <div id="caixa-destino">
-                <label style="font-weight:bold; margin-bottom:5px; display:block;">Confirme o Setor Destino:</label>
-                <input type="text" id="idSetorDestino" placeholder="Use o leitor para o QR do Setor" style="width:100%; padding:10px; margin-bottom:10px; box-sizing:border-box;">
-                <button class="btn-entregue" onclick="finalizarEntrega()">Gravar Entrega Final</button>
-            </div>
-
-            <h3>Registrar Evento</h3>
-            <div class="botoes-status" id="botoes-padrao">
-                <button class="btn-separado" onclick="registrarEvento('Separado')">📦 Separado</button>
-                <button class="btn-conferido" onclick="registrarEvento('Conferido (Almox Apoio)')">🔍 Conferido (Almox Apoio)</button>
-                <button class="btn-carregado" onclick="registrarEvento('Carregado (Transporte)')">🚚 Carregado (Transporte)</button>
-                <button class="btn-recebido" onclick="registrarEvento('Recebido (Almox Central)')">📥 Recebido (Almox Central)</button>
-                <button class="btn-entregue" onclick="abrirCaixaDestino()">✅ Entregue (Setor Destino)</button>
+                <div class="input-group">
+                    <label for="idLocalQR">2. Local / Etapa (QR Code):</label>
+                    <input type="text" id="idLocalQR" placeholder="Bipe o QR Code do Setor">
+                </div>
             </div>
 
             <div id="historico">
-                <h3>Histórico de Eventos</h3>
+                <h3>Últimos Bipes</h3>
                 <div id="listaRegistros"></div>
             </div>
         </div>
@@ -84,12 +107,12 @@
         // CONFIGURAÇÃO DO FIREBASE (SDK V8)
         // ==========================================
         var firebaseConfig = {
-  		        apiKey: "AIzaSyDHUlqzRw_vSyp9livOvQ0rjBYT9l_yofs",
-  		        authDomain: "checkpoint-pedidos.firebaseapp.com",
-  		        projectId: "checkpoint-pedidos",
-  		        storageBucket: "checkpoint-pedidos.firebasestorage.app",
-  		        messagingSenderId: "890832634523",
-  		        appId: "1:890832634523:web:7f8fa0ee6a2a9c60e27c3e"
+  		    apiKey: "AIzaSyDHUlqzRw_vSyp9livOvQ0rjBYT9l_yofs",
+  		    authDomain: "checkpoint-pedidos.firebaseapp.com",
+  		    projectId: "checkpoint-pedidos",
+  		    storageBucket: "checkpoint-pedidos.firebasestorage.app",
+  		    messagingSenderId: "890832634523",
+  		    appId: "1:890832634523:web:7f8fa0ee6a2a9c60e27c3e"
         };
 
         firebase.initializeApp(firebaseConfig);
@@ -97,6 +120,16 @@
         // ==========================================
 
         var nomeOperadorAtual = "";
+        
+        // O "Dicionário" que traduz o QR Code da Parede para o Status no Sistema
+        var dicionarioEtapas = {
+            "QR-SEP-CENTRAL": "Separado (Central)",
+            "QR-SEP-APOIO": "Separado (Apoio)",
+            "QR-CONFERIDO": "Conferido (Apoio)",
+            "QR-CARREGADO": "Carregado (Transporte)",
+            "QR-RECEBIDO": "Recebido (Central)"
+        };
+
         var listaColaboradores = {
             "144006": "BRUNA LOURENCO", "1249": "BRUNA QUEVEDO", "168314": "CAIO MATHEUS", "167407": "ENI", 
             "1764": "GUILHERME", "163591": "HENZO", "167702": "JOAO GUSTAVO", "151357": "LUIZ HENRIQUE", 
@@ -105,6 +138,11 @@
             "147628": "GABRIEL", "292": "IDERALDO", "166913": "LUIS GUSTAVO", "167733": "RAFAEL", "139320": "RENAN"
         };
 
+        // Permite logar apertando Enter na matrícula
+        document.getElementById('idMatricula').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') { validarAcesso(); }
+        });
+
         function validarAcesso() {
             var matriculaDigitada = document.getElementById('idMatricula').value.trim();
             if (listaColaboradores[matriculaDigitada]) {
@@ -112,46 +150,85 @@
                 document.getElementById('tela-login').style.display = 'none';
                 document.getElementById('tela-logistica').style.display = 'block';
                 document.getElementById('mensagemSaudacao').innerText = "Operador: " + nomeOperadorAtual;
+                
+                // Foca na requisição para começar os trabalhos
                 document.getElementById('idRequisicao').focus();
             } else {
-                alert("Matrícula não encontrada. Verifique o número e tente novamente.");
+                alert("Matrícula não encontrada.");
             }
         }
 
-        function abrirCaixaDestino() {
-            document.getElementById('botoes-padrao').style.display = 'none';
-            document.getElementById('caixa-destino').style.display = 'block';
-            document.getElementById('idSetorDestino').focus();
-        }
+        // ==========================================
+        // LÓGICA DO SCAN & GO (O PULO DO GATO)
+        // ==========================================
+        
+        // 1. Ouve a caixa de Requisição. Se bater 7 números, pula para a caixa do Local
+        document.getElementById('idRequisicao').addEventListener('input', function(e) {
+            var valor = this.value.trim();
+            if (valor.length === 7) {
+                document.getElementById('idLocalQR').focus();
+            }
+        });
 
-        function finalizarEntrega() {
-            var setorDestino = document.getElementById('idSetorDestino').value.trim();
-            if (setorDestino === '') { alert("Por favor, informe ou escaneie o setor destino."); return; }
-            registrarEvento("Entregue (" + setorDestino + ")");
-            document.getElementById('idSetorDestino').value = '';
-            document.getElementById('caixa-destino').style.display = 'none';
-            document.getElementById('botoes-padrao').style.display = 'block';
-        }
+        // O Palmtop pode enviar um "Enter" após ler a requisição. Vamos garantir que ele só pule de campo.
+        document.getElementById('idRequisicao').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault(); // Impede recarregar a tela
+                if (this.value.trim().length === 7) {
+                    document.getElementById('idLocalQR').focus();
+                }
+            }
+        });
 
-        function registrarEvento(statusFinal) {
-            var matricula = document.getElementById('idMatricula').value.trim();
+        // 2. Ouve a caixa do Local/QR Code. Quando o Palmtop bipar e der o "Enter", ele salva!
+        document.getElementById('idLocalQR').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                processarLeitura();
+            }
+        });
+
+        function processarLeitura() {
             var requisicao = document.getElementById('idRequisicao').value.trim();
+            var qrCodeLido = document.getElementById('idLocalQR').value.trim().toUpperCase();
 
-            if (requisicao.length !== 7) { alert("Aviso: A requisição Tasy deve conter exatamente 7 dígitos numéricos!"); return; }
+            // Validações básicas de segurança
+            if (requisicao.length !== 7) {
+                alert("Aviso: Bipagem de requisição incompleta (precisa ter 7 dígitos).");
+                document.getElementById('idRequisicao').focus();
+                return;
+            }
+            if (qrCodeLido === "") { return; } // Ignora se apertar enter vazio
+
+            // Descobre o status baseado no dicionário
+            var statusFinal = dicionarioEtapas[qrCodeLido];
+
+            // Se o QR Code não for nenhum dos nossos padrões (ex: QR-SEPARADO), 
+            // nós assumimos que é um QR Code de um Setor Final do Hospital (ex: UTI-ADULTO)
+            if (!statusFinal) {
+                // Prevenção: Se for algum código estranho que começa com QR-, avisa o erro
+                if (qrCodeLido.startsWith("QR-")) {
+                    alert("QR Code de etapa inválido ou etiqueta danificada.");
+                    document.getElementById('idLocalQR').value = "";
+                    return;
+                }
+                // É um setor destino válido!
+                statusFinal = "Entregue (" + qrCodeLido + ")";
+            }
+
+            // Inicia a gravação
+            document.getElementById('mensagemSaudacao').innerText = "Enviando dados... ⏳";
+            document.getElementById('mensagemSaudacao').style.color = "#f39c12";
 
             var dataAtual = new Date();
-            
             var novoEvento = {
-                matricula: matricula,
+                matricula: document.getElementById('idMatricula').value.trim(),
                 nome: nomeOperadorAtual,
                 requisicao: requisicao,
                 status: statusFinal, 
                 data: dataAtual.toLocaleString('pt-BR'),
                 ordem: dataAtual.getTime()
             };
-
-            document.getElementById('mensagemSaudacao').innerText = "Enviando dados... ⏳";
-            document.getElementById('mensagemSaudacao').style.color = "#f39c12";
 
             salvarNoFirebase(novoEvento);
         }
@@ -163,16 +240,24 @@
                 document.getElementById('mensagemSaudacao').style.color = "#27ae60";
                 
                 adicionarRegistroNaTela(evento);
+                
+                // MÁGICA DO TOAST: Mostra o balão e esconde sozinho depois de 1.5 segundos
+                var toast = document.getElementById("toast-sucesso");
+                toast.className = "mostrar";
+                setTimeout(function(){ toast.className = toast.className.replace("mostrar", ""); }, 1500);
+                
+                // Limpa as duas caixas e volta o cursor para a primeira!
                 document.getElementById('idRequisicao').value = '';
+                document.getElementById('idLocalQR').value = '';
                 document.getElementById('idRequisicao').focus(); 
             })
             .catch(function(erro) {
                 document.getElementById('mensagemSaudacao').innerText = "Operador: " + nomeOperadorAtual;
                 document.getElementById('mensagemSaudacao').style.color = "#27ae60";
-                
-                // MENSAGEM DE ERRO DEDO-DURO DO FIREBASE
                 alert("Erro ao salvar no banco. Motivo técnico: " + erro.message);
-                console.error(erro);
+                
+                document.getElementById('idLocalQR').value = '';
+                document.getElementById('idLocalQR').focus();
             });
         }
 
@@ -182,7 +267,6 @@
             novoItem.className = 'registro';
             novoItem.innerHTML = '<strong>Req:</strong> ' + evento.requisicao + ' <br>' +
                                  '<strong>Status:</strong> ' + evento.status + ' <br>' +
-                                 '<strong>Operador:</strong> ' + evento.nome + ' (' + evento.matricula + ') <br>' +
                                  '<em>🕒 ' + evento.data + '</em>';
             
             if (divLista.firstChild) {
