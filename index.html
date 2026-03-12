@@ -22,10 +22,8 @@
         button { width: 100%; padding: 15px; border: none; border-radius: 5px; color: white; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
         .btn-acessar { background-color: #2c3e50; }
         
-        /* Botão Único de Romaneio */
         .btn-romaneio { background-color: #8e44ad; margin-top: 15px; box-shadow: 0 4px 0 #732d91; transition: 0.2s;}
         .btn-romaneio:active { transform: translateY(4px); box-shadow: 0 0 0 #732d91; }
-        
         .btn-voltar { background-color: #e74c3c; margin-top: 15px; }
 
         #historico { margin-top: 30px; }
@@ -37,7 +35,6 @@
         .instrucao { font-size: 13px; color: #7f8c8d; text-align: center; margin-bottom: 10px; font-weight: bold; line-height: 1.4;}
         .saudacao { text-align: center; color: #27ae60; font-weight: bold; margin-bottom: 15px; }
 
-        /* Estilos da Tela de Lote */
         .area-lote { background: #fff; padding: 15px; border-radius: 8px; border: 3px solid #ccc; margin-bottom: 15px; transition: 0.3s;}
         .titulo-lote { text-align: center; font-size: 18px; font-weight: bold; margin-bottom: 15px; text-transform: uppercase;}
 
@@ -141,6 +138,9 @@
         var etapaLoteAtual = ""; 
         var contadorLoteSessao = 0; 
         
+        // A MÁGICA DOS VOLUMES: Um dicionário que vai lembrar o que já foi bipado hoje
+        var memoriaVolumes = {};
+        
         var dicionarioEtapas = {
             "QR-SEP-CENTRAL": "Separado (Central)",
             "QR-SEP-APOIO": "Separado (Apoio)",
@@ -177,8 +177,10 @@
             }
         }
 
-        function mostrarToast() {
+        // Adicionamos um parâmetro novo no Toast para mostrar o Volume na tela
+        function mostrarToast(textoPersonalizado) {
             var toast = document.getElementById("toast-sucesso");
+            toast.innerText = textoPersonalizado || "✅ Salvo na Nuvem!";
             toast.className = "mostrar";
             setTimeout(function(){ toast.className = toast.className.replace("mostrar", ""); }, 1500);
         }
@@ -220,7 +222,8 @@
             
             bancoDeDados.collection("checkpoints_logistica").add(novoEvento)
             .then(function() { 
-                mostrarToast();
+                // Exibe o Toast com a info de qual volume foi gravado
+                mostrarToast("✅ Salvo! (Volume " + novoEvento.volume + ")");
                 adicionarRegistroNaTela(novoEvento);
                 document.getElementById('idRequisicao').value = '';
                 document.getElementById('idLocalQR').value = '';
@@ -236,7 +239,6 @@
             document.getElementById('tela-logistica').style.display = 'none';
             document.getElementById('tela-lote').style.display = 'block';
 
-            // Zera tudo e força o operador a ver o Passo 1 (Bipar a Parede)
             document.getElementById('titulo-lote').innerText = "CONFIGURANDO ROMANEIO";
             document.getElementById('titulo-lote').style.color = "#333";
             document.getElementById('caixa-lote').style.borderColor = "#ccc";
@@ -256,7 +258,6 @@
             document.getElementById('idRequisicao').focus();
         }
 
-        // Gatilho do Passo 1: Lendo o QR da Parede para travar o romaneio
         document.getElementById('idLocalQRLote').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault(); 
@@ -267,7 +268,6 @@
         function validarParedeRomaneio() {
             var qrLido = document.getElementById('idLocalQRLote').value.trim().toUpperCase();
 
-            // POKA-YOKE: Bloqueia se o operador tentar iniciar romaneio num local não permitido
             if (qrLido !== "QR-CARREGADO" && qrLido !== "QR-RECEBIDO") {
                 alert("Local Inválido! O Modo Romaneio só pode ser iniciado nas áreas de Carregamento ou Recebimento.");
                 document.getElementById('idLocalQRLote').value = '';
@@ -275,7 +275,6 @@
                 return;
             }
 
-            // O local é válido! Transforma a tela (Passo 2)
             etapaLoteAtual = qrLido;
             contadorLoteSessao = 0;
             document.getElementById('qtd-lote').innerText = contadorLoteSessao;
@@ -293,7 +292,6 @@
                 caixa.style.borderColor = "#3498db";
             }
 
-            // Animação: Esconde a caixa do Local e mostra a Metralhadora
             document.getElementById('passo1-lote').style.display = 'none';
             document.getElementById('passo2-lote').style.display = 'block';
 
@@ -301,7 +299,6 @@
             document.getElementById('idReqLote').focus();
         }
 
-        // Gatilho do Passo 2: A Metralhadora de Bipes
         document.getElementById('idReqLote').addEventListener('input', function(e) {
             if (this.value.trim().length === 7) { processarLeituraLote(); }
         });
@@ -325,20 +322,34 @@
 
             bancoDeDados.collection("checkpoints_logistica").add(novoEvento)
             .then(function() { 
-                mostrarToast();
+                mostrarToast("✅ Salvo! (Volume " + novoEvento.volume + ")");
                 contadorLoteSessao++;
                 document.getElementById('qtd-lote').innerText = contadorLoteSessao;
             }).catch(function(erro) { alert("Erro ao salvar: " + erro.message); });
         }
 
-        // Função auxiliar para os pacotes de dados
+        // ==========================================
+        // FUNÇÃO CENTRAL COM INTELIGÊNCIA DE VOLUMES
+        // ==========================================
         function criarObjetoEvento(req, status) {
             var dataAtual = new Date();
+            
+            // Cria uma "Chave Única" (ex: 1234567-Carregado)
+            var chaveVolume = req + "-" + status;
+            
+            // Verifica na Memória se já bipou essa chave hoje
+            if (!memoriaVolumes[chaveVolume]) {
+                memoriaVolumes[chaveVolume] = 1; // É a primeira caixa!
+            } else {
+                memoriaVolumes[chaveVolume]++;   // É mais uma caixa!
+            }
+
             return {
                 matricula: document.getElementById('idMatricula').value.trim(),
                 nome: nomeOperadorAtual,
                 requisicao: req,
                 status: status, 
+                volume: memoriaVolumes[chaveVolume], // A nuvem agora sabe qual é o volume!
                 data: dataAtual.toLocaleString('pt-BR'),
                 ordem: dataAtual.getTime()
             };
@@ -348,7 +359,7 @@
             var divLista = document.getElementById('listaRegistros');
             var novoItem = document.createElement('div');
             novoItem.className = 'registro';
-            novoItem.innerHTML = '<strong>Req:</strong> ' + evento.requisicao + ' <br>' +
+            novoItem.innerHTML = '<strong>Req:</strong> ' + evento.requisicao + ' <span style="color:#d35400; font-weight:bold;">(Vol ' + evento.volume + ')</span><br>' +
                                  '<strong>Status:</strong> ' + evento.status + ' <br>' +
                                  '<em>🕒 ' + evento.data + '</em>';
             
