@@ -10,45 +10,42 @@
 
     <style>
         body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; color: #333; }
-        .container { max-width: 1000px; margin: 0 auto; }
+        .container { max-width: 1100px; margin: 0 auto; }
         
         h1 { color: #2c3e50; text-align: center; margin-bottom: 5px; }
         .subtitulo { text-align: center; color: #7f8c8d; margin-bottom: 30px; }
 
-        /* Filtro de Data e Exportação */
         .filtro-container { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 30px; flex-wrap: wrap;}
         .filtro-container label { font-weight: bold; color: #2c3e50; }
         .filtro-container input[type="date"] { padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
         .btn-filtrar { background-color: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.2s; }
         .btn-filtrar:hover { background-color: #2980b9; }
         
-        /* Botão do Excel */
         .btn-exportar { background-color: #27ae60; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.2s; }
         .btn-exportar:hover { background-color: #2ecc71; }
 
-        /* Cards Totalizadores */
         .cards-grid { display: flex; gap: 15px; margin-bottom: 30px; flex-wrap: wrap; justify-content: space-between; }
-        .card { background: white; flex: 1; min-width: 150px; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-align: center; border-bottom: 4px solid #bdc3c7; }
-        .card h3 { margin: 0; font-size: 14px; color: #7f8c8d; text-transform: uppercase; }
-        .card .numero { font-size: 32px; font-weight: bold; color: #2c3e50; margin-top: 10px; }
+        .card { background: white; flex: 1; min-width: 130px; padding: 20px 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-align: center; border-bottom: 4px solid #bdc3c7; }
+        .card h3 { margin: 0; font-size: 13px; color: #7f8c8d; text-transform: uppercase; }
+        .card .numero { font-size: 30px; font-weight: bold; color: #2c3e50; margin-top: 10px; }
         
         #card-separado { border-color: #f39c12; }
         #card-conferido { border-color: #8e44ad; }
         #card-carregado { border-color: #d35400; }
         #card-recebido { border-color: #3498db; }
+        #card-sep-central { border-color: #16a085; }
         #card-entregue { border-color: #2ecc71; }
 
-        /* Tabela de Produtividade */
         .tabela-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow-x: auto; }
         .tabela-container h2 { margin-top: 0; color: #2c3e50; font-size: 18px; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; }
         
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { padding: 12px 15px; text-align: center; border-bottom: 1px solid #ecf0f1; }
-        th { background-color: #f8f9fa; color: #2c3e50; font-weight: bold; text-transform: uppercase; font-size: 13px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; min-width: 800px;}
+        th, td { padding: 12px 10px; text-align: center; border-bottom: 1px solid #ecf0f1; }
+        th { background-color: #f8f9fa; color: #2c3e50; font-weight: bold; text-transform: uppercase; font-size: 12px; }
         td { font-size: 14px; color: #34495e; }
         tr:hover { background-color: #f1f2f6; }
         .col-nome { text-align: left; font-weight: bold; }
-        .col-total { font-weight: bold; background-color: #f8f9fa; }
+        .col-total { font-weight: bold; background-color: #f8f9fa; color: #2c3e50;}
         
         .loading { text-align: center; color: #e67e22; font-weight: bold; display: none; margin-top: 10px; width: 100%; }
     </style>
@@ -63,7 +60,7 @@
 
     <div class="container">
         <h1>📊 Dashboard de Produtividade</h1>
-        <div class="subtitulo">Monitoramento de Entregas e Performance por Colaborador</div>
+        <div class="subtitulo">Monitoramento de Volumes Movimentados por Colaborador</div>
 
         <div class="filtro-container">
             <label for="filtroData">Data do Relatório:</label>
@@ -75,7 +72,7 @@
 
         <div class="cards-grid">
             <div class="card" id="card-separado">
-                <h3>📦 Separado</h3>
+                <h3>📦 Sep. Apoio</h3>
                 <div class="numero" id="tot-separado">0</div>
             </div>
             <div class="card" id="card-conferido">
@@ -90,6 +87,10 @@
                 <h3>📥 Recebido</h3>
                 <div class="numero" id="tot-recebido">0</div>
             </div>
+            <div class="card" id="card-sep-central">
+                <h3>📦 Sep. Central</h3>
+                <div class="numero" id="tot-sep-central">0</div>
+            </div>
             <div class="card" id="card-entregue">
                 <h3>✅ Entregue</h3>
                 <div class="numero" id="tot-entregue">0</div>
@@ -102,23 +103,24 @@
                 <thead>
                     <tr>
                         <th class="col-nome">Colaborador</th>
-                        <th>Separado</th>
+                        <th>Sep. Apoio</th>
                         <th>Conferido</th>
                         <th>Carregado</th>
                         <th>Recebido</th>
+                        <th>Sep. Central</th>
                         <th>Entregue</th>
-                        <th class="col-total">Total de Bipes</th>
+                        <th class="col-total">Total de Volumes</th>
                     </tr>
                 </thead>
                 <tbody id="corpo-tabela">
-                    </tbody>
+                </tbody>
             </table>
         </div>
     </div>
 
     <script>
         // ==========================================
-        // CONFIGURAÇÃO DO FIREBASE (SDK V8)
+        // CONFIGURAÇÃO DO FIREBASE
         // ==========================================
         var firebaseConfig = {
   		    apiKey: "AIzaSyDHUlqzRw_vSyp9livOvQ0rjBYT9l_yofs",
@@ -131,9 +133,7 @@
 
         firebase.initializeApp(firebaseConfig);
         var bancoDeDados = firebase.firestore();
-        // ==========================================
 
-        // VARIÁVEIS GLOBAIS PARA A EXPORTAÇÃO
         var dadosParaExportar = {}; 
         var dataExportacao = "";
 
@@ -162,7 +162,7 @@
                 .where("ordem", "<=", fimDoDia)
                 .get()
                 .then(function(resultado) {
-                    dataExportacao = dataInput; // Salva a data para o nome do arquivo Excel
+                    dataExportacao = dataInput;
                     processarRelatorio(resultado);
                 })
                 .catch(function(erro) {
@@ -173,7 +173,8 @@
         }
 
         function processarRelatorio(resultado) {
-            var totais = { separado: 0, conferido: 0, carregado: 0, recebido: 0, entregue: 0 };
+            // Adicionado a gaveta de separação do central
+            var totais = { separado: 0, conferido: 0, carregado: 0, recebido: 0, sepCentral: 0, entregue: 0 };
             var colaboradores = {};
 
             resultado.forEach(function(documento) {
@@ -182,10 +183,13 @@
                 var status = evento.status || "";
 
                 if (!colaboradores[nome]) {
-                    colaboradores[nome] = { separado: 0, conferido: 0, carregado: 0, recebido: 0, entregue: 0, total: 0 };
+                    colaboradores[nome] = { separado: 0, conferido: 0, carregado: 0, recebido: 0, sepCentral: 0, entregue: 0, total: 0 };
                 }
 
-                if (status.indexOf("Separado") !== -1) {
+                // A Lógica de Distribuição
+                if (status.indexOf("Separado (Central)") !== -1) {
+                    totais.sepCentral++; colaboradores[nome].sepCentral++; colaboradores[nome].total++;
+                } else if (status.indexOf("Separado (Apoio)") !== -1 || status === "Separado") {
                     totais.separado++; colaboradores[nome].separado++; colaboradores[nome].total++;
                 } else if (status.indexOf("Conferido") !== -1) {
                     totais.conferido++; colaboradores[nome].conferido++; colaboradores[nome].total++;
@@ -198,13 +202,14 @@
                 }
             });
 
-            // Salva os dados processados na variável global para o botão do Excel usar
             dadosParaExportar = colaboradores;
 
+            // Atualiza os 6 cards
             document.getElementById('tot-separado').innerText = totais.separado;
             document.getElementById('tot-conferido').innerText = totais.conferido;
             document.getElementById('tot-carregado').innerText = totais.carregado;
             document.getElementById('tot-recebido').innerText = totais.recebido;
+            document.getElementById('tot-sep-central').innerText = totais.sepCentral;
             document.getElementById('tot-entregue').innerText = totais.entregue;
 
             var corpoTabela = document.getElementById('corpo-tabela');
@@ -213,7 +218,7 @@
             var listaNomes = Object.keys(colaboradores).sort();
 
             if (listaNomes.length === 0) {
-                corpoTabela.innerHTML = '<tr><td colspan="7" style="color: #e74c3c;">Nenhum registro encontrado para esta data.</td></tr>';
+                corpoTabela.innerHTML = '<tr><td colspan="8" style="color: #e74c3c;">Nenhum registro encontrado para esta data.</td></tr>';
             } else {
                 listaNomes.forEach(function(nome) {
                     var dados = colaboradores[nome];
@@ -223,6 +228,7 @@
                                         '<td>' + dados.conferido + '</td>' +
                                         '<td>' + dados.carregado + '</td>' +
                                         '<td>' + dados.recebido + '</td>' +
+                                        '<td>' + dados.sepCentral + '</td>' +
                                         '<td>' + dados.entregue + '</td>' +
                                         '<td class="col-total">' + dados.total + '</td>' +
                                     '</tr>';
@@ -234,29 +240,21 @@
         }
 
         // ==========================================
-        // FUNÇÃO DE EXPORTAÇÃO PARA EXCEL (CSV)
+        // EXPORTAÇÃO PARA EXCEL ATUALIZADA
         // ==========================================
         function exportarParaExcel() {
             var listaNomes = Object.keys(dadosParaExportar);
-            
-            if (listaNomes.length === 0) {
-                alert("Não há dados na tabela para exportar. Faça uma busca primeiro.");
-                return;
-            }
+            if (listaNomes.length === 0) { alert("Não há dados na tabela para exportar."); return; }
 
-            // Cria o cabeçalho do arquivo (usando ponto e vírgula para o Excel entender as colunas)
-            var conteudoCSV = "Colaborador;Separado;Conferido;Carregado;Recebido;Entregue;Total_Bipes\n";
+            // Cabeçalho com as 6 etapas
+            var conteudoCSV = "Colaborador;Sep_Apoio;Conferido;Carregado;Recebido;Sep_Central;Entregue;Total_Volumes\n";
 
-            // Preenche as linhas com os dados
             listaNomes.sort().forEach(function(nome) {
                 var d = dadosParaExportar[nome];
-                conteudoCSV += nome + ";" + d.separado + ";" + d.conferido + ";" + d.carregado + ";" + d.recebido + ";" + d.entregue + ";" + d.total + "\n";
+                conteudoCSV += nome + ";" + d.separado + ";" + d.conferido + ";" + d.carregado + ";" + d.recebido + ";" + d.sepCentral + ";" + d.entregue + ";" + d.total + "\n";
             });
 
-            // Adiciona um código especial no início (BOM) para o Excel ler acentos do português corretamente
             var blob = new Blob(["\uFEFF" + conteudoCSV], { type: 'text/csv;charset=utf-8;' });
-            
-            // Cria um link invisível e clica nele para forçar o download
             var link = document.createElement("a");
             var url = URL.createObjectURL(blob);
             link.setAttribute("href", url);
