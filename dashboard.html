@@ -212,15 +212,6 @@
             
             document.getElementById('filtroData').value = ano + '-' + mes + '-' + dia;
             carregarDados();
-
-            // O setInterval (Piloto Automático) foi comentado para evitar esgotamento 
-            // do limite diário do banco de dados gratuito do Firebase.
-            /*
-            setInterval(function() {
-                console.log("Atualização automática desativada temporariamente...");
-                // carregarDados();
-            }, 60000);
-            */
         };
 
         function carregarDados() {
@@ -314,8 +305,12 @@
             } else {
                 
                 var maximos = { separado: 0, conferido: 0, carregado: 0, recebido: 0, sepCentral: 0, entregue: 0, total: 0 };
+                var somaTotalVolumes = 0; // Para o rodapé da tabela
+
                 listaNomes.forEach(function(nome) {
                     var d = colaboradores[nome];
+                    somaTotalVolumes += d.total;
+                    
                     if(d.separado > maximos.separado) maximos.separado = d.separado;
                     if(d.conferido > maximos.conferido) maximos.conferido = d.conferido;
                     if(d.carregado > maximos.carregado) maximos.carregado = d.carregado;
@@ -347,6 +342,21 @@
                                     '</tr>';
                     corpoTabela.innerHTML += linhaHTML;
                 });
+
+                // ==========================================
+                // LINHA DE TOTAL GERAL NO RODAPÉ DA TABELA
+                // ==========================================
+                var linhaTotalHTML = '<tr style="background-color: #e8f6f3; border-top: 2px solid #bdc3c7;">' +
+                                        '<td class="col-nome" style="color: #16a085; font-weight: bold;">TOTAL GERAL</td>' +
+                                        '<td style="font-weight: bold; color: #2c3e50;">' + totais.separado + '</td>' +
+                                        '<td style="font-weight: bold; color: #2c3e50;">' + totais.conferido + '</td>' +
+                                        '<td style="font-weight: bold; color: #2c3e50;">' + totais.carregado + '</td>' +
+                                        '<td style="font-weight: bold; color: #2c3e50;">' + totais.recebido + '</td>' +
+                                        '<td style="font-weight: bold; color: #2c3e50;">' + totais.sepCentral + '</td>' +
+                                        '<td style="font-weight: bold; color: #2c3e50;">' + totais.entregue + '</td>' +
+                                        '<td style="font-weight: bold; color: #c0392b; font-size: 16px;">' + somaTotalVolumes + '</td>' +
+                                     '</tr>';
+                corpoTabela.innerHTML += linhaTotalHTML;
             }
 
             // ==========================================
