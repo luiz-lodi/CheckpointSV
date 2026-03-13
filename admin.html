@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel de Gestão - Exclusão de Registros</title>
+    <title>Painel de Gestão - WMS Logística</title>
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -15,22 +15,40 @@
         h1 { color: #2c3e50; text-align: center; margin-bottom: 5px; }
         .subtitulo { text-align: center; color: #7f8c8d; margin-bottom: 30px; }
 
-        /* Estilos do Login */
+        /* ESTILOS DO LOGIN */
         #tela-login { background: white; max-width: 400px; margin: 50px auto; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; }
-        #tela-login input { width: 100%; padding: 12px; margin: 10px 0 20px 0; border: 2px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 16px; }
-        #tela-login button { background-color: #2c3e50; color: white; border: none; padding: 15px; width: 100%; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .input-group { margin-bottom: 15px; text-align: left; }
+        .input-group label { display: block; font-weight: bold; font-size: 14px; color: #2c3e50; margin-bottom: 5px;}
+        .input-group input { width: 100%; padding: 12px; border: 2px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 16px; transition: 0.3s; }
+        .input-group input:focus { border-color: #3498db; outline: none; }
+        
+        #tela-login button { background-color: #2c3e50; color: white; border: none; padding: 15px; width: 100%; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; margin-top: 10px;}
         #tela-login button:hover { background-color: #1a252f; }
 
-        /* Estilos do Painel (Oculto inicialmente) */
+        /* ESTILOS DO PAINEL GERAL */
         #painel-admin { display: none; }
+        
+        .secao-titulo { color: #2c3e50; font-size: 18px; font-weight: bold; margin-top: 20px; margin-bottom: 15px; border-bottom: 2px solid #bdc3c7; padding-bottom: 5px; text-transform: uppercase; }
 
-        .filtro-container { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 30px; }
+        /* MURAL DE MENSAGENS */
+        .painel-mensagens { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 30px;}
+        .painel-mensagens textarea { width: 100%; padding: 12px; border: 2px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 14px; font-family: inherit; resize: vertical; margin-bottom: 10px;}
+        .btn-salvar-msg { background-color: #27ae60; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.2s; float: right;}
+        .btn-salvar-msg:hover { background-color: #2ecc71; }
+        
+        .lista-mensagens { margin-top: 50px; border-top: 1px solid #eee; padding-top: 15px;}
+        .msg-card { background: #fdfefe; border-left: 4px solid #f1c40f; padding: 12px 15px; margin-bottom: 10px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);}
+        .msg-header { font-size: 12px; color: #7f8c8d; margin-bottom: 5px; border-bottom: 1px dashed #eee; padding-bottom: 5px;}
+        .msg-texto { font-size: 15px; color: #2c3e50; white-space: pre-wrap;}
+
+        /* TABELA DE EXCLUSÃO */
+        .filtro-container { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 15px; }
         .filtro-container label { font-weight: bold; color: #2c3e50; }
         .filtro-container input[type="date"] { padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
         .btn-filtrar { background-color: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; }
 
-        .tabela-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; min-width: 800px;}
+        .tabela-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow-x: auto; margin-bottom: 40px;}
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; min-width: 800px;}
         th, td { padding: 12px 10px; text-align: center; border-bottom: 1px solid #ecf0f1; }
         th { background-color: #f8f9fa; color: #2c3e50; font-weight: bold; text-transform: uppercase; font-size: 12px; }
         td { font-size: 14px; color: #34495e; }
@@ -40,6 +58,17 @@
         .btn-excluir:hover { background-color: #c0392b; }
         
         .loading { text-align: center; color: #e67e22; font-weight: bold; display: none; margin-top: 10px; width: 100%; font-size: 16px;}
+
+        /* MODAL DE JUSTIFICATIVA (POP-UP) */
+        .modal-overlay { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); }
+        .modal-content { background-color: #fff; margin: 15% auto; padding: 25px; border-radius: 8px; width: 90%; max-width: 450px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .modal-content h3 { margin-top: 0; color: #e74c3c; border-bottom: 2px solid #eee; padding-bottom: 10px;}
+        .modal-content p { font-size: 15px; color: #333; margin-bottom: 15px;}
+        .modal-content input { width: 100%; padding: 12px; border: 2px solid #e74c3c; border-radius: 5px; box-sizing: border-box; font-size: 15px; margin-bottom: 20px;}
+        .modal-botoes { display: flex; justify-content: flex-end; gap: 10px; }
+        .btn-modal-cancelar { background-color: #95a5a6; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .btn-modal-confirmar { background-color: #e74c3c; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+
     </style>
 </head>
 <body>
@@ -47,27 +76,52 @@
     <div style="background-color: #2c3e50; padding: 15px; text-align: center; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
         <a href="index.html" style="color: #ecf0f1; text-decoration: none; margin: 0 15px; font-weight: bold; font-size: 16px;">📱 Tela do Operador</a>
         <a href="kanban.html" style="color: #ecf0f1; text-decoration: none; margin: 0 15px; font-weight: bold; font-size: 16px;">🚥 Kanban em Tempo Real</a>
-        <a href="dashboard.html" style="color: #ecf0f1; text-decoration: none; margin: 0 15px; font-weight: bold; font-size: 16px;">📊 Dashboard Gerencial</a>
+        <a href="dashboard.html" style="color: #ecf0f1; text-decoration: none; margin: 0 15px; font-weight: bold; font-size: 16px;">📊 Dashboard Diário</a>
+        <a href="relatorios.html" style="color: #ecf0f1; text-decoration: none; margin: 0 15px; font-weight: bold; font-size: 16px;">📈 Relatórios BI</a>
         <a href="admin.html" style="color: #f1c40f; text-decoration: none; margin: 0 15px; font-weight: bold; font-size: 16px;">⚙️ Painel Gestão</a>
     </div>
 
     <div class="container">
-        <h1>⚙️ Painel de Gestão (Admin)</h1>
-        <div class="subtitulo">Correção e exclusão de apontamentos logísticos</div>
+        <h1>⚙️ Painel de Gestão e Auditoria</h1>
+        <div class="subtitulo">Acesso restrito para líderes operacionais</div>
 
         <div id="tela-login">
-            <h3 style="color: #2c3e50; margin-top: 0;">Acesso Restrito</h3>
-            <label style="display: block; text-align: left; font-weight: bold; font-size: 14px; color: #7f8c8d;">Senha de Gestor:</label>
-            <input type="password" id="senhaGestor" placeholder="Digite a senha administrativa" onkeypress="verificarEnter(event)">
-            <button onclick="fazerLogin()">Desbloquear Painel</button>
-            <div id="msg-erro" style="color: #e74c3c; margin-top: 15px; font-weight: bold; display: none;">Senha incorreta!</div>
+            <h3 style="color: #2c3e50; margin-top: 0;">Autenticação de Gestor</h3>
+            
+            <div class="input-group">
+                <label>Matrícula:</label>
+                <input type="number" id="matriculaGestor" placeholder="Ex: 151357">
+            </div>
+
+            <div class="input-group">
+                <label>Senha:</label>
+                <input type="password" id="senhaGestor" placeholder="Sua senha secreta" onkeypress="verificarEnter(event)">
+            </div>
+
+            <button onclick="fazerLogin()">Acessar</button>
+            <div id="msg-erro" style="color: #e74c3c; margin-top: 15px; font-weight: bold; display: none;">Matrícula ou senha incorretos!</div>
         </div>
 
         <div id="painel-admin">
+            <div style="text-align: right; font-size: 14px; font-weight: bold; color: #27ae60; margin-bottom: 10px;" id="identificacao-logado"></div>
+
+            <div class="secao-titulo">📌 Mural de Avisos da Gestão</div>
+            <div class="painel-mensagens">
+                <textarea id="textoMensagem" rows="3" placeholder="Escreva um aviso, orientação ou nota importante para o registro da gestão..."></textarea>
+                <div style="overflow: hidden;">
+                    <button class="btn-salvar-msg" onclick="salvarMensagem()">Salvar Mensagem</button>
+                </div>
+                
+                <div class="lista-mensagens" id="lista-mensagens">
+                    <div style="text-align: center; color: #7f8c8d; font-size: 13px;">Carregando histórico de mensagens...</div>
+                </div>
+            </div>
+
+            <div class="secao-titulo">🗑️ Auditoria e Exclusão de Apontamentos</div>
             <div class="filtro-container">
-                <label for="filtroData">Buscar registros do dia:</label>
+                <label for="filtroData">Buscar registros efetuados no dia:</label>
                 <input type="date" id="filtroData">
-                <button class="btn-filtrar" onclick="carregarDados()">Buscar Dados</button>
+                <button class="btn-filtrar" onclick="carregarDados()">Buscar Apontamentos</button>
                 <div class="loading" id="msg-loading">Buscando banco de dados... ⏳</div>
             </div>
 
@@ -84,8 +138,22 @@
                         </tr>
                     </thead>
                     <tbody id="corpo-tabela">
-                        </tbody>
+                    </tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-justificativa" class="modal-overlay">
+        <div class="modal-content">
+            <h3>⚠️ Atenção: Ação Irreversível</h3>
+            <p id="texto-resumo-exclusao"></p>
+            <p style="font-size: 13px; color: #7f8c8d; margin-bottom: 5px;">Para fins de auditoria, justifique o motivo desta exclusão:</p>
+            <input type="text" id="input-justificativa" placeholder="Ex: Operador bipou na etapa errada por engano...">
+            
+            <div class="modal-botoes">
+                <button class="btn-modal-cancelar" onclick="fecharModal()">Cancelar</button>
+                <button class="btn-modal-confirmar" onclick="processarExclusaoFinal()">Confirmar Exclusão</button>
             </div>
         </div>
     </div>
@@ -106,33 +174,95 @@
         var bancoDeDados = firebase.firestore();
 
         // ==========================================
-        // SISTEMA DE LOGIN SIMPLES
+        // BASE DE GESTORES PERMITIDOS
         // ==========================================
-        var senhasPermitidas = ["adminhsvp", "renan123", "bruna123"]; // Senhas para Você, Renan e Bruna
+        var gestores = {
+            "151357": { nome: "LUIZ HENRIQUE LINK LODI", senha: "Martin" }, // Senhas originais do briefing, podem ser trocadas aqui!
+            "1249":   { nome: "BRUNA QUEVEDO DA SILVA",  senha: "Maria" },
+            "139320": { nome: "RENAN RIBEIRO REIS",      senha: "Olivia" }
+        };
+
+        var gestorLogado = null;
 
         function verificarEnter(e) {
             if (e.key === 'Enter') fazerLogin();
         }
 
+        // ==========================================
+        // SISTEMA DE LOGIN
+        // ==========================================
         function fazerLogin() {
-            var senhaDigitada = document.getElementById('senhaGestor').value.trim().toLowerCase();
-            if (senhasPermitidas.includes(senhaDigitada)) {
+            var matricula = document.getElementById('matriculaGestor').value.trim();
+            var senha = document.getElementById('senhaGestor').value.trim().toLowerCase();
+            
+            if (gestores[matricula] && gestores[matricula].senha === senha) {
+                gestorLogado = gestores[matricula];
+                gestorLogado.matricula = matricula;
+
                 document.getElementById('tela-login').style.display = 'none';
                 document.getElementById('painel-admin').style.display = 'block';
+                document.getElementById('identificacao-logado').innerText = "👤 Gestor Logado: " + gestorLogado.nome;
                 
-                // Preenche a data de hoje automaticamente e busca
                 var hoje = new Date();
                 var dia = String(hoje.getDate()).padStart(2, '0');
                 var mes = String(hoje.getMonth() + 1).padStart(2, '0');
                 document.getElementById('filtroData').value = hoje.getFullYear() + '-' + mes + '-' + dia;
+                
                 carregarDados();
+                carregarMensagens();
             } else {
                 document.getElementById('msg-erro').style.display = 'block';
             }
         }
 
         // ==========================================
-        // BUSCA E EXIBIÇÃO DE DADOS
+        // MÓDULO DE MENSAGENS
+        // ==========================================
+        function salvarMensagem() {
+            var texto = document.getElementById('textoMensagem').value.trim();
+            if (texto === "") { alert("A mensagem não pode estar vazia."); return; }
+
+            var novaMsg = {
+                texto: texto,
+                autor: gestorLogado.nome,
+                data: new Date().toLocaleString('pt-BR'),
+                ordem: new Date().getTime()
+            };
+
+            bancoDeDados.collection("mensagens_gestao").add(novaMsg)
+            .then(function() {
+                document.getElementById('textoMensagem').value = "";
+                carregarMensagens();
+            })
+            .catch(function(erro) { alert("Erro ao salvar mensagem: " + erro.message); });
+        }
+
+        function carregarMensagens() {
+            var divLista = document.getElementById('lista-mensagens');
+            
+            bancoDeDados.collection("mensagens_gestao")
+                .orderBy("ordem", "desc")
+                .limit(10) // Mostra as 10 últimas mensagens
+                .get()
+                .then(function(resultado) {
+                    if (resultado.empty) {
+                        divLista.innerHTML = '<div style="text-align: center; color: #7f8c8d; font-size: 13px;">Nenhuma mensagem registrada ainda.</div>';
+                    } else {
+                        divLista.innerHTML = '';
+                        resultado.forEach(function(doc) {
+                            var msg = doc.data();
+                            var html = '<div class="msg-card">' +
+                                            '<div class="msg-header">🗣️ Postado por <strong>' + msg.autor + '</strong> em ' + msg.data + '</div>' +
+                                            '<div class="msg-texto">' + msg.texto + '</div>' +
+                                       '</div>';
+                            divLista.innerHTML += html;
+                        });
+                    }
+                });
+        }
+
+        // ==========================================
+        // BUSCA E EXIBIÇÃO DA AUDITORIA
         // ==========================================
         function carregarDados() {
             var dataInput = document.getElementById('filtroData').value;
@@ -149,19 +279,20 @@
             bancoDeDados.collection("checkpoints_logistica")
                 .where("ordem", ">=", inicioDoDia)
                 .where("ordem", "<=", fimDoDia)
-                .orderBy("ordem", "desc") // Mostra os bipes mais recentes primeiro
+                .orderBy("ordem", "desc") 
                 .get()
                 .then(function(resultado) {
                     if (resultado.empty) {
-                        corpoTabela.innerHTML = '<tr><td colspan="6" style="color: #e74c3c; font-weight:bold;">Nenhum registro encontrado nesta data.</td></tr>';
+                        corpoTabela.innerHTML = '<tr><td colspan="6" style="color: #e74c3c; font-weight:bold;">Nenhum apontamento encontrado nesta data.</td></tr>';
                     } else {
                         resultado.forEach(function(documento) {
                             var evento = documento.data();
-                            var idDocumento = documento.id; // ID ÚNICO gerado pelo Firebase
+                            var idDocumento = documento.id; 
                             var volumeTxt = evento.volume ? evento.volume : "1";
-
-                            // Extrai só a hora para ficar mais limpo
                             var horaExata = evento.data.split(" ")[1] || evento.data;
+
+                            // Transforma o objeto do evento em uma String pra passar pro botão
+                            var dadosEventoString = encodeURIComponent(JSON.stringify(evento));
 
                             var linhaHTML = '<tr>' +
                                                 '<td><strong>' + horaExata + '</strong></td>' +
@@ -169,7 +300,7 @@
                                                 '<td style="font-weight:bold; color:#2980b9;">' + evento.requisicao + '</td>' +
                                                 '<td style="color:#d35400; font-weight:bold;">Vol ' + volumeTxt + '</td>' +
                                                 '<td>' + evento.status + '</td>' +
-                                                '<td><button class="btn-excluir" onclick="excluirRegistro(\'' + idDocumento + '\', \'' + evento.requisicao + '\', \'' + evento.status + '\')">🗑️ Excluir</button></td>' +
+                                                '<td><button class="btn-excluir" onclick="abrirModalExclusao(\'' + idDocumento + '\', \'' + dadosEventoString + '\')">🗑️ Excluir</button></td>' +
                                             '</tr>';
                             corpoTabela.innerHTML += linhaHTML;
                         });
@@ -179,26 +310,71 @@
                 .catch(function(erro) {
                     console.error("Erro ao buscar dados:", erro);
                     document.getElementById('msg-loading').style.display = 'none';
-                    alert("Atenção: Para ordernar por data (descendente) o Firebase pode exigir a criação de um Índice. Se não carregar, avise o suporte.");
                 });
         }
 
         // ==========================================
-        // EXCLUSÃO DE DADOS
+        // LÓGICA DE EXCLUSÃO COM JUSTIFICATIVA (MODAL)
         // ==========================================
-        function excluirRegistro(idDoc, req, status) {
-            var confirmacao = confirm("⚠️ ATENÇÃO!\nTem certeza que deseja apagar a Requisição " + req + " (" + status + ") do banco de dados?\n\nEssa ação não pode ser desfeita.");
+        var idParaExcluir = null;
+        var dadosParaExcluir = null;
+
+        function abrirModalExclusao(idDoc, dadosString) {
+            idParaExcluir = idDoc;
+            dadosParaExcluir = JSON.parse(decodeURIComponent(dadosString));
             
-            if (confirmacao) {
-                bancoDeDados.collection("checkpoints_logistica").doc(idDoc).delete()
-                .then(function() {
-                    alert("✅ Registro excluído com sucesso!");
-                    carregarDados(); // Recarrega a tabela automaticamente
-                })
-                .catch(function(erro) {
-                    alert("❌ Erro ao tentar excluir: " + erro.message);
-                });
+            var vol = dadosParaExcluir.volume ? dadosParaExcluir.volume : "1";
+            document.getElementById('texto-resumo-exclusao').innerHTML = "Você está prestes a excluir o apontamento da <strong>Requisição " + dadosParaExcluir.requisicao + " (Volume " + vol + ")</strong> na etapa de <strong>" + dadosParaExcluir.status + "</strong>.";
+            
+            document.getElementById('input-justificativa').value = ""; // Limpa a caixa
+            document.getElementById('modal-justificativa').style.display = 'block';
+            document.getElementById('input-justificativa').focus();
+        }
+
+        function fecharModal() {
+            document.getElementById('modal-justificativa').style.display = 'none';
+            idParaExcluir = null;
+            dadosParaExcluir = null;
+        }
+
+        function processarExclusaoFinal() {
+            var justificativa = document.getElementById('input-justificativa').value.trim();
+            
+            if (justificativa.length < 5) {
+                alert("A justificativa é obrigatória e deve ter pelo menos 5 caracteres.");
+                document.getElementById('input-justificativa').focus();
+                return;
             }
+
+            // 1. Cria o registro no Histórico de Exclusões (Auditoria)
+            var registroAuditoria = {
+                idRegistroApagado: idParaExcluir,
+                requisicao: dadosParaExcluir.requisicao,
+                status: dadosParaExcluir.status,
+                volume: dadosParaExcluir.volume || 1,
+                operadorOriginal: dadosParaExcluir.nome,
+                excluidoPorNome: gestorLogado.nome,
+                excluidoPorMatricula: gestorLogado.matricula,
+                justificativa: justificativa,
+                dataExclusao: new Date().toLocaleString('pt-BR'),
+                ordemExclusao: new Date().getTime()
+            };
+
+            // Salva o log e DEPOIS apaga a linha principal
+            bancoDeDados.collection("historico_exclusoes").add(registroAuditoria)
+            .then(function() {
+                
+                // 2. Apaga efetivamente o erro
+                return bancoDeDados.collection("checkpoints_logistica").doc(idParaExcluir).delete();
+                
+            }).then(function() {
+                fecharModal();
+                alert("✅ Registro excluído e auditado com sucesso!");
+                carregarDados(); // Recarrega a tabela
+            }).catch(function(erro) {
+                alert("❌ Erro ao processar exclusão: " + erro.message);
+                fecharModal();
+            });
         }
     </script>
 </body>
