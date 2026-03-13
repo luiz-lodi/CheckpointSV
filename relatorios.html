@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatórios BI - Logística Mensal</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        
+        h1 { color: #2c3e50; text-align: center; margin-bottom: 5px; }
+        .subtitulo { text-align: center; color: #7f8c8d; margin-bottom: 30px; }
+
+        .filtro-container { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 30px; flex-wrap: wrap;}
+        .filtro-container label { font-weight: bold; color: #2c3e50; }
+        .filtro-container input[type="month"] { padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
+        .btn-filtrar { background-color: #9b59b6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-filtrar:hover { background-color: #8e44ad; }
+
+        .dashboard-grid { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 30px;}
+        .chart-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); flex: 1; min-width: 500px; }
+        .chart-container h3 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; font-size: 16px; text-align: center;}
+
+        .tabela-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow-x: auto; margin-bottom: 30px;}
+        .tabela-container h3 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; font-size: 16px;}
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; min-width: 800px;}
+        th, td { padding: 12px 10px; text-align: center; border-bottom: 1px solid #ecf0f1; }
+        th { background-color: #f8f9fa; color: #2c3e50; font-weight: bold; text-transform: uppercase; font-size: 12px; }
+        td { font-size: 14px; color: #34495e; }
+        tr:hover { background-color: #f1f2f6; }
+        .col-nome { text-align: left; font-weight: bold; }
+        .col-total { font-weight: bold; background-color: #f8f9fa; color: #2c3e50;}
+        
+        .loading { text-align: center; color: #e67e22; font-weight: bold; display: none; margin-top: 10px; width: 100%; font-size: 18px;}
+    </style>
+</head>
+<body>
+
+    <div style="background-color: #2c3e50; padding: 15px; text-align: center; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <a href="index.html" style="color: #ecf0f1; text-decoration: none; margin: 0 15px; font-weight: bold; font-size: 16px;">📱 Tela do Operador</a>
+        <a href="kanban.html" style="color: #ecf0f1; text-decoration: none; margin: 0 15px; font-weight: bold; font-size: 16px;">🚥 Kanban em Tempo Real</a>
+        <a href="dashboard.html" style="color: #ecf0f1; text-decoration: none; margin: 0 15px; font-weight: bold; font-size: 16px;">📊 Dashboard Diário</a>
+        <a href="relatorios.html" style="color: #f1c40f; text-decoration: none; margin: 0 15px; font-weight: bold; font-size: 16px;">📈 Relatórios BI</a>
+        <a href="admin.html" style="color: #ecf0f1; text-decoration: none; margin: 0 15px; font-weight: bold; font-size: 16px;">⚙️ Painel Gestão</a>
+    </div>
+
+    <div class="container">
+        <h1>📈 Relatórios de Business Intelligence</h1>
+        <div class="subtitulo">Visão macro da operação mensal com gráficos e tendências</div>
+
+        <div class="filtro-container">
+            <label for="filtroMes">Selecione o Mês e Ano:</label>
+            <input type="month" id="filtroMes">
+            <button class="btn-filtrar" onclick="gerarRelatorioMensal()">Gerar Gráficos</button>
+            <div class="loading" id="msg-loading">Analisando milhares de registros... Isso pode levar alguns segundos ⏳</div>
+        </div>
+
+        <div class="dashboard-grid">
+            <div class="chart-container">
+                <h3>🏆 Produtividade Total por Colaborador</h3>
+                <canvas id="chartProdutividade"></canvas>
+            </div>
+            
+            <div class="chart-container">
+                <h3>⏱️ Evolução Diária do Lead Time (Em Horas)</h3>
+                <canvas id="chartSLA"></canvas>
+            </div>
+        </div>
+
+        <div class="tabela-container">
+            <h3>Tabela Consolidada Mensal</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th class="col-nome">Colaborador</th>
+                        <th>Sep. Apoio</th>
+                        <th>Conferido</th>
+                        <th>Carregado</th>
+                        <th>Recebido</th>
+                        <th>Sep. Central</th>
+                        <th>Entregue</th>
+                        <th class="col-total">Total de Volumes</th>
+                    </tr>
+                </thead>
+                <tbody id="corpo-tabela">
+                    <tr><td colspan="8" style="color:#7f8c8d; text-align:center;">Aguardando geração do relatório...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // CONFIGURAÇÃO FIREBASE E CHART.JS
+        // ==========================================
+        var firebaseConfig = {
+            apiKey: "AIzaSyDHUlqzRw_vSyp9livOvQ0rjBYT9l_yofs",
+            authDomain: "checkpoint-pedidos.firebaseapp.com",
+            projectId: "checkpoint-pedidos",
+            storageBucket: "checkpoint-pedidos.firebasestorage.app",
+            messagingSenderId: "890832634523",
+            appId: "1:890832634523:web:7f8fa0ee6a2a9c60e27c3e"
+        };
+        firebase.initializeApp(firebaseConfig);
+        var bancoDeDados = firebase.firestore();
+
+        var graficoProd = null;
+        var graficoSLA = null;
+
+        window.onload = function() {
+            var hoje = new Date();
+            var mes = String(hoje.getMonth() + 1).padStart(2, '0');
+            var ano = hoje.getFullYear();
+            document.getElementById('filtroMes').value = ano + '-' + mes;
+        };
+
+        function gerarRelatorioMensal() {
+            var dataInput = document.getElementById('filtroMes').value;
+            if (!dataInput) return;
+
+            document.getElementById('msg-loading').style.display = 'block';
+
+            var ano = parseInt(dataInput.split('-')[0]);
+            var mes = parseInt(dataInput.split('-')[1]) - 1; 
+
+            // Pega o primeiro milissegundo do mês e o último milissegundo do mês
+            var inicioMes = new Date(ano, mes, 1, 0, 0, 0).getTime();
+            var fimMes = new Date(ano, mes + 1, 0, 23, 59, 59).getTime();
+
+            var qtdDiasNoMes = new Date(ano, mes + 1, 0).getDate();
+
+            bancoDeDados.collection("checkpoints_logistica")
+                .where("ordem", ">=", inicioMes)
+                .where("ordem", "<=", fimMes)
+                .get()
+                .then(function(resultado) {
+                    processarDadosParaGraficos(resultado, qtdDiasNoMes);
+                })
+                .catch(function(erro) {
+                    console.error("Erro:", erro);
+                    document.getElementById('msg-loading').style.display = 'none';
+                    alert("Erro ao buscar dados do Firebase.");
+                });
+        }
+
+        function processarDadosParaGraficos(resultado, qtdDiasNoMes) {
+            var colaboradores = {};
+            var slaPorDia = {}; // Vai agrupar as entregas por dia (1 a 31)
+            var reqsMes = {}; 
+
+            // 1. Varre todos os dados do mês
+            resultado.forEach(function(documento) {
+                var ev = documento.data();
+                var nome = ev.nome || "DESCONHECIDO";
+                var status = ev.status || "";
+                var ordem = ev.ordem;
+
+                // Prepara objeto do colaborador
+                if (!colaboradores[nome]) {
+                    colaboradores[nome] = { separado: 0, conferido: 0, carregado: 0, recebido: 0, sepCentral: 0, entregue: 0, total: 0 };
+                }
+
+                // Soma Produtividade
+                if (status.indexOf("Separado (Central)") !== -1) { colaboradores[nome].sepCentral++; colaboradores[nome].total++; }
+                else if (status.indexOf("Separado (Apoio)") !== -1 || status === "Separado") { colaboradores[nome].separado++; colaboradores[nome].total++; }
+                else if (status.indexOf("Conferido") !== -1) { colaboradores[nome].conferido++; colaboradores[nome].total++; }
+                else if (status.indexOf("Carregado") !== -1) { colaboradores[nome].carregado++; colaboradores[nome].total++; }
+                else if (status.indexOf("Recebido") !== -1) { colaboradores[nome].recebido++; colaboradores[nome].total++; }
+                else if (status.indexOf("Entregue") !== -1) { colaboradores[nome].entregue++; colaboradores[nome].total++; }
+
+                // Prepara lógica de SLA
+                var req = ev.requisicao;
+                if (!reqsMes[req]) reqsMes[req] = { eventos: [] };
+                reqsMes[req].eventos.push(ev);
+            });
+
+            // 2. Renderiza a Tabela de Produtividade Mensal
+            renderizarTabela(colaboradores);
+
+            // 3. Organiza dados para o Gráfico de Produtividade
+            var labelsNomes = [];
+            var dataTotais = [];
+            
+            // Ordena do que mais produziu para o que menos produziu
+            var arrayColaboradores = Object.keys(colaboradores).map(function(nome) {
+                return { nome: nome, total: colaboradores[nome].total };
+            });
+            arrayColaboradores.sort((a, b) => b.total - a.total);
+
+            arrayColaboradores.forEach(function(colab) {
+                labelsNomes.push(colab.nome.split(" ")[0]); // Pega só o 1º nome para caber no gráfico
+                dataTotais.push(colab.total);
+            });
+
+            desenharGraficoProdutividade(labelsNomes, dataTotais);
+
+            // 4. Lógica Otimizada de SLA Mensal
+            var buscasHistoricas = [];
+
+            Object.keys(reqsMes).forEach(function(req) {
+                var eventos = reqsMes[req].eventos;
+                
+                // Acha o primeiro e o último evento DENTRO deste mês
+                var minEvento = eventos[0];
+                var maxEvento = eventos[0];
+                var isEntregue = false;
+
+                eventos.forEach(function(e) {
+                    if (e.ordem < minEvento.ordem) minEvento = e;
+                    if (e.ordem > maxEvento.ordem) maxEvento = e;
+                    if (e.status.indexOf("Entregue") !== -1) isEntregue = true;
+                });
+
+                if (isEntregue) {
+                    var diaEntrega = new Date(maxEvento.ordem).getDate();
+                    if (!slaPorDia[diaEntrega]) {
+                        slaPorDia[diaEntrega] = { somaApoioMs: 0, qtdApoio: 0, somaCentralMs: 0, qtdCentral: 0 };
+                    }
+
+                    // Se o primeiro status que achamos não for "Separado", significa que começou no mês passado
+                    var statusInicialMes = minEvento.status || "";
+                    if (statusInicialMes.indexOf("Separado") === -1) {
+                        // Busca no passado
+                        var promessa = bancoDeDados.collection("checkpoints_logistica")
+                            .where("requisicao", "==", req).get().then(function(hist) {
+                                var verdadeiroMinimo = null;
+                                hist.forEach(docH => {
+                                    var evH = docH.data();
+                                    if (!verdadeiroMinimo || evH.ordem < verdadeiroMinimo.ordem) verdadeiroMinimo = evH;
+                                });
+                                if (verdadeiroMinimo) processarLeadTime(verdadeiroMinimo, maxEvento, diaEntrega, slaPorDia);
+                            });
+                        buscasHistoricas.push(promessa);
+                    } else {
+                        // Começou e terminou neste mês
+                        processarLeadTime(minEvento, maxEvento, diaEntrega, slaPorDia);
+                    }
+                }
+            });
+
+            Promise.all(buscasHistoricas).then(function() {
+                // Desenhar o Gráfico de Linhas (SLA)
+                var labelsDias = [];
+                var dataSlaApoio = [];
+                var dataSlaCentral = [];
+
+                for (var i = 1; i <= qtdDiasNoMes; i++) {
+                    labelsDias.push("Dia " + i);
+                    
+                    if (slaPorDia[i]) {
+                        var diaData = slaPorDia[i];
+                        
+                        // Converte Milissegundos para HORAS (Float) para o gráfico
+                        if (diaData.qtdApoio > 0) {
+                            var mediaMs = diaData.somaApoioMs / diaData.qtdApoio;
+                            dataSlaApoio.push((mediaMs / (1000 * 60 * 60)).toFixed(2));
+                        } else { dataSlaApoio.push(null); }
+
+                        if (diaData.qtdCentral > 0) {
+                            var mediaMsC = diaData.somaCentralMs / diaData.qtdCentral;
+                            dataSlaCentral.push((mediaMsC / (1000 * 60 * 60)).toFixed(2));
+                        } else { dataSlaCentral.push(null); }
+
+                    } else {
+                        dataSlaApoio.push(null);
+                        dataSlaCentral.push(null);
+                    }
+                }
+
+                desenharGraficoSLA(labelsDias, dataSlaApoio, dataSlaCentral);
+                document.getElementById('msg-loading').style.display = 'none';
+
+            });
+        }
+
+        // Função auxiliar do SLA
+        function processarLeadTime(minEv, maxEv, dia, slaPorDia) {
+            var ms = maxEv.ordem - minEv.ordem;
+            var origem = minEv.status || "";
+            
+            if (origem.indexOf("Apoio") !== -1 || origem === "Separado") {
+                slaPorDia[dia].somaApoioMs += ms;
+                slaPorDia[dia].qtdApoio++;
+            } else if (origem.indexOf("Central") !== -1) {
+                slaPorDia[dia].somaCentralMs += ms;
+                slaPorDia[dia].qtdCentral++;
+            }
+        }
+
+        function renderizarTabela(colaboradores) {
+            var corpoTabela = document.getElementById('corpo-tabela');
+            corpoTabela.innerHTML = ''; 
+            var listaNomes = Object.keys(colaboradores).sort();
+
+            if (listaNomes.length === 0) return;
+
+            listaNomes.forEach(function(nome) {
+                var d = colaboradores[nome];
+                var linhaHTML = '<tr>' +
+                                    '<td class="col-nome">' + nome + '</td>' +
+                                    '<td>' + d.separado + '</td>' +
+                                    '<td>' + d.conferido + '</td>' +
+                                    '<td>' + d.carregado + '</td>' +
+                                    '<td>' + d.recebido + '</td>' +
+                                    '<td>' + d.sepCentral + '</td>' +
+                                    '<td>' + d.entregue + '</td>' +
+                                    '<td class="col-total">' + d.total + '</td>' +
+                                '</tr>';
+                corpoTabela.innerHTML += linhaHTML;
+            });
+        }
+
+        // ==========================================
+        // CHART.JS - DESENHO DOS GRÁFICOS
+        // ==========================================
+        function desenharGraficoProdutividade(labels, dados) {
+            var ctx = document.getElementById('chartProdutividade').getContext('2d');
+            if (graficoProd) graficoProd.destroy(); // Apaga o anterior para não sobrepor
+
+            graficoProd = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Total de Volumes',
+                        data: dados,
+                        backgroundColor: '#9b59b6',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+
+        function desenharGraficoSLA(labels, apoio, central) {
+            var ctx = document.getElementById('chartSLA').getContext('2d');
+            if (graficoSLA) graficoSLA.destroy();
+
+            graficoSLA = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'SLA Apoio (Horas)', data: apoio, borderColor: '#f39c12', backgroundColor: '#f39c12', tension: 0.3, pointRadius: 4 },
+                        { label: 'SLA Central (Horas)', data: central, borderColor: '#1abc9c', backgroundColor: '#1abc9c', tension: 0.3, pointRadius: 4 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    spanGaps: true, // Conecta a linha mesmo se um dia não teve entregas
+                    scales: { y: { beginAtZero: true, title: { display: true, text: 'Tempo Médio (Horas)'} } },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    var horasDecimais = context.parsed.y;
+                                    var horas = Math.floor(horasDecimais);
+                                    var minutos = Math.round((horasDecimais - horas) * 60);
+                                    return context.dataset.label + ': ' + horas + 'h ' + minutos + 'm';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
