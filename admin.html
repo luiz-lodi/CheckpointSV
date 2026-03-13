@@ -28,7 +28,7 @@
         /* ESTILOS DO PAINEL GERAL */
         #painel-admin { display: none; }
         
-        .secao-titulo { color: #2c3e50; font-size: 18px; font-weight: bold; margin-top: 20px; margin-bottom: 15px; border-bottom: 2px solid #bdc3c7; padding-bottom: 5px; text-transform: uppercase; }
+        .secao-titulo { color: #2c3e50; font-size: 18px; font-weight: bold; margin-top: 30px; margin-bottom: 15px; border-bottom: 2px solid #bdc3c7; padding-bottom: 5px; text-transform: uppercase; }
 
         /* MURAL DE MENSAGENS */
         .painel-mensagens { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 30px;}
@@ -41,7 +41,7 @@
         .msg-header { font-size: 12px; color: #7f8c8d; margin-bottom: 5px; border-bottom: 1px dashed #eee; padding-bottom: 5px;}
         .msg-texto { font-size: 15px; color: #2c3e50; white-space: pre-wrap;}
 
-        /* TABELA DE EXCLUSÃO */
+        /* TABELA GERAL E EXCLUSÃO */
         .filtro-container { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 15px; }
         .filtro-container label { font-weight: bold; color: #2c3e50; }
         .filtro-container input[type="date"] { padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
@@ -83,7 +83,7 @@
 
     <div class="container">
         <h1>⚙️ Painel de Gestão e Auditoria</h1>
-        <div class="subtitulo">Acesso restrito para líderes operacionais</div>
+        <div class="subtitulo">Acesso restrito para gestores</div>
 
         <div id="tela-login">
             <h3 style="color: #2c3e50; margin-top: 0;">Autenticação de Gestor</h3>
@@ -117,7 +117,7 @@
                 </div>
             </div>
 
-            <div class="secao-titulo">🗑️ Auditoria e Exclusão de Apontamentos</div>
+            <div class="secao-titulo">🗑️ Exclusão de Apontamentos Logísticos</div>
             <div class="filtro-container">
                 <label for="filtroData">Buscar registros efetuados no dia:</label>
                 <input type="date" id="filtroData">
@@ -141,6 +141,26 @@
                     </tbody>
                 </table>
             </div>
+
+            <div class="secao-titulo">📜 Histórico de Auditoria (Exclusões)</div>
+            <div class="tabela-container" style="margin-bottom: 60px;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Data da Exclusão</th>
+                            <th>Requisição (Vol)</th>
+                            <th>Etapa Apagada</th>
+                            <th>Operador Original</th>
+                            <th>Excluído por</th>
+                            <th>Justificativa</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpo-auditoria">
+                        <tr><td colspan="6" style="color: #7f8c8d;">Aguardando liberação de acesso...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            
         </div>
     </div>
 
@@ -177,7 +197,7 @@
         // BASE DE GESTORES PERMITIDOS
         // ==========================================
         var gestores = {
-            "151357": { nome: "LUIZ HENRIQUE LINK LODI", senha: "Martin" }, // Senhas originais do briefing, podem ser trocadas aqui!
+            "151357": { nome: "LUIZ HENRIQUE LINK LODI", senha: "Martin" },
             "1249":   { nome: "BRUNA QUEVEDO DA SILVA",  senha: "Maria" },
             "139320": { nome: "RENAN RIBEIRO REIS",      senha: "Olivia" }
         };
@@ -193,6 +213,7 @@
         // ==========================================
         function fazerLogin() {
             var matricula = document.getElementById('matriculaGestor').value.trim();
+            // AQUI corrigimos o toLowerCase() para ele aceitar maiúsculas nas senhas!
             var senha = document.getElementById('senhaGestor').value.trim();
             
             if (gestores[matricula] && gestores[matricula].senha === senha) {
@@ -201,7 +222,7 @@
 
                 document.getElementById('tela-login').style.display = 'none';
                 document.getElementById('painel-admin').style.display = 'block';
-                document.getElementById('identificacao-logado').innerText = "👤 Gestor Logado: " + gestorLogado.nome;
+                document.getElementById('identificacao-logado').innerText = "👤 Usuário: " + gestorLogado.nome;
                 
                 var hoje = new Date();
                 var dia = String(hoje.getDate()).padStart(2, '0');
@@ -210,6 +231,7 @@
                 
                 carregarDados();
                 carregarMensagens();
+                carregarAuditoria(); // Puxa a tabela nova no final
             } else {
                 document.getElementById('msg-erro').style.display = 'block';
             }
@@ -242,7 +264,7 @@
             
             bancoDeDados.collection("mensagens_gestao")
                 .orderBy("ordem", "desc")
-                .limit(10) // Mostra as 10 últimas mensagens
+                .limit(10)
                 .get()
                 .then(function(resultado) {
                     if (resultado.empty) {
@@ -262,7 +284,7 @@
         }
 
         // ==========================================
-        // BUSCA E EXIBIÇÃO DA AUDITORIA
+        // BUSCA E EXIBIÇÃO DA TELA DE EXCLUSÃO
         // ==========================================
         function carregarDados() {
             var dataInput = document.getElementById('filtroData').value;
@@ -291,7 +313,6 @@
                             var volumeTxt = evento.volume ? evento.volume : "1";
                             var horaExata = evento.data.split(" ")[1] || evento.data;
 
-                            // Transforma o objeto do evento em uma String pra passar pro botão
                             var dadosEventoString = encodeURIComponent(JSON.stringify(evento));
 
                             var linhaHTML = '<tr>' +
@@ -314,6 +335,43 @@
         }
 
         // ==========================================
+        // MÓDULO DE AUDITORIA (NOVO)
+        // ==========================================
+        function carregarAuditoria() {
+            var corpoAuditoria = document.getElementById('corpo-auditoria');
+            
+            bancoDeDados.collection("historico_exclusoes")
+                .orderBy("ordemExclusao", "desc")
+                .limit(20) // Exibe apenas os últimos 20 para manter a tela limpa
+                .get()
+                .then(function(resultado) {
+                    if (resultado.empty) {
+                        corpoAuditoria.innerHTML = '<tr><td colspan="6" style="color: #7f8c8d;">Nenhuma exclusão registrada no histórico.</td></tr>';
+                    } else {
+                        corpoAuditoria.innerHTML = '';
+                        resultado.forEach(function(doc) {
+                            var log = doc.data();
+                            
+                            // Formatação elegante da tabela de log
+                            var html = '<tr>' +
+                                            '<td>' + log.dataExclusao + '</td>' +
+                                            '<td style="color:#2980b9;"><strong>' + log.requisicao + '</strong> (Vol ' + log.volume + ')</td>' +
+                                            '<td>' + log.status + '</td>' +
+                                            '<td>' + log.operadorOriginal + '</td>' +
+                                            '<td style="color:#e74c3c; font-weight:bold;">' + log.excluidoPorNome + '</td>' +
+                                            '<td style="text-align:left; max-width:250px; font-style:italic;">"' + log.justificativa + '"</td>' +
+                                       '</tr>';
+                            corpoAuditoria.innerHTML += html;
+                        });
+                    }
+                })
+                .catch(function(erro) {
+                    console.error("Erro ao carregar auditoria:", erro);
+                    corpoAuditoria.innerHTML = '<tr><td colspan="6" style="color: #e74c3c;">Erro ao carregar o histórico.</td></tr>';
+                });
+        }
+
+        // ==========================================
         // LÓGICA DE EXCLUSÃO COM JUSTIFICATIVA (MODAL)
         // ==========================================
         var idParaExcluir = null;
@@ -326,7 +384,7 @@
             var vol = dadosParaExcluir.volume ? dadosParaExcluir.volume : "1";
             document.getElementById('texto-resumo-exclusao').innerHTML = "Você está prestes a excluir o apontamento da <strong>Requisição " + dadosParaExcluir.requisicao + " (Volume " + vol + ")</strong> na etapa de <strong>" + dadosParaExcluir.status + "</strong>.";
             
-            document.getElementById('input-justificativa').value = ""; // Limpa a caixa
+            document.getElementById('input-justificativa').value = "";
             document.getElementById('modal-justificativa').style.display = 'block';
             document.getElementById('input-justificativa').focus();
         }
@@ -346,7 +404,6 @@
                 return;
             }
 
-            // 1. Cria o registro no Histórico de Exclusões (Auditoria)
             var registroAuditoria = {
                 idRegistroApagado: idParaExcluir,
                 requisicao: dadosParaExcluir.requisicao,
@@ -360,17 +417,13 @@
                 ordemExclusao: new Date().getTime()
             };
 
-            // Salva o log e DEPOIS apaga a linha principal
             bancoDeDados.collection("historico_exclusoes").add(registroAuditoria)
             .then(function() {
-                
-                // 2. Apaga efetivamente o erro
                 return bancoDeDados.collection("checkpoints_logistica").doc(idParaExcluir).delete();
-                
             }).then(function() {
                 fecharModal();
-                alert("✅ Registro excluído e auditado com sucesso!");
-                carregarDados(); // Recarrega a tabela
+                carregarDados(); // Recarrega os bipes do dia
+                carregarAuditoria(); // Já atualiza a tabela de histórico ali embaixo!
             }).catch(function(erro) {
                 alert("❌ Erro ao processar exclusão: " + erro.message);
                 fecharModal();
