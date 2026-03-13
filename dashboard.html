@@ -24,6 +24,7 @@
         .btn-exportar { background-color: #27ae60; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.2s; }
         .btn-exportar:hover { background-color: #2ecc71; }
 
+        /* Ajustei a margem inferior para podermos empilhar duas linhas de cards */
         .cards-grid { display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; justify-content: space-between; }
         .card { background: white; flex: 1; min-width: 130px; padding: 20px 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-align: center; border-bottom: 4px solid #bdc3c7; }
         .card h3 { margin: 0; font-size: 13px; color: #7f8c8d; text-transform: uppercase; }
@@ -36,14 +37,13 @@
         #card-recebido { border-color: #3498db; }
         #card-sep-central { border-color: #16a085; }
         
-        /* Ajuste visual para a segunda linha (Entregue e SLA dividindo meio a meio) */
+        /* Ajuste visual para a segunda linha (Entregue e SLA) */
         #card-entregue { border-color: #2ecc71; }
-        
-        #card-sla { background-color: #2c3e50; border-color: #34495e; min-width: 200px; }
+        #card-sla { background-color: #2c3e50; border-color: #34495e; min-width: 250px; }
         #card-sla h3 { color: #bdc3c7; }
-        #card-sla .numero { color: #f1c40f; font-size: 34px; }
+        #card-sla .numero { color: #f1c40f; font-size: 36px; }
 
-        .tabela-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow-x: auto; margin-top: 15px; }
+        .tabela-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow-x: auto; margin-top: 15px;}
         .tabela-container h2 { margin-top: 0; color: #2c3e50; font-size: 18px; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; }
         
         table { width: 100%; border-collapse: collapse; margin-top: 15px; min-width: 800px;}
@@ -99,3 +99,253 @@
                 <div class="numero" id="tot-sep-central">0</div>
             </div>
         </div>
+
+        <div class="cards-grid" style="margin-bottom: 30px;">
+            <div class="card" id="card-entregue">
+                <h3>✅ Entregue (Destino Final)</h3>
+                <div class="numero" id="tot-entregue">0</div>
+            </div>
+            <div class="card" id="card-sla">
+                <h3>⏱️ Lead Time Médio (Ponta a Ponta)</h3>
+                <div class="numero" id="tot-leadtime">--h --m</div>
+            </div>
+        </div>
+
+        <div class="tabela-container">
+            <h2>Produtividade por Colaborador</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th class="col-nome">Colaborador</th>
+                        <th>Sep. Apoio</th>
+                        <th>Conferido</th>
+                        <th>Carregado</th>
+                        <th>Recebido</th>
+                        <th>Sep. Central</th>
+                        <th>Entregue</th>
+                        <th class="col-total">Total de Volumes</th>
+                    </tr>
+                </thead>
+                <tbody id="corpo-tabela">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // CONFIGURAÇÃO DO FIREBASE
+        // ==========================================
+        var firebaseConfig = {
+  		    apiKey: "AIzaSyDHUlqzRw_vSyp9livOvQ0rjBYT9l_yofs",
+  		    authDomain: "checkpoint-pedidos.firebaseapp.com",
+  		    projectId: "checkpoint-pedidos",
+  		    storageBucket: "checkpoint-pedidos.firebasestorage.app",
+  		    messagingSenderId: "890832634523",
+  		    appId: "1:890832634523:web:7f8fa0ee6a2a9c60e27c3e"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        var bancoDeDados = firebase.firestore();
+
+        var dadosParaExportar = {}; 
+        var dataExportacao = "";
+
+        window.onload = function() {
+            var hoje = new Date();
+            var dia = String(hoje.getDate()).padStart(2, '0');
+            var mes = String(hoje.getMonth() + 1).padStart(2, '0');
+            var ano = hoje.getFullYear();
+            
+            document.getElementById('filtroData').value = ano + '-' + mes + '-' + dia;
+            carregarDados();
+        };
+
+        function carregarDados() {
+            var dataInput = document.getElementById('filtroData').value;
+            if (!dataInput) { alert("Por favor, selecione uma data!"); return; }
+
+            document.getElementById('msg-loading').style.display = 'block';
+            document.getElementById('tot-leadtime').innerText = "Calculando... ⏳";
+
+            var dataEscolhida = new Date(dataInput + "T00:00:00"); 
+            var inicioDoDia = dataEscolhida.getTime();
+            var fimDoDia = inicioDoDia + (24 * 60 * 60 * 1000) - 1;
+
+            bancoDeDados.collection("checkpoints_logistica")
+                .where("ordem", ">=", inicioDoDia)
+                .where("ordem", "<=", fimDoDia)
+                .get()
+                .then(function(resultado) {
+                    dataExportacao = dataInput;
+                    processarRelatorio(resultado);
+                })
+                .catch(function(erro) {
+                    console.error("Erro ao buscar dados:", erro);
+                    alert("Ocorreu um erro ao buscar os dados da nuvem.");
+                    document.getElementById('msg-loading').style.display = 'none';
+                });
+        }
+
+        function processarRelatorio(resultado) {
+            var totais = { separado: 0, conferido: 0, carregado: 0, recebido: 0, sepCentral: 0, entregue: 0 };
+            var colaboradores = {};
+            
+            // Variáveis para a Máquina do Tempo (SLA)
+            var reqsEntreguesNoDia = [];
+            var mapasDeTempo = {}; // Vai guardar a hora final de cada requisição
+
+            resultado.forEach(function(documento) {
+                var evento = documento.data();
+                var nome = evento.nome || "DESCONHECIDO";
+                var status = evento.status || "";
+
+                if (!colaboradores[nome]) {
+                    colaboradores[nome] = { separado: 0, conferido: 0, carregado: 0, recebido: 0, sepCentral: 0, entregue: 0, total: 0 };
+                }
+
+                if (status.indexOf("Separado (Central)") !== -1) {
+                    totais.sepCentral++; colaboradores[nome].sepCentral++; colaboradores[nome].total++;
+                } else if (status.indexOf("Separado (Apoio)") !== -1 || status === "Separado") {
+                    totais.separado++; colaboradores[nome].separado++; colaboradores[nome].total++;
+                } else if (status.indexOf("Conferido") !== -1) {
+                    totais.conferido++; colaboradores[nome].conferido++; colaboradores[nome].total++;
+                } else if (status.indexOf("Carregado") !== -1) {
+                    totais.carregado++; colaboradores[nome].carregado++; colaboradores[nome].total++;
+                } else if (status.indexOf("Recebido") !== -1) {
+                    totais.recebido++; colaboradores[nome].recebido++; colaboradores[nome].total++;
+                } else if (status.indexOf("Entregue") !== -1) {
+                    totais.entregue++; colaboradores[nome].entregue++; colaboradores[nome].total++;
+                    
+                    // Lógica do SLA: Guarda que essa requisição foi entregue e a hora exata
+                    if (!reqsEntreguesNoDia.includes(evento.requisicao)) {
+                        reqsEntreguesNoDia.push(evento.requisicao);
+                        mapasDeTempo[evento.requisicao] = { fim: evento.ordem };
+                    } else {
+                        // Se tiver vários volumes da mesma req entregues, pegamos o tempo do ÚLTIMO entregue
+                        if (evento.ordem > mapasDeTempo[evento.requisicao].fim) {
+                            mapasDeTempo[evento.requisicao].fim = evento.ordem;
+                        }
+                    }
+                }
+            });
+
+            dadosParaExportar = colaboradores;
+
+            document.getElementById('tot-separado').innerText = totais.separado;
+            document.getElementById('tot-conferido').innerText = totais.conferido;
+            document.getElementById('tot-carregado').innerText = totais.carregado;
+            document.getElementById('tot-recebido').innerText = totais.recebido;
+            document.getElementById('tot-sep-central').innerText = totais.sepCentral;
+            document.getElementById('tot-entregue').innerText = totais.entregue;
+
+            var corpoTabela = document.getElementById('corpo-tabela');
+            corpoTabela.innerHTML = ''; 
+            var listaNomes = Object.keys(colaboradores).sort();
+
+            if (listaNomes.length === 0) {
+                corpoTabela.innerHTML = '<tr><td colspan="8" style="color: #e74c3c;">Nenhum registro encontrado para esta data.</td></tr>';
+            } else {
+                listaNomes.forEach(function(nome) {
+                    var dados = colaboradores[nome];
+                    var linhaHTML = '<tr>' +
+                                        '<td class="col-nome">' + nome + '</td>' +
+                                        '<td>' + dados.separado + '</td>' +
+                                        '<td>' + dados.conferido + '</td>' +
+                                        '<td>' + dados.carregado + '</td>' +
+                                        '<td>' + dados.recebido + '</td>' +
+                                        '<td>' + dados.sepCentral + '</td>' +
+                                        '<td>' + dados.entregue + '</td>' +
+                                        '<td class="col-total">' + dados.total + '</td>' +
+                                    '</tr>';
+                    corpoTabela.innerHTML += linhaHTML;
+                });
+            }
+
+            // ==========================================
+            // CÁLCULO ASSÍNCRONO DO LEAD TIME
+            // ==========================================
+            if (reqsEntreguesNoDia.length === 0) {
+                document.getElementById('tot-leadtime').innerText = "0h 0m";
+                document.getElementById('msg-loading').style.display = 'none';
+                return;
+            }
+
+            // Cria uma lista de tarefas (promessas) para buscar o início de cada requisição
+            var buscasHistoricas = reqsEntreguesNoDia.map(function(req) {
+                return bancoDeDados.collection("checkpoints_logistica")
+                    .where("requisicao", "==", req)
+                    .orderBy("ordem", "asc")
+                    .limit(1) // Pega apenas o primeiro evento da vida dessa requisição
+                    .get()
+                    .then(function(resHist) {
+                        if (!resHist.empty) {
+                            var primeiroEvento = resHist.docs[0].data();
+                            mapasDeTempo[req].inicio = primeiroEvento.ordem;
+                        }
+                    });
+            });
+
+            // Quando todas as buscas no passado terminarem...
+            Promise.all(buscasHistoricas).then(function() {
+                var somaTemposMs = 0;
+                var qtdEntregasValidas = 0;
+
+                for (var req in mapasDeTempo) {
+                    var tempo = mapasDeTempo[req];
+                    if (tempo.inicio && tempo.fim && tempo.fim >= tempo.inicio) {
+                        somaTemposMs += (tempo.fim - tempo.inicio);
+                        qtdEntregasValidas++;
+                    }
+                }
+
+                if (qtdEntregasValidas > 0) {
+                    var mediaMs = somaTemposMs / qtdEntregasValidas;
+                    var mediaMinutos = Math.floor(mediaMs / (1000 * 60));
+                    
+                    var horas = Math.floor(mediaMinutos / 60);
+                    var minutos = mediaMinutos % 60;
+                    
+                    // Formata bonitinho: ex: 04h 15m
+                    document.getElementById('tot-leadtime').innerText = (horas < 10 ? "0"+horas : horas) + "h " + (minutos < 10 ? "0"+minutos : minutos) + "m";
+                } else {
+                    document.getElementById('tot-leadtime').innerText = "N/D";
+                }
+
+                document.getElementById('msg-loading').style.display = 'none';
+
+            }).catch(function(erro) {
+                console.error("Erro na Máquina do Tempo do SLA:", erro);
+                document.getElementById('tot-leadtime').innerText = "Erro";
+                document.getElementById('msg-loading').style.display = 'none';
+            });
+        }
+
+        // ==========================================
+        // EXPORTAÇÃO PARA EXCEL
+        // ==========================================
+        function exportarParaExcel() {
+            var listaNomes = Object.keys(dadosParaExportar);
+            if (listaNomes.length === 0) { alert("Não há dados na tabela para exportar."); return; }
+
+            var conteudoCSV = "Colaborador;Sep_Apoio;Conferido;Carregado;Recebido;Sep_Central;Entregue;Total_Volumes\n";
+
+            listaNomes.sort().forEach(function(nome) {
+                var d = dadosParaExportar[nome];
+                conteudoCSV += nome + ";" + d.separado + ";" + d.conferido + ";" + d.carregado + ";" + d.recebido + ";" + d.sepCentral + ";" + d.entregue + ";" + d.total + "\n";
+            });
+
+            var blob = new Blob(["\uFEFF" + conteudoCSV], { type: 'text/csv;charset=utf-8;' });
+            var link = document.createElement("a");
+            var url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", "Produtividade_Logistica_" + dataExportacao + ".csv");
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>
