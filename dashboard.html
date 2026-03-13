@@ -24,7 +24,10 @@
         .btn-exportar { background-color: #27ae60; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.2s; }
         .btn-exportar:hover { background-color: #2ecc71; }
 
-        .cards-grid { display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; justify-content: space-between; }
+        /* Estilo dos Títulos de Seção */
+        .secao-titulo { color: #2c3e50; font-size: 16px; font-weight: bold; margin-top: 10px; margin-bottom: 15px; border-bottom: 2px solid #bdc3c7; padding-bottom: 5px; text-transform: uppercase; }
+
+        .cards-grid { display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; justify-content: space-between; }
         .card { background: white; flex: 1; min-width: 130px; padding: 20px 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-align: center; border-bottom: 4px solid #bdc3c7; }
         .card h3 { margin: 0; font-size: 13px; color: #7f8c8d; text-transform: uppercase; }
         .card .numero { font-size: 30px; font-weight: bold; color: #2c3e50; margin-top: 10px; }
@@ -85,6 +88,7 @@
             <div class="loading" id="msg-loading">Processando dados e calculando SLAs... ⏳</div>
         </div>
 
+        <div class="secao-titulo">🏢 Equipe Almoxarifados Centro de Apoio</div>
         <div class="cards-grid">
             <div class="card" id="card-separado">
                 <h3>📦 Sep. Apoio</h3>
@@ -100,6 +104,7 @@
             </div>
         </div>
 
+        <div class="secao-titulo">🏥 Equipe Almoxarifados Texeira Soares</div>
         <div class="cards-grid">
             <div class="card" id="card-recebido">
                 <h3>📥 Recebido</h3>
@@ -115,13 +120,14 @@
             </div>
         </div>
 
+        <div class="secao-titulo">⏱️ Tempos Totais de Processamento</div>
         <div class="cards-grid" style="margin-bottom: 30px;">
             <div class="card" id="card-sla-apoio">
-                <h3>⏱️ Lead Time (Fluxo Apoio)</h3>
+                <h3>Lead Time (Fluxo Apoio)</h3>
                 <div class="numero" id="tot-leadtime-apoio">--h --m</div>
             </div>
             <div class="card" id="card-sla-central">
-                <h3>⏱️ Lead Time (Fluxo Central)</h3>
+                <h3>Lead Time (Fluxo Central)</h3>
                 <div class="numero" id="tot-leadtime-central">--h --m</div>
             </div>
         </div>
@@ -166,6 +172,9 @@
         var dadosParaExportar = {}; 
         var dataExportacao = "";
 
+        // ==========================================
+        // INICIALIZAÇÃO E PILOTO AUTOMÁTICO
+        // ==========================================
         window.onload = function() {
             var hoje = new Date();
             var dia = String(hoje.getDate()).padStart(2, '0');
@@ -175,10 +184,12 @@
             document.getElementById('filtroData').value = ano + '-' + mes + '-' + dia;
             carregarDados();
 
-            // O PILOTO AUTOMÁTICO: Atualiza o painel sozinho a cada 3 minutos (180.000 milissegundos)
+            // Atualiza automaticamente os dados a cada 60 segundos (60.000 milissegundos)
             setInterval(function() {
+                // Adiciona um feedback visual sutil de que a tela atualizou sozinha
+                console.log("Atualização automática em andamento...");
                 carregarDados();
-            }, 180000);
+            }, 60000);
         };
 
         function carregarDados() {
@@ -203,7 +214,6 @@
                 })
                 .catch(function(erro) {
                     console.error("Erro ao buscar dados:", erro);
-                    alert("Ocorreu um erro ao buscar os dados da nuvem.");
                     document.getElementById('msg-loading').style.display = 'none';
                 });
         }
@@ -278,7 +288,6 @@
                     if(d.total > maximos.total) maximos.total = d.total;
                 });
 
-                // Função para pintar a célula se for o campeão
                 function formatarCelula(valor, valorMaximo, isTotal = false) {
                     var classe = isTotal ? "col-total" : "";
                     if (valor > 0 && valor === valorMaximo) {
@@ -287,7 +296,6 @@
                     return '<td class="' + classe + '">' + valor + '</td>';
                 }
 
-                // Desenhando a tabela com as medalhas
                 listaNomes.forEach(function(nome) {
                     var dados = colaboradores[nome];
                     var linhaHTML = '<tr>' +
