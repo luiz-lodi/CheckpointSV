@@ -77,7 +77,8 @@
     <div style="background-color: #2c3e50; padding: 15px; text-align: center; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
         <a href="index.html" style="color: #ecf0f1; text-decoration: none; margin: 0 15px; font-weight: bold; font-size: 16px;">📱 Tela do Operador</a>
         <a href="kanban.html" style="color: #ecf0f1; text-decoration: none; margin: 0 15px; font-weight: bold; font-size: 16px;">🚥 Kanban em Tempo Real</a>
-        <a href="dashboard.html" style="color: #f1c40f; text-decoration: none; margin: 0 15px; font-weight: bold; font-size: 16px;">📊 Dashboard Gerencial</a>
+        <a href="dashboard.html" style="color: #f1c40f; text-decoration: none; margin: 0 15px; font-weight: bold; font-size: 16px;">📊 Dashboard Diário</a>
+        <a href="relatorios.html" style="color: #ecf0f1; text-decoration: none; margin: 0 15px; font-weight: bold; font-size: 16px;">📈 Relatórios BI</a>
         <a href="admin.html" style="color: #ecf0f1; text-decoration: none; margin: 0 15px; font-weight: bold; font-size: 16px;">⚙️ Painel Gestão</a>
     </div>
 
@@ -201,7 +202,7 @@
         var dataExportacao = "";
 
         // ==========================================
-        // INICIALIZAÇÃO E PILOTO AUTOMÁTICO
+        // INICIALIZAÇÃO 
         // ==========================================
         window.onload = function() {
             var hoje = new Date();
@@ -212,10 +213,14 @@
             document.getElementById('filtroData').value = ano + '-' + mes + '-' + dia;
             carregarDados();
 
+            // O setInterval (Piloto Automático) foi comentado para evitar esgotamento 
+            // do limite diário do banco de dados gratuito do Firebase.
+            /*
             setInterval(function() {
-                console.log("Atualização automática em andamento...");
-                carregarDados();
+                console.log("Atualização automática desativada temporariamente...");
+                // carregarDados();
             }, 60000);
+            */
         };
 
         function carregarDados() {
