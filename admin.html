@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Gestão - Exclusão de Registros</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        
+        h1 { color: #2c3e50; text-align: center; margin-bottom: 5px; }
+        .subtitulo { text-align: center; color: #7f8c8d; margin-bottom: 30px; }
+
+        /* Estilos do Login */
+        #tela-login { background: white; max-width: 400px; margin: 50px auto; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; }
+        #tela-login input { width: 100%; padding: 12px; margin: 10px 0 20px 0; border: 2px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 16px; }
+        #tela-login button { background-color: #2c3e50; color: white; border: none; padding: 15px; width: 100%; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        #tela-login button:hover { background-color: #1a252f; }
+
+        /* Estilos do Painel (Oculto inicialmente) */
+        #painel-admin { display: none; }
+
+        .filtro-container { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 30px; }
+        .filtro-container label { font-weight: bold; color: #2c3e50; }
+        .filtro-container input[type="date"] { padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
+        .btn-filtrar { background-color: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+
+        .tabela-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; min-width: 800px;}
+        th, td { padding: 12px 10px; text-align: center; border-bottom: 1px solid #ecf0f1; }
+        th { background-color: #f8f9fa; color: #2c3e50; font-weight: bold; text-transform: uppercase; font-size: 12px; }
+        td { font-size: 14px; color: #34495e; }
+        tr:hover { background-color: #f1f2f6; }
+        
+        .btn-excluir { background-color: #e74c3c; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; transition: 0.2s; }
+        .btn-excluir:hover { background-color: #c0392b; }
+        
+        .loading { text-align: center; color: #e67e22; font-weight: bold; display: none; margin-top: 10px; width: 100%; font-size: 16px;}
+    </style>
+</head>
+<body>
+
+    <div style="background-color: #2c3e50; padding: 15px; text-align: center; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <a href="index.html" style="color: #ecf0f1; text-decoration: none; margin: 0 15px; font-weight: bold; font-size: 16px;">📱 Tela do Operador</a>
+        <a href="kanban.html" style="color: #ecf0f1; text-decoration: none; margin: 0 15px; font-weight: bold; font-size: 16px;">🚥 Kanban em Tempo Real</a>
+        <a href="dashboard.html" style="color: #ecf0f1; text-decoration: none; margin: 0 15px; font-weight: bold; font-size: 16px;">📊 Dashboard Gerencial</a>
+        <a href="admin.html" style="color: #f1c40f; text-decoration: none; margin: 0 15px; font-weight: bold; font-size: 16px;">⚙️ Painel Gestão</a>
+    </div>
+
+    <div class="container">
+        <h1>⚙️ Painel de Gestão (Admin)</h1>
+        <div class="subtitulo">Correção e exclusão de apontamentos logísticos</div>
+
+        <div id="tela-login">
+            <h3 style="color: #2c3e50; margin-top: 0;">Acesso Restrito</h3>
+            <label style="display: block; text-align: left; font-weight: bold; font-size: 14px; color: #7f8c8d;">Senha de Gestor:</label>
+            <input type="password" id="senhaGestor" placeholder="Digite a senha administrativa" onkeypress="verificarEnter(event)">
+            <button onclick="fazerLogin()">Desbloquear Painel</button>
+            <div id="msg-erro" style="color: #e74c3c; margin-top: 15px; font-weight: bold; display: none;">Senha incorreta!</div>
+        </div>
+
+        <div id="painel-admin">
+            <div class="filtro-container">
+                <label for="filtroData">Buscar registros do dia:</label>
+                <input type="date" id="filtroData">
+                <button class="btn-filtrar" onclick="carregarDados()">Buscar Dados</button>
+                <div class="loading" id="msg-loading">Buscando banco de dados... ⏳</div>
+            </div>
+
+            <div class="tabela-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Hora Exata</th>
+                            <th>Operador</th>
+                            <th>Requisição</th>
+                            <th>Volume</th>
+                            <th>Status (Etapa)</th>
+                            <th>Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpo-tabela">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // CONFIGURAÇÃO DO FIREBASE
+        // ==========================================
+        var firebaseConfig = {
+            apiKey: "AIzaSyDHUlqzRw_vSyp9livOvQ0rjBYT9l_yofs",
+            authDomain: "checkpoint-pedidos.firebaseapp.com",
+            projectId: "checkpoint-pedidos",
+            storageBucket: "checkpoint-pedidos.firebasestorage.app",
+            messagingSenderId: "890832634523",
+            appId: "1:890832634523:web:7f8fa0ee6a2a9c60e27c3e"
+        };
+        firebase.initializeApp(firebaseConfig);
+        var bancoDeDados = firebase.firestore();
+
+        // ==========================================
+        // SISTEMA DE LOGIN SIMPLES
+        // ==========================================
+        var senhasPermitidas = ["adminhsvp", "renan123", "bruna123"]; // Senhas para Você, Renan e Bruna
+
+        function verificarEnter(e) {
+            if (e.key === 'Enter') fazerLogin();
+        }
+
+        function fazerLogin() {
+            var senhaDigitada = document.getElementById('senhaGestor').value.trim().toLowerCase();
+            if (senhasPermitidas.includes(senhaDigitada)) {
+                document.getElementById('tela-login').style.display = 'none';
+                document.getElementById('painel-admin').style.display = 'block';
+                
+                // Preenche a data de hoje automaticamente e busca
+                var hoje = new Date();
+                var dia = String(hoje.getDate()).padStart(2, '0');
+                var mes = String(hoje.getMonth() + 1).padStart(2, '0');
+                document.getElementById('filtroData').value = hoje.getFullYear() + '-' + mes + '-' + dia;
+                carregarDados();
+            } else {
+                document.getElementById('msg-erro').style.display = 'block';
+            }
+        }
+
+        // ==========================================
+        // BUSCA E EXIBIÇÃO DE DADOS
+        // ==========================================
+        function carregarDados() {
+            var dataInput = document.getElementById('filtroData').value;
+            if (!dataInput) return;
+
+            document.getElementById('msg-loading').style.display = 'block';
+            var corpoTabela = document.getElementById('corpo-tabela');
+            corpoTabela.innerHTML = ''; 
+
+            var dataEscolhida = new Date(dataInput + "T00:00:00"); 
+            var inicioDoDia = dataEscolhida.getTime();
+            var fimDoDia = inicioDoDia + (24 * 60 * 60 * 1000) - 1;
+
+            bancoDeDados.collection("checkpoints_logistica")
+                .where("ordem", ">=", inicioDoDia)
+                .where("ordem", "<=", fimDoDia)
+                .orderBy("ordem", "desc") // Mostra os bipes mais recentes primeiro
+                .get()
+                .then(function(resultado) {
+                    if (resultado.empty) {
+                        corpoTabela.innerHTML = '<tr><td colspan="6" style="color: #e74c3c; font-weight:bold;">Nenhum registro encontrado nesta data.</td></tr>';
+                    } else {
+                        resultado.forEach(function(documento) {
+                            var evento = documento.data();
+                            var idDocumento = documento.id; // ID ÚNICO gerado pelo Firebase
+                            var volumeTxt = evento.volume ? evento.volume : "1";
+
+                            // Extrai só a hora para ficar mais limpo
+                            var horaExata = evento.data.split(" ")[1] || evento.data;
+
+                            var linhaHTML = '<tr>' +
+                                                '<td><strong>' + horaExata + '</strong></td>' +
+                                                '<td>' + evento.nome + '</td>' +
+                                                '<td style="font-weight:bold; color:#2980b9;">' + evento.requisicao + '</td>' +
+                                                '<td style="color:#d35400; font-weight:bold;">Vol ' + volumeTxt + '</td>' +
+                                                '<td>' + evento.status + '</td>' +
+                                                '<td><button class="btn-excluir" onclick="excluirRegistro(\'' + idDocumento + '\', \'' + evento.requisicao + '\', \'' + evento.status + '\')">🗑️ Excluir</button></td>' +
+                                            '</tr>';
+                            corpoTabela.innerHTML += linhaHTML;
+                        });
+                    }
+                    document.getElementById('msg-loading').style.display = 'none';
+                })
+                .catch(function(erro) {
+                    console.error("Erro ao buscar dados:", erro);
+                    document.getElementById('msg-loading').style.display = 'none';
+                    alert("Atenção: Para ordernar por data (descendente) o Firebase pode exigir a criação de um Índice. Se não carregar, avise o suporte.");
+                });
+        }
+
+        // ==========================================
+        // EXCLUSÃO DE DADOS
+        // ==========================================
+        function excluirRegistro(idDoc, req, status) {
+            var confirmacao = confirm("⚠️ ATENÇÃO!\nTem certeza que deseja apagar a Requisição " + req + " (" + status + ") do banco de dados?\n\nEssa ação não pode ser desfeita.");
+            
+            if (confirmacao) {
+                bancoDeDados.collection("checkpoints_logistica").doc(idDoc).delete()
+                .then(function() {
+                    alert("✅ Registro excluído com sucesso!");
+                    carregarDados(); // Recarrega a tabela automaticamente
+                })
+                .catch(function(erro) {
+                    alert("❌ Erro ao tentar excluir: " + erro.message);
+                });
+            }
+        }
+    </script>
+</body>
+</html>
