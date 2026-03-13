@@ -90,12 +90,12 @@
             
             <div class="input-group">
                 <label>Matrícula:</label>
-                <input type="number" id="matriculaGestor" placeholder="Ex: 151357">
+                <input type="number" id="matriculaGestor" placeholder="">
             </div>
 
             <div class="input-group">
                 <label>Senha:</label>
-                <input type="password" id="senhaGestor" placeholder="Sua senha secreta" onkeypress="verificarEnter(event)">
+                <input type="password" id="senhaGestor" placeholder="" onkeypress="verificarEnter(event)">
             </div>
 
             <button onclick="fazerLogin()">Acessar</button>
@@ -193,7 +193,7 @@
         // ==========================================
         function fazerLogin() {
             var matricula = document.getElementById('matriculaGestor').value.trim();
-            var senha = document.getElementById('senhaGestor').value.trim().toLowerCase();
+            var senha = document.getElementById('senhaGestor').value.trim();
             
             if (gestores[matricula] && gestores[matricula].senha === senha) {
                 gestorLogado = gestores[matricula];
