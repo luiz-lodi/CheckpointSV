@@ -281,21 +281,31 @@
             var buscasHistoricas = reqsEntreguesNoDia.map(function(req) {
                 return bancoDeDados.collection("checkpoints_logistica")
                     .where("requisicao", "==", req)
-                    .orderBy("ordem", "asc")
-                    .limit(1) 
+                    // REMOVIDO o orderBy e o limit(1) para evitar a trava de Índice do Firebase
                     .get()
                     .then(function(resHist) {
                         if (!resHist.empty) {
-                            var primeiroEvento = resHist.docs[0].data();
-                            var statusOrigem = primeiroEvento.status || "";
                             
-                            // Define qual calculadora de SLA vai receber este tempo
-                            if (statusOrigem.indexOf("Apoio") !== -1 || statusOrigem === "Separado") {
-                                mapasDeTempo[req].origem = "APOIO";
-                            } else if (statusOrigem.indexOf("Central") !== -1) {
-                                mapasDeTempo[req].origem = "CENTRAL";
+                            // Acha o evento mais antigo na memória do navegador
+                            var primeiroEvento = null;
+                            resHist.forEach(function(doc) {
+                                var ev = doc.data();
+                                if (!primeiroEvento || ev.ordem < primeiroEvento.ordem) {
+                                    primeiroEvento = ev;
+                                }
+                            });
+
+                            if (primeiroEvento) {
+                                var statusOrigem = primeiroEvento.status || "";
+                                
+                                // Define qual calculadora de SLA vai receber este tempo
+                                if (statusOrigem.indexOf("Apoio") !== -1 || statusOrigem === "Separado") {
+                                    mapasDeTempo[req].origem = "APOIO";
+                                } else if (statusOrigem.indexOf("Central") !== -1) {
+                                    mapasDeTempo[req].origem = "CENTRAL";
+                                }
+                                mapasDeTempo[req].inicio = primeiroEvento.ordem;
                             }
-                            mapasDeTempo[req].inicio = primeiroEvento.ordem;
                         }
                     });
             });
