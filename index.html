@@ -3,121 +3,125 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CHECKPOINT DE REQUISIÇÕES HSVP</title>
+    <title>CHECKPOINT HSVP</title>
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f4f4f9; color: #333; }
-        .container { max-width: 400px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: #2c3e50; font-size: 24px; }
-        h3 { color: #34495e; border-bottom: 2px solid #eee; padding-bottom: 5px; }
+        /* CSS Otimizado para telas pequenas (Palmtops) */
+        body { font-family: Arial, sans-serif; margin: 0; padding: 10px; background-color: #f4f4f9; color: #333; }
+        .container { max-width: 100%; margin: 0 auto; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #2c3e50; font-size: 20px; margin-top: 0; margin-bottom: 15px;}
+        h3 { color: #34495e; border-bottom: 2px solid #eee; padding-bottom: 5px; font-size: 16px; margin-bottom: 10px;}
 
-        .input-group { margin-bottom: 15px; }
-        .input-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; color: #2c3e50;}
-        .input-group input { width: 100%; padding: 15px; border: 2px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 18px; margin-bottom: 5px; transition: 0.3s;}
-        .input-group input:focus { border-color: #3498db; outline: none; box-shadow: 0 0 8px rgba(52, 152, 219, 0.3); }
+        .input-group { margin-bottom: 12px; }
+        .input-group label { display: block; margin-bottom: 4px; font-weight: bold; font-size: 13px; color: #2c3e50;}
+        .input-group input { width: 100%; padding: 12px; border: 2px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 16px; margin-bottom: 2px; transition: 0.2s;}
+        .input-group input:focus { border-color: #3498db; outline: none; background-color: #f0f8ff; }
+        .input-group input:read-only { background-color: #ecf0f1; border-color: #bdc3c7; color: #7f8c8d; }
 
-        button { width: 100%; padding: 15px; border: none; border-radius: 5px; color: white; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
-        .btn-acessar { background-color: #2c3e50; }
+        button { width: 100%; padding: 12px; border: none; border-radius: 5px; color: white; font-size: 14px; font-weight: bold; cursor: pointer; margin-bottom: 5px; }
         
-        .btn-romaneio { background-color: #8e44ad; margin-top: 15px; box-shadow: 0 4px 0 #732d91; transition: 0.2s;}
-        .btn-romaneio:active { transform: translateY(4px); box-shadow: 0 0 0 #732d91; }
-        .btn-voltar { background-color: #e74c3c; margin-top: 15px; }
-
-        #historico { margin-top: 30px; }
-        .registro { background: #ecf0f1; padding: 10px; margin-bottom: 8px; border-radius: 5px; font-size: 13px; line-height: 1.4; border-left: 4px solid #3498db; }
+        /* Cores dos Botões de Modos Especiais */
+        .botoes-modos { display: flex; gap: 10px; margin-top: 10px; }
+        .btn-conferente { background-color: #8e44ad; border-bottom: 3px solid #732d91; flex: 1; padding: 15px 5px;}
+        .btn-conferente:active { transform: translateY(2px); border-bottom-width: 1px; }
         
-        #tela-logistica, #tela-lote { display: none; }
+        .btn-romaneio { background-color: #d35400; border-bottom: 3px solid #a04000; flex: 1; padding: 15px 5px;}
+        .btn-romaneio:active { transform: translateY(2px); border-bottom-width: 1px; }
         
-        .area-scan { background: #e8f6f3; padding: 15px; border-radius: 8px; border: 2px dashed #1abc9c; margin-bottom: 15px;}
-        .instrucao { font-size: 13px; color: #7f8c8d; text-align: center; margin-bottom: 10px; font-weight: bold; line-height: 1.4;}
-        .saudacao { text-align: center; color: #27ae60; font-weight: bold; margin-bottom: 15px; }
+        .btn-voltar { background-color: #e74c3c; margin-top: 10px; }
+        .btn-limpar { background-color: #95a5a6; padding: 8px; font-size: 12px; margin-top: 5px; }
 
-        .area-lote { background: #fff; padding: 15px; border-radius: 8px; border: 3px solid #ccc; margin-bottom: 15px; transition: 0.3s;}
-        .titulo-lote { text-align: center; font-size: 18px; font-weight: bold; margin-bottom: 15px; text-transform: uppercase;}
+        #historico { margin-top: 20px; }
+        .registro { background: #ecf0f1; padding: 8px; margin-bottom: 6px; border-radius: 4px; font-size: 12px; line-height: 1.3; border-left: 4px solid #3498db; }
+        
+        .area-scan { background: #e8f6f3; padding: 12px; border-radius: 6px; border: 2px dashed #1abc9c; margin-bottom: 10px;}
+        .instrucao { font-size: 12px; color: #7f8c8d; text-align: center; margin-bottom: 8px; font-weight: bold; line-height: 1.3;}
+        
+        #box-operador { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #ecf0f1; }
+        .nome-destaque { color: #27ae60; font-weight: bold; font-size: 14px; margin-top: 5px; display: none; }
+
+        .area-lote { background: #fff; padding: 12px; border-radius: 6px; border: 2px solid #ccc; margin-bottom: 10px; }
+        .titulo-lote { text-align: center; font-size: 16px; font-weight: bold; margin-bottom: 10px; text-transform: uppercase;}
+
+        #tela-lote { display: none; }
 
         #toast-sucesso {
-            visibility: hidden; min-width: 200px; background-color: #2ecc71; color: #fff; text-align: center; border-radius: 8px; padding: 15px;
-            position: fixed; z-index: 999; left: 50%; bottom: 20px; transform: translateX(-50%); font-size: 16px; font-weight: bold;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2); opacity: 0; transition: opacity 0.3s, bottom 0.3s;
+            visibility: hidden; min-width: 200px; background-color: #2ecc71; color: #fff; text-align: center; border-radius: 6px; padding: 12px;
+            position: fixed; z-index: 999; left: 50%; bottom: 20px; transform: translateX(-50%); font-size: 15px; font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2); opacity: 0; transition: opacity 0.2s;
         }
-        #toast-sucesso.mostrar { visibility: visible; opacity: 1; bottom: 50px; }
+        #toast-sucesso.mostrar { visibility: visible; opacity: 1; }
     </style>
 </head>
 <body>
 
-    <div style="background-color: #2c3e50; padding: 15px; text-align: center; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-        <a href="index.html" style="color: #f1c40f; text-decoration: none; margin: 0 15px; font-weight: bold; font-size: 16px;">📱 Tela do Operador</a>
-        <a href="kanban.html" style="color: #ecf0f1; text-decoration: none; margin: 0 15px; font-weight: bold; font-size: 16px;">🚥 Kanban em Tempo Real</a>
-        <a href="dashboard.html" style="color: #ecf0f1; text-decoration: none; margin: 0 15px; font-weight: bold; font-size: 16px;">📊 Dashboard Gerencial</a>
-        <a href="admin.html" style="color: #ecf0f1; text-decoration: none; margin: 0 15px; font-weight: bold; font-size: 16px;">⚙️ Painel Gestão</a>
-    </div>
-
-    <div id="toast-sucesso">✅ Salvo na Nuvem!</div>
+    <div id="toast-sucesso">✅ Salvo!</div>
 
     <div class="container">
-        <h1>CHECKPOINT DE REQUISIÇÕES HSVP</h1>
+        <h1>📦 HSVP CHECKPOINT</h1>
         
-        <div id="tela-login">
+        <div id="box-operador">
             <div class="input-group">
-                <label for="idMatricula">Matrícula do Operador:</label>
-                <input type="number" id="idMatricula" placeholder="Digite e aperte Enter">
-                <button class="btn-acessar" onclick="validarAcesso()">Acessar Sistema</button>
+                <label for="idMatricula">Matrícula (Bipe o crachá):</label>
+                <input type="number" id="idMatricula" placeholder="Digite e Enter">
+                <div id="displayOperador" class="nome-destaque"></div>
             </div>
+            <button id="btn-trocar-operador" class="btn-limpar" style="display:none;" onclick="trocarOperador()">🔄 Trocar Operador</button>
         </div>
 
         <div id="tela-logistica">
-            <div class="saudacao" id="mensagemSaudacao"></div>
-
             <div class="area-scan">
-                <div class="instrucao" style="color:#16a085;">MODO UNITÁRIO (BIPE A REQUISIÇÃO E DEPOIS O LOCAL)</div>
+                <div class="instrucao" style="color:#16a085;">MODO UNITÁRIO</div>
                 <div class="input-group">
                     <label for="idRequisicao">1. Requisição Tasy (7 dígitos):</label>
-                    <input type="number" id="idRequisicao" placeholder="Bipe o código de barras">
+                    <input type="number" id="idRequisicao" placeholder="Bipe a requisição">
                 </div>
                 <div class="input-group">
                     <label for="idLocalQR">2. Local / Etapa (QR Code):</label>
-                    <input type="text" id="idLocalQR" placeholder="Bipe o QR Code do Setor">
+                    <input type="text" id="idLocalQR" placeholder="Bipe a parede">
                 </div>
             </div>
 
-            <button class="btn-romaneio" onclick="iniciarRomaneio()">📦 Abrir Modo Romaneio</button>
+            <div class="botoes-modos">
+                <button class="btn-conferente" onclick="abrirModoLote('CONFERENTE')">🔍 Modo<br>Conferente</button>
+                <button class="btn-romaneio" onclick="abrirModoLote('ROMANEIO')">🚚 Modo<br>Romaneio</button>
+            </div>
 
             <div id="historico">
-                <h3>Últimos Bipes (Fluxo Normal)</h3>
+                <h3>Últimos Bipes</h3>
                 <div id="listaRegistros"></div>
             </div>
         </div>
 
         <div id="tela-lote">
             <div class="area-lote" id="caixa-lote">
-                <div class="titulo-lote" id="titulo-lote">CONFIGURANDO ROMANEIO</div>
+                <div class="titulo-lote" id="titulo-lote">CONFIGURANDO LOTE</div>
                 
                 <div id="passo1-lote">
-                    <div class="instrucao" style="color:#e74c3c;">PASSO 1: Para iniciar, bipe o QR Code da doca de Carregamento ou Recebimento.</div>
-                    <div class="input-group" style="margin-top:20px;">
-                        <label for="idLocalQRLote">Travar Romaneio no Local:</label>
+                    <div class="instrucao" id="texto-passo1" style="color:#e74c3c;">PASSO 1: Bipe a parede.</div>
+                    <div class="input-group">
+                        <label for="idLocalQRLote">Travar Local:</label>
                         <input type="text" id="idLocalQRLote" placeholder="Bipe a parede...">
                     </div>
                 </div>
 
                 <div id="passo2-lote" style="display:none;">
-                    <div class="instrucao">PASSO 2: Bipe as requisições. O sistema salvará automaticamente a cada bipe.</div>
-                    <div class="input-group" style="margin-top:20px;">
-                        <label for="idReqLote">Requisição Tasy (7 dígitos):</label>
+                    <div class="instrucao">PASSO 2: Bipe as requisições sequencialmente.</div>
+                    <div class="input-group">
+                        <label for="idReqLote">Requisição (7 dígitos):</label>
                         <input type="number" id="idReqLote" placeholder="Bipe e aguarde...">
                     </div>
-                    <div id="contador-lote" style="text-align:center; font-weight:bold; color:#7f8c8d; margin-top:15px; padding-top:10px; border-top:1px solid #eee;">
-                        Itens bipados neste romaneio:<br>
-                        <span id="qtd-lote" style="color:#2c3e50; font-size:32px; display:block; margin-top:5px;">0</span>
+                    <div id="contador-lote" style="text-align:center; font-weight:bold; color:#7f8c8d; margin-top:10px; padding-top:10px; border-top:1px solid #eee;">
+                        Itens processados:<br>
+                        <span id="qtd-lote" style="color:#2c3e50; font-size:28px; display:block; margin-top:5px;">0</span>
                     </div>
                 </div>
-
             </div>
 
-            <button class="btn-voltar" onclick="fecharModoLote()">🔙 Encerrar Romaneio</button>
+            <button class="btn-voltar" onclick="fecharModoLote()">🔙 Encerrar Modo Lote</button>
         </div>
 
     </div>
@@ -127,14 +131,13 @@
         // CONFIGURAÇÃO DO FIREBASE
         // ==========================================
         var firebaseConfig = {
-  		    apiKey: "AIzaSyDHUlqzRw_vSyp9livOvQ0rjBYT9l_yofs",
-  		    authDomain: "checkpoint-pedidos.firebaseapp.com",
-  		    projectId: "checkpoint-pedidos",
-  		    storageBucket: "checkpoint-pedidos.firebasestorage.app",
-  		    messagingSenderId: "890832634523",
-  		    appId: "1:890832634523:web:7f8fa0ee6a2a9c60e27c3e"
+            apiKey: "AIzaSyDHUlqzRw_vSyp9livOvQ0rjBYT9l_yofs",
+            authDomain: "checkpoint-pedidos.firebaseapp.com",
+            projectId: "checkpoint-pedidos",
+            storageBucket: "checkpoint-pedidos.firebasestorage.app",
+            messagingSenderId: "890832634523",
+            appId: "1:890832634523:web:7f8fa0ee6a2a9c60e27c3e"
         };
-
         firebase.initializeApp(firebaseConfig);
         var bancoDeDados = firebase.firestore();
 
@@ -142,10 +145,9 @@
         // VARIÁVEIS E DICIONÁRIOS
         // ==========================================
         var nomeOperadorAtual = "";
+        var tipoLoteAtual = ""; // Guarda se é CONFERENTE ou ROMANEIO
         var etapaLoteAtual = ""; 
         var contadorLoteSessao = 0; 
-        
-        // A MÁGICA DOS VOLUMES
         var memoriaVolumes = {};
         
         var dicionarioEtapas = {
@@ -164,56 +166,96 @@
             "147628": "GABRIEL", "292": "IDERALDO", "166913": "LUIS GUSTAVO", "167733": "RAFAEL", "139320": "RENAN"
         };
 
+        window.onload = function() {
+            document.getElementById('idMatricula').focus();
+        };
+
+        function mostrarToast(texto) {
+            var toast = document.getElementById("toast-sucesso");
+            toast.innerText = texto;
+            toast.className = "mostrar";
+            setTimeout(function(){ toast.className = toast.className.replace("mostrar", ""); }, 1200);
+        }
+
         // ==========================================
-        // LOGIN
+        // FLUXO 1: VALIDAÇÃO DE MATRÍCULA
         // ==========================================
         document.getElementById('idMatricula').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') { validarAcesso(); }
+            if (e.key === 'Enter') { 
+                e.preventDefault(); 
+                validarAcesso(); 
+            }
         });
 
         function validarAcesso() {
-            var matriculaDigitada = document.getElementById('idMatricula').value.trim();
-            if (listaColaboradores[matriculaDigitada]) {
-                nomeOperadorAtual = listaColaboradores[matriculaDigitada];
-                document.getElementById('tela-login').style.display = 'none';
-                document.getElementById('tela-logistica').style.display = 'block';
-                document.getElementById('mensagemSaudacao').innerText = "Operador: " + nomeOperadorAtual;
+            var mat = document.getElementById('idMatricula').value.trim();
+            if (listaColaboradores[mat]) {
+                nomeOperadorAtual = listaColaboradores[mat];
+                
+                document.getElementById('idMatricula').readOnly = true;
+                var display = document.getElementById('displayOperador');
+                display.innerText = "✅ Logado: " + nomeOperadorAtual;
+                display.style.display = "block";
+                
+                document.getElementById('btn-trocar-operador').style.display = "block";
                 document.getElementById('idRequisicao').focus();
             } else {
-                alert("Matrícula não encontrada.");
+                alert("Matrícula não encontrada!");
+                document.getElementById('idMatricula').value = "";
+                document.getElementById('idMatricula').focus();
             }
         }
 
-        function mostrarToast(textoPersonalizado) {
-            var toast = document.getElementById("toast-sucesso");
-            toast.innerText = textoPersonalizado || "✅ Salvo na Nuvem!";
-            toast.className = "mostrar";
-            setTimeout(function(){ toast.className = toast.className.replace("mostrar", ""); }, 1500);
+        function trocarOperador() {
+            nomeOperadorAtual = "";
+            document.getElementById('idMatricula').readOnly = false;
+            document.getElementById('idMatricula').value = "";
+            document.getElementById('displayOperador').style.display = "none";
+            document.getElementById('btn-trocar-operador').style.display = "none";
+            document.getElementById('idMatricula').focus();
+        }
+
+        function checarOperador() {
+            if (!nomeOperadorAtual) {
+                alert("Por favor, bipe o seu crachá (Matrícula) primeiro!");
+                document.getElementById('idMatricula').focus();
+                return false;
+            }
+            return true;
         }
 
         // ==========================================
-        // LÓGICA DA TELA 1 (SCAN & GO NORMAL)
+        // FLUXO 2: MODO UNITÁRIO
         // ==========================================
         document.getElementById('idRequisicao').addEventListener('input', function(e) {
-            if (this.value.trim().length === 7) { document.getElementById('idLocalQR').focus(); }
+            if (this.value.trim().length === 7) { 
+                if(checarOperador()) document.getElementById('idLocalQR').focus(); 
+                else this.value = "";
+            }
         });
 
         document.getElementById('idRequisicao').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault(); 
-                if (this.value.trim().length === 7) { document.getElementById('idLocalQR').focus(); }
+                if (this.value.trim().length === 7) { 
+                    if(checarOperador()) document.getElementById('idLocalQR').focus();
+                    else this.value = "";
+                }
             }
         });
 
         document.getElementById('idLocalQR').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') { e.preventDefault(); processarLeituraNormal(); }
+            if (e.key === 'Enter') { 
+                e.preventDefault(); 
+                if(checarOperador()) processarLeituraNormal(); 
+            }
         });
 
         function processarLeituraNormal() {
             var requisicao = document.getElementById('idRequisicao').value.trim();
             var qrCodeLido = document.getElementById('idLocalQR').value.trim().toUpperCase();
 
-            if (requisicao.length !== 7) { alert("Requisição deve ter 7 dígitos."); document.getElementById('idRequisicao').focus(); return; }
+            if (requisicao.length !== 7) { document.getElementById('idRequisicao').focus(); return; }
             if (qrCodeLido === "") { return; } 
 
             var statusFinal = dicionarioEtapas[qrCodeLido];
@@ -228,7 +270,7 @@
             
             bancoDeDados.collection("checkpoints_logistica").add(novoEvento)
             .then(function() { 
-                mostrarToast("✅ Salvo! (Volume " + novoEvento.volume + ")");
+                mostrarToast("✅ Salvo! (Vol " + novoEvento.volume + ")");
                 adicionarRegistroNaTela(novoEvento);
                 document.getElementById('idRequisicao').value = '';
                 document.getElementById('idLocalQR').value = '';
@@ -237,14 +279,27 @@
         }
 
         // ==========================================
-        // LÓGICA DA TELA 2 (MODO ROMANEIO / POKA-YOKE)
+        // FLUXO 3: MODOS DE LOTE (CONFERENTE E ROMANEIO)
         // ==========================================
-        function iniciarRomaneio() {
+        function abrirModoLote(tipo) {
+            if(!checarOperador()) return;
+            tipoLoteAtual = tipo;
+
             document.getElementById('tela-logistica').style.display = 'none';
             document.getElementById('tela-lote').style.display = 'block';
 
-            document.getElementById('titulo-lote').innerText = "CONFIGURANDO ROMANEIO";
-            document.getElementById('titulo-lote').style.color = "#333";
+            var titulo = document.getElementById('titulo-lote');
+            var inst1 = document.getElementById('texto-passo1');
+
+            if (tipo === 'CONFERENTE') {
+                titulo.innerText = "🔍 MODO CONFERENTE";
+                inst1.innerText = "PASSO 1: Bipe a bancada (QR-CONFERIDO).";
+            } else {
+                titulo.innerText = "🚚 MODO ROMANEIO";
+                inst1.innerText = "PASSO 1: Bipe a doca (Carregado ou Recebido).";
+            }
+            
+            titulo.style.color = "#333";
             document.getElementById('caixa-lote').style.borderColor = "#ccc";
 
             document.getElementById('passo1-lote').style.display = 'block';
@@ -258,6 +313,7 @@
             document.getElementById('tela-lote').style.display = 'none';
             document.getElementById('tela-logistica').style.display = 'block';
             etapaLoteAtual = "";
+            tipoLoteAtual = "";
             document.getElementById('idRequisicao').value = '';
             document.getElementById('idRequisicao').focus();
         }
@@ -265,15 +321,24 @@
         document.getElementById('idLocalQRLote').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault(); 
-                validarParedeRomaneio();
+                validarParedeLote();
             }
         });
 
-        function validarParedeRomaneio() {
+        function validarParedeLote() {
             var qrLido = document.getElementById('idLocalQRLote').value.trim().toUpperCase();
 
-            if (qrLido !== "QR-CARREGADO" && qrLido !== "QR-RECEBIDO") {
-                alert("Local Inválido! O Modo Romaneio só pode ser iniciado nas áreas de Carregamento ou Recebimento.");
+            // Poka-Yoke do Conferente
+            if (tipoLoteAtual === 'CONFERENTE' && qrLido !== "QR-CONFERIDO") {
+                alert("Local Inválido! O Modo Conferente exige o QR-CONFERIDO.");
+                document.getElementById('idLocalQRLote').value = '';
+                document.getElementById('idLocalQRLote').focus();
+                return;
+            }
+
+            // Poka-Yoke do Romaneio
+            if (tipoLoteAtual === 'ROMANEIO' && qrLido !== "QR-CARREGADO" && qrLido !== "QR-RECEBIDO") {
+                alert("Local Inválido! Use apenas nas docas de Carregamento ou Recebimento.");
                 document.getElementById('idLocalQRLote').value = '';
                 document.getElementById('idLocalQRLote').focus();
                 return;
@@ -286,7 +351,11 @@
             var titulo = document.getElementById('titulo-lote');
             var caixa = document.getElementById('caixa-lote');
 
-            if(etapaLoteAtual === 'QR-CARREGADO') {
+            if (etapaLoteAtual === 'QR-CONFERIDO') {
+                titulo.innerText = "🔍 CONFERINDO VOLUMES";
+                titulo.style.color = "#8e44ad";
+                caixa.style.borderColor = "#8e44ad";
+            } else if(etapaLoteAtual === 'QR-CARREGADO') {
                 titulo.innerText = "🚚 CARREGANDO ROMANEIO";
                 titulo.style.color = "#d35400";
                 caixa.style.borderColor = "#d35400";
@@ -326,7 +395,7 @@
 
             bancoDeDados.collection("checkpoints_logistica").add(novoEvento)
             .then(function() { 
-                mostrarToast("✅ Salvo! (Volume " + novoEvento.volume + ")");
+                mostrarToast("✅ Salvo! (Vol " + novoEvento.volume + ")");
                 contadorLoteSessao++;
                 document.getElementById('qtd-lote').innerText = contadorLoteSessao;
             }).catch(function(erro) { alert("Erro ao salvar: " + erro.message); });
@@ -361,8 +430,7 @@
             var novoItem = document.createElement('div');
             novoItem.className = 'registro';
             novoItem.innerHTML = '<strong>Req:</strong> ' + evento.requisicao + ' <span style="color:#d35400; font-weight:bold;">(Vol ' + evento.volume + ')</span><br>' +
-                                 '<strong>Status:</strong> ' + evento.status + ' <br>' +
-                                 '<em>🕒 ' + evento.data + '</em>';
+                                 '<strong>Status:</strong> ' + evento.status;
             
             if (divLista.firstChild) { divLista.insertBefore(novoItem, divLista.firstChild); } 
             else { divLista.appendChild(novoItem); }
