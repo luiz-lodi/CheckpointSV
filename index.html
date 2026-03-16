@@ -194,59 +194,53 @@
             document.getElementById('idMatricula').focus();
         };
 
-    function mostrarToast(texto) {
-    var toast = document.getElementById("toast-sucesso");
-    toast.innerText = texto;
-    
-    // VERIFICAÇÃO DE ERRO PARA FEEDBACK HÁPTICO/SONORO
-    if (!texto.includes("✅")) {
-        // 1. Vibração: Padrão [Vibra 200ms, Pausa 100ms, Vibra 200ms]
-        if (navigator.vibrate) {
-            navigator.vibrate([200, 100, 200]);
+    function dispararAlertaErro() {
+        // Feedback Tátil
+        if (window.navigator && window.navigator.vibrate) {
+            window.navigator.vibrate([300, 100, 300]);
         }
-        
-        // 2. Som: Toca um "Beep" de erro do sistema
+        // Feedback Sonoro
         try {
             var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             var osc = audioCtx.createOscillator();
             var gain = audioCtx.createGain();
             osc.connect(gain);
             gain.connect(audioCtx.destination);
-            osc.type = "sine"; // Som suave mas perceptível
-            osc.frequency.value = 150; // Tom grave para erro
-            gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+            osc.type = "square"; // Som mais "industrial" para erro
+            osc.frequency.value = 100; // Tom bem grave
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
             osc.start();
-            osc.stop(audioCtx.currentTime + 0.3); // Dura 0.3 segundos
-        } catch (e) { console.log("Áudio não suportado"); }
-        
-        // Estilo visual de erro para o Toast
-        toast.style.backgroundColor = "#e74c3c"; 
-    } else {
-        // Estilo visual de sucesso (verde original)
-        toast.style.backgroundColor = "#2ecc71";
+            osc.stop(audioCtx.currentTime + 0.4);
+        } catch (e) { console.log("Erro som"); }
     }
 
-    toast.className = "mostrar";
-    setTimeout(function(){ toast.className = toast.className.replace("mostrar", ""); }, 1500);
+    function mostrarToast(texto) {
+        var toast = document.getElementById("toast-sucesso");
+        toast.innerText = texto;
+        
+        if (!texto.includes("✅")) {
+            dispararAlertaErro(); // Aciona hardware no erro
+            toast.style.backgroundColor = "#e74c3c"; 
+        } else {
+            toast.style.backgroundColor = "#2ecc71";
+        }
+
+        toast.className = "mostrar";
+        setTimeout(function(){ toast.className = toast.className.replace("mostrar", ""); }, 1500);
     }
 
         // ==========================================
-        // FLUXO 1: VALIDAÇÃO E CRACHÁ DO OPERADOR (COM CORTADOR DE ZEROS)
+        // FLUXO 1: VALIDAÇÃO E CRACHÁ DO OPERADOR
         // ==========================================
         function validarAcesso() {
             var matRaw = document.getElementById('idMatricula').value.trim();
             if (matRaw === "") return;
 
-            // 1. Pega apenas os últimos 6 caracteres da string bipada
             var ultimosSeis = matRaw.slice(-6);
-            
-            // 2. Transforma em número para arrancar os Zeros à esquerda, e volta para texto
             var mat = parseInt(ultimosSeis, 10).toString();
 
             if (listaColaboradores[mat]) {
                 nomeOperadorAtual = listaColaboradores[mat];
-                
-                // Mostra na tela a matrícula já "limpa" para o operador
                 document.getElementById('idMatricula').value = mat;
                 document.getElementById('idMatricula').readOnly = true;
                 
@@ -257,6 +251,7 @@
                 document.getElementById('btn-trocar-operador').style.display = "block";
                 document.getElementById('idRequisicao').focus();
             } else {
+                dispararAlertaErro(); // Vibra se matrícula falhar
                 alert("Matrícula não encontrada!");
                 document.getElementById('idMatricula').value = "";
                 document.getElementById('idMatricula').focus();
@@ -278,6 +273,7 @@
 
         function checarOperador() {
             if (!nomeOperadorAtual) {
+                dispararAlertaErro(); // Vibra se tentar bipar deslogado
                 alert("Por favor, bipe o seu crachá (Matrícula) primeiro!");
                 document.getElementById('idMatricula').focus();
                 return false;
@@ -318,7 +314,8 @@
                 var statusFinal = dicionarioEtapas[qrCodeLido];
                 if (!statusFinal) {
                     if (qrCodeLido.startsWith("QR-")) {
-                        alert("QR Code de etapa inválido."); document.getElementById('idLocalQR').value = ""; return;
+                        mostrarToast("❌ QR Code inválido."); // Isso vai disparar vibração
+                        document.getElementById('idLocalQR').value = ""; return;
                     }
                     statusFinal = "Entregue (" + qrCodeLido + ")";
                 }
@@ -375,11 +372,11 @@
                 var qrLido = document.getElementById('idLocalQRLote').value.trim().toUpperCase();
 
                 if (tipoLoteAtual === 'CONFERENTE' && qrLido !== "QR-CONFERIDO") {
-                    alert("Local Inválido! O Modo Conferente exige o QR-CONFERIDO.");
+                    mostrarToast("❌ Local inválido para Conferente."); // Vibra
                     document.getElementById('idLocalQRLote').value = ''; return;
                 }
                 if (tipoLoteAtual === 'ROMANEIO' && qrLido !== "QR-CARREGADO" && qrLido !== "QR-RECEBIDO") {
-                    alert("Local Inválido! Use apenas nas docas de Carregamento ou Recebimento.");
+                    mostrarToast("❌ Local inválido para Romaneio."); // Vibra
                     document.getElementById('idLocalQRLote').value = ''; return;
                 }
 
@@ -463,7 +460,7 @@
                     .catch(function(erro) {
                         console.error(erro);
                         memoriaVolumes[chaveVolume] = undefined; 
-                        alert("Erro ao conectar com a base de dados: " + erro.message);
+                        mostrarToast("❌ Erro de conexão."); // Vibra
                     });
 
             } else if (Array.isArray(memoriaVolumes[chaveVolume])) {
@@ -505,7 +502,7 @@
                 }
             })
             .catch(function(erro) {
-                alert("Erro ao gravar: " + erro.message);
+                mostrarToast("❌ Erro ao gravar."); // Vibra
             });
         }
 
@@ -522,13 +519,3 @@
     </script>
 </body>
 </html>
-
-<!--
-=========================================================================
-SISTEMA WMS - CHECKPOINT LOGÍSTICO HSVP
-⚙️ Arquitetura de Negócio e Idealização: Luiz Henrique Link Lodi
-🧠 Engenharia de Software e IA: Gemini
-📅 Versão Final (Go-Live): Março de 2026
-
-"Tecnologia à serviço da operação e da eficiência hospitalar."
--->
