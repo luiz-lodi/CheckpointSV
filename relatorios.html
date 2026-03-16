@@ -16,6 +16,17 @@
         h1 { color: #2c3e50; text-align: center; margin-bottom: 5px; }
         .subtitulo { text-align: center; color: #7f8c8d; margin-bottom: 30px; }
 
+        /* ESTILOS DO LOGIN (COPIADO DO ADMIN) */
+        #tela-login { background: white; max-width: 400px; margin: 50px auto; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; }
+        .input-group { margin-bottom: 15px; text-align: left; }
+        .input-group label { display: block; font-weight: bold; font-size: 14px; color: #2c3e50; margin-bottom: 5px;}
+        .input-group input { width: 100%; padding: 12px; border: 2px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 16px; transition: 0.3s; }
+        .input-group input:focus { border-color: #3498db; outline: none; }
+        #tela-login button { background-color: #9b59b6; color: white; border: none; padding: 15px; width: 100%; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; margin-top: 10px;}
+        #tela-login button:hover { background-color: #8e44ad; }
+
+        #painel-relatorios { display: none; } /* Oculta o BI inicialmente */
+
         .filtro-container { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 30px; flex-wrap: wrap;}
         .filtro-container label { font-weight: bold; color: #2c3e50; }
         .filtro-container input[type="month"] { padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
@@ -39,7 +50,6 @@
         .col-nome { text-align: left; font-weight: bold; }
         .col-total { font-weight: bold; background-color: #f8f9fa; color: #2c3e50;}
         
-        /* Estilo do Troféu */
         .celula-destaque { background-color: #fff9c4 !important; color: #d35400 !important; font-weight: bold !important; border-radius: 4px; box-shadow: inset 0 0 5px rgba(211, 84, 0, 0.1);}
         
         .loading { text-align: center; color: #e67e22; font-weight: bold; display: none; margin-top: 10px; width: 100%; font-size: 18px;}
@@ -59,67 +69,88 @@
         <h1>📈 Relatórios de Business Intelligence</h1>
         <div class="subtitulo">Visão macro da operação mensal com gráficos e tendências</div>
 
-        <div class="filtro-container">
-            <label for="filtroMes">Selecione o Mês e Ano:</label>
-            <input type="month" id="filtroMes">
-            <button class="btn-filtrar" onclick="gerarRelatorioMensal()">Gerar Gráficos</button>
-            <div class="loading" id="msg-loading">Analisando milhares de registros... Isso pode levar alguns segundos ⏳</div>
-        </div>
-
-        <div class="secao-titulo">🎯 Desempenho e Tempos de Entrega</div>
-        <div class="dashboard-grid">
-            <div class="chart-container">
-                <h3>🏆 Produtividade Total por Colaborador</h3>
-                <div style="position: relative; height:300px; width:100%;">
-                    <canvas id="chartProdutividade"></canvas>
-                </div>
-            </div>
+        <div id="tela-login">
+            <h3 style="color: #2c3e50; margin-top: 0;">Acesso Restrito - Diretoria e Gestão</h3>
             
-            <div class="chart-container">
-                <h3>⏱️ Evolução Diária do Lead Time (Em Horas)</h3>
-                <div style="position: relative; height:300px; width:100%;">
-                    <canvas id="chartSLA"></canvas>
-                </div>
+            <div class="input-group">
+                <label>Matrícula:</label>
+                <input type="number" id="matriculaGestor" placeholder="">
             </div>
+
+            <div class="input-group">
+                <label>Senha:</label>
+                <input type="password" id="senhaGestor" placeholder="" onkeypress="verificarEnter(event)">
+            </div>
+
+            <button onclick="fazerLogin()">Acessar BI</button>
+            <div id="msg-erro" style="color: #e74c3c; margin-top: 15px; font-weight: bold; display: none;">Matrícula ou senha incorretos!</div>
         </div>
 
-        <div class="secao-titulo">📊 Análise de Fluxo e Distribuição de Volumes</div>
-        <div class="dashboard-grid">
-            <div class="chart-container">
-                <h3>📦 Distribuição de Volumes por Etapa</h3>
-                <div style="position: relative; height:300px; width:100%;">
-                    <canvas id="chartEtapas"></canvas>
-                </div>
-            </div>
-            
-            <div class="chart-container">
-                <h3>🏢 Comparativo de Carga: Apoio vs Central</h3>
-                <div style="position: relative; height:300px; width:100%; display:flex; justify-content:center;">
-                    <canvas id="chartSetores"></canvas>
-                </div>
-            </div>
-        </div>
+        <div id="painel-relatorios">
+            <div style="text-align: right; font-size: 14px; font-weight: bold; color: #9b59b6; margin-bottom: 10px;" id="identificacao-logado"></div>
 
-        <div class="secao-titulo">📋 Consolidação de Dados da Equipe</div>
-        <div class="tabela-container">
-            <h3>Tabela de Produtividade Mensal</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th class="col-nome">Colaborador</th>
-                        <th>Sep. Apoio</th>
-                        <th>Conferido</th>
-                        <th>Carregado</th>
-                        <th>Recebido</th>
-                        <th>Sep. Central</th>
-                        <th>Entregue</th>
-                        <th class="col-total">Total de Volumes</th>
-                    </tr>
-                </thead>
-                <tbody id="corpo-tabela">
-                    <tr><td colspan="8" style="color:#7f8c8d; text-align:center;">Aguardando geração do relatório...</td></tr>
-                </tbody>
-            </table>
+            <div class="filtro-container">
+                <label for="filtroMes">Selecione o Mês e Ano:</label>
+                <input type="month" id="filtroMes">
+                <button class="btn-filtrar" onclick="gerarRelatorioMensal()">Gerar Gráficos</button>
+                <div class="loading" id="msg-loading">Analisando milhares de registros... Isso pode levar alguns segundos ⏳</div>
+            </div>
+
+            <div class="secao-titulo">🎯 Desempenho e Tempos de Entrega</div>
+            <div class="dashboard-grid">
+                <div class="chart-container">
+                    <h3>🏆 Produtividade Total por Colaborador</h3>
+                    <div style="position: relative; height:300px; width:100%;">
+                        <canvas id="chartProdutividade"></canvas>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <h3>⏱️ Evolução Diária do Lead Time (Em Horas)</h3>
+                    <div style="position: relative; height:300px; width:100%;">
+                        <canvas id="chartSLA"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="secao-titulo">📊 Análise de Fluxo e Distribuição de Volumes</div>
+            <div class="dashboard-grid">
+                <div class="chart-container">
+                    <h3>📦 Distribuição de Volumes por Etapa</h3>
+                    <div style="position: relative; height:300px; width:100%;">
+                        <canvas id="chartEtapas"></canvas>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <h3>🏢 Comparativo de Carga: Apoio vs Central</h3>
+                    <div style="position: relative; height:300px; width:100%; display:flex; justify-content:center;">
+                        <canvas id="chartSetores"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="secao-titulo">📋 Consolidação de Dados da Equipe</div>
+            <div class="tabela-container">
+                <h3>Tabela de Produtividade Mensal</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="col-nome">Colaborador</th>
+                            <th>Sep. Apoio</th>
+                            <th>Conferido</th>
+                            <th>Carregado</th>
+                            <th>Recebido</th>
+                            <th>Sep. Central</th>
+                            <th>Entregue</th>
+                            <th class="col-total">Total de Volumes</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpo-tabela">
+                        <tr><td colspan="8" style="color:#7f8c8d; text-align:center;">Aguardando geração do relatório...</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -143,13 +174,41 @@
         var graficoEtapas = null;
         var graficoSetores = null;
 
-        window.onload = function() {
-            var hoje = new Date();
-            var mes = String(hoje.getMonth() + 1).padStart(2, '0');
-            var ano = hoje.getFullYear();
-            document.getElementById('filtroMes').value = ano + '-' + mes;
+        // ==========================================
+        // BASE DE GESTORES PERMITIDOS E LOGIN
+        // ==========================================
+        var gestores = {
+            "151357": { nome: "LUIZ HENRIQUE LINK LODI", senha: "Martin" },
+            "1249":   { nome: "BRUNA QUEVEDO DA SILVA",  senha: "Maria" },
+            "139320": { nome: "RENAN RIBEIRO REIS",      senha: "Olivia" }
         };
 
+        function verificarEnter(e) {
+            if (e.key === 'Enter') fazerLogin();
+        }
+
+        function fazerLogin() {
+            var matricula = document.getElementById('matriculaGestor').value.trim();
+            var senha = document.getElementById('senhaGestor').value.trim();
+            
+            if (gestores[matricula] && gestores[matricula].senha === senha) {
+                document.getElementById('tela-login').style.display = 'none';
+                document.getElementById('painel-relatorios').style.display = 'block';
+                document.getElementById('identificacao-logado').innerText = "👤 Acesso Liberado: " + gestores[matricula].nome;
+                
+                // Configura o mês atual no filtro assim que logar
+                var hoje = new Date();
+                var mes = String(hoje.getMonth() + 1).padStart(2, '0');
+                var ano = hoje.getFullYear();
+                document.getElementById('filtroMes').value = ano + '-' + mes;
+            } else {
+                document.getElementById('msg-erro').style.display = 'block';
+            }
+        }
+
+        // ==========================================
+        // LÓGICA DE RELATÓRIOS BI
+        // ==========================================
         function gerarRelatorioMensal() {
             var dataInput = document.getElementById('filtroMes').value;
             if (!dataInput) return;
@@ -218,9 +277,7 @@
                 reqsMes[req].eventos.push(ev);
             });
 
-            // Chama a tabela passando os colaboradores e os totais
             renderizarTabela(colaboradores, totais);
-
             desenharGraficoEtapas(totais);
             desenharGraficoSetores(totais);
 
@@ -328,7 +385,6 @@
 
             if (listaNomes.length === 0) return;
 
-            // Encontra os maiores valores de cada coluna para dar o troféu
             var maximos = { separado: 0, conferido: 0, carregado: 0, recebido: 0, sepCentral: 0, entregue: 0, total: 0 };
             
             listaNomes.forEach(function(nome) {
@@ -365,7 +421,6 @@
                 corpoTabela.innerHTML += linhaHTML;
             });
 
-            // LINHA DE TOTAL GERAL NO RODAPÉ
             var somaTotalVolumes = totais.separado + totais.conferido + totais.carregado + totais.recebido + totais.sepCentral + totais.entregue;
             var linhaTotalHTML = '<tr style="background-color: #e8f6f3; border-top: 2px solid #bdc3c7;">' +
                                     '<td class="col-nome" style="color: #16a085; font-weight: bold;">TOTAL GERAL</td>' +
