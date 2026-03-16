@@ -205,8 +205,7 @@
         };
 
     function dispararAlertaErro() {
-        // Removida a vibração para evitar redundância
-        // Mantido apenas o Feedback Sonoro instantâneo
+        // Feedback Sonoro instantâneo para erro
         try {
             var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             var osc = audioCtx.createOscillator();
@@ -258,7 +257,7 @@
                 document.getElementById('btn-trocar-operador').style.display = "block";
                 document.getElementById('idRequisicao').focus();
             } else {
-                dispararAlertaErro(); // Vibra se matrícula falhar
+                dispararAlertaErro();
                 alert("Matrícula não encontrada!");
                 document.getElementById('idMatricula').value = "";
                 document.getElementById('idMatricula').focus();
@@ -280,7 +279,7 @@
 
         function checarOperador() {
             if (!nomeOperadorAtual) {
-                dispararAlertaErro(); // Vibra se tentar bipar deslogado
+                dispararAlertaErro();
                 alert("Por favor, bipe o seu crachá (Matrícula) primeiro!");
                 document.getElementById('idMatricula').focus();
                 return false;
@@ -292,7 +291,15 @@
         // FLUXO 2: MODO UNITÁRIO
         // ==========================================
         document.getElementById('idRequisicao').addEventListener('input', function(e) {
-            if (this.value.trim().length === 7) { 
+            var valor = this.value.trim();
+            
+            // Impede a entrada de qualquer coisa que não seja número (incluindo 'e' e '-')
+            if (/[^0-9]/.test(valor)) {
+                this.value = valor.replace(/\D/g, ''); 
+                return;
+            }
+
+            if (this.value.length === 7) { 
                 if(checarOperador()) document.getElementById('idLocalQR').focus(); 
                 else this.value = "";
             }
@@ -321,7 +328,7 @@
                 var statusFinal = dicionarioEtapas[qrCodeLido];
                 if (!statusFinal) {
                     if (qrCodeLido.startsWith("QR-")) {
-                        mostrarToast("❌ QR Code inválido."); // Isso vai disparar vibração
+                        mostrarToast("❌ QR Code inválido."); 
                         document.getElementById('idLocalQR').value = ""; return;
                     }
                     statusFinal = "Entregue (" + qrCodeLido + ")";
@@ -379,11 +386,11 @@
                 var qrLido = document.getElementById('idLocalQRLote').value.trim().toUpperCase();
 
                 if (tipoLoteAtual === 'CONFERENTE' && qrLido !== "QR-CONFERIDO") {
-                    mostrarToast("❌ Local inválido para Conferente."); // Vibra
+                    mostrarToast("❌ Local inválido para Conferente."); 
                     document.getElementById('idLocalQRLote').value = ''; return;
                 }
                 if (tipoLoteAtual === 'ROMANEIO' && qrLido !== "QR-CARREGADO" && qrLido !== "QR-RECEBIDO") {
-                    mostrarToast("❌ Local inválido para Romaneio."); // Vibra
+                    mostrarToast("❌ Local inválido para Romaneio."); 
                     document.getElementById('idLocalQRLote').value = ''; return;
                 }
 
@@ -410,7 +417,19 @@
         });
 
         document.getElementById('idReqLote').addEventListener('input', function(e) {
-            if (this.value.trim().length === 7) { dispararBipeLote(); }
+            var valor = this.value.trim();
+
+            // Bloqueio de letras instantâneo
+            if (/[^0-9]/.test(valor)) {
+                this.value = valor.replace(/\D/g, '');
+                dispararAlertaErro(); 
+                mostrarToast("❌ Use apenas números na Requisição");
+                return;
+            }
+
+            if (this.value.length === 7) { 
+                dispararBipeLote(); 
+            }
         });
 
         document.getElementById('idReqLote').addEventListener('keypress', function(e) {
@@ -467,7 +486,7 @@
                     .catch(function(erro) {
                         console.error(erro);
                         memoriaVolumes[chaveVolume] = undefined; 
-                        mostrarToast("❌ Erro de conexão."); // Vibra
+                        mostrarToast("❌ Erro de conexão."); 
                     });
 
             } else if (Array.isArray(memoriaVolumes[chaveVolume])) {
@@ -509,7 +528,7 @@
                 }
             })
             .catch(function(erro) {
-                mostrarToast("❌ Erro ao gravar."); // Vibra
+                mostrarToast("❌ Erro ao gravar."); 
             });
         }
 
