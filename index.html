@@ -50,7 +50,7 @@
             font-weight: bold; 
             font-size: 14px; 
             margin-top: 8px; 
-            padding: 8px; /* Caixa levemente mais fina */
+            padding: 8px; 
             background-color: #fadbd8; 
             border: 2px dashed #e74c3c; 
             border-radius: 5px; 
@@ -58,10 +58,10 @@
             display: none; 
         }
         .nome-destaque .operador-nome { 
-            color: #c0392b; /* Vermelho escuro de destaque */
-            font-size: 1.1em; /* Levemente maior que o texto base */
+            color: #c0392b; 
+            font-size: 1.1em; 
             text-transform: uppercase; 
-            margin-left: 4px; /* Espaço entre os dois pontos e o nome */
+            margin-left: 4px; 
         }
 
         .area-lote { background: #fff; padding: 12px; border-radius: 6px; border: 2px solid #ccc; margin-bottom: 10px; }
@@ -200,16 +200,26 @@
         }
 
         // ==========================================
-        // FLUXO 1: VALIDAÇÃO E CRACHÁ DO OPERADOR
+        // FLUXO 1: VALIDAÇÃO E CRACHÁ DO OPERADOR (COM CORTADOR DE ZEROS)
         // ==========================================
         function validarAcesso() {
-            var mat = document.getElementById('idMatricula').value.trim();
+            var matRaw = document.getElementById('idMatricula').value.trim();
+            if (matRaw === "") return;
+
+            // 1. Pega apenas os últimos 6 caracteres da string bipada
+            var ultimosSeis = matRaw.slice(-6);
+            
+            // 2. Transforma em número para arrancar os Zeros à esquerda, e volta para texto
+            var mat = parseInt(ultimosSeis, 10).toString();
+
             if (listaColaboradores[mat]) {
                 nomeOperadorAtual = listaColaboradores[mat];
+                
+                // Mostra na tela a matrícula já "limpa" para o operador
+                document.getElementById('idMatricula').value = mat;
                 document.getElementById('idMatricula').readOnly = true;
                 
                 var display = document.getElementById('displayOperador');
-                // Aqui injetamos o novo formato de destaque (agora na mesma linha)
                 display.innerHTML = "👤 Usuário logado:<span class='operador-nome'>" + nomeOperadorAtual + "</span>";
                 display.style.display = "block";
                 
