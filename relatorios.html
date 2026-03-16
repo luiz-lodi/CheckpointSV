@@ -22,12 +22,14 @@
         .btn-filtrar { background-color: #9b59b6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.2s; }
         .btn-filtrar:hover { background-color: #8e44ad; }
 
+        .secao-titulo { color: #2c3e50; font-size: 18px; font-weight: bold; margin-top: 30px; margin-bottom: 15px; border-bottom: 2px solid #bdc3c7; padding-bottom: 5px; text-transform: uppercase; }
+
         .dashboard-grid { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 30px;}
-        .chart-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); flex: 1; min-width: 500px; }
+        .chart-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); flex: 1; min-width: 450px; }
         .chart-container h3 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; font-size: 16px; text-align: center;}
 
         .tabela-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow-x: auto; margin-bottom: 30px;}
-        .tabela-container h3 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; font-size: 16px;}
+        .tabela-container h3 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; font-size: 16px; text-align: center;}
         
         table { width: 100%; border-collapse: collapse; margin-top: 15px; min-width: 800px;}
         th, td { padding: 12px 10px; text-align: center; border-bottom: 1px solid #ecf0f1; }
@@ -61,20 +63,43 @@
             <div class="loading" id="msg-loading">Analisando milhares de registros... Isso pode levar alguns segundos ⏳</div>
         </div>
 
+        <div class="secao-titulo">🎯 Desempenho e Tempos de Entrega</div>
         <div class="dashboard-grid">
             <div class="chart-container">
                 <h3>🏆 Produtividade Total por Colaborador</h3>
-                <canvas id="chartProdutividade"></canvas>
+                <div style="position: relative; height:300px; width:100%;">
+                    <canvas id="chartProdutividade"></canvas>
+                </div>
             </div>
             
             <div class="chart-container">
                 <h3>⏱️ Evolução Diária do Lead Time (Em Horas)</h3>
-                <canvas id="chartSLA"></canvas>
+                <div style="position: relative; height:300px; width:100%;">
+                    <canvas id="chartSLA"></canvas>
+                </div>
             </div>
         </div>
 
+        <div class="secao-titulo">📊 Análise de Fluxo e Distribuição de Volumes</div>
+        <div class="dashboard-grid">
+            <div class="chart-container">
+                <h3>📦 Distribuição de Volumes por Etapa</h3>
+                <div style="position: relative; height:300px; width:100%;">
+                    <canvas id="chartEtapas"></canvas>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <h3>🏢 Comparativo de Carga: Apoio vs Central</h3>
+                <div style="position: relative; height:300px; width:100%; display:flex; justify-content:center;">
+                    <canvas id="chartSetores"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="secao-titulo">📋 Consolidação de Dados da Equipe</div>
         <div class="tabela-container">
-            <h3>Tabela Consolidada Mensal</h3>
+            <h3>Tabela de Produtividade Mensal</h3>
             <table>
                 <thead>
                     <tr>
@@ -112,6 +137,8 @@
 
         var graficoProd = null;
         var graficoSLA = null;
+        var graficoEtapas = null;
+        var graficoSetores = null;
 
         window.onload = function() {
             var hoje = new Date();
@@ -129,7 +156,6 @@
             var ano = parseInt(dataInput.split('-')[0]);
             var mes = parseInt(dataInput.split('-')[1]) - 1; 
 
-            // Pega o primeiro milissegundo do mês e o último milissegundo do mês
             var inicioMes = new Date(ano, mes, 1, 0, 0, 0).getTime();
             var fimMes = new Date(ano, mes + 1, 0, 23, 59, 59).getTime();
 
@@ -151,28 +177,39 @@
 
         function processarDadosParaGraficos(resultado, qtdDiasNoMes) {
             var colaboradores = {};
-            var slaPorDia = {}; // Vai agrupar as entregas por dia (1 a 31)
+            var totais = { separado: 0, conferido: 0, carregado: 0, recebido: 0, sepCentral: 0, entregue: 0 };
+            var slaPorDia = {}; 
             var reqsMes = {}; 
 
-            // 1. Varre todos os dados do mês
+            // 1. Varre todos os dados do mês e acumula Totais Globais + Colaboradores
             resultado.forEach(function(documento) {
                 var ev = documento.data();
                 var nome = ev.nome || "DESCONHECIDO";
                 var status = ev.status || "";
                 var ordem = ev.ordem;
 
-                // Prepara objeto do colaborador
                 if (!colaboradores[nome]) {
                     colaboradores[nome] = { separado: 0, conferido: 0, carregado: 0, recebido: 0, sepCentral: 0, entregue: 0, total: 0 };
                 }
 
-                // Soma Produtividade
-                if (status.indexOf("Separado (Central)") !== -1) { colaboradores[nome].sepCentral++; colaboradores[nome].total++; }
-                else if (status.indexOf("Separado (Apoio)") !== -1 || status === "Separado") { colaboradores[nome].separado++; colaboradores[nome].total++; }
-                else if (status.indexOf("Conferido") !== -1) { colaboradores[nome].conferido++; colaboradores[nome].total++; }
-                else if (status.indexOf("Carregado") !== -1) { colaboradores[nome].carregado++; colaboradores[nome].total++; }
-                else if (status.indexOf("Recebido") !== -1) { colaboradores[nome].recebido++; colaboradores[nome].total++; }
-                else if (status.indexOf("Entregue") !== -1) { colaboradores[nome].entregue++; colaboradores[nome].total++; }
+                if (status.indexOf("Separado (Central)") !== -1) { 
+                    colaboradores[nome].sepCentral++; colaboradores[nome].total++; totais.sepCentral++;
+                }
+                else if (status.indexOf("Separado (Apoio)") !== -1 || status === "Separado") { 
+                    colaboradores[nome].separado++; colaboradores[nome].total++; totais.separado++;
+                }
+                else if (status.indexOf("Conferido") !== -1) { 
+                    colaboradores[nome].conferido++; colaboradores[nome].total++; totais.conferido++;
+                }
+                else if (status.indexOf("Carregado") !== -1) { 
+                    colaboradores[nome].carregado++; colaboradores[nome].total++; totais.carregado++;
+                }
+                else if (status.indexOf("Recebido") !== -1) { 
+                    colaboradores[nome].recebido++; colaboradores[nome].total++; totais.recebido++;
+                }
+                else if (status.indexOf("Entregue") !== -1) { 
+                    colaboradores[nome].entregue++; colaboradores[nome].total++; totais.entregue++;
+                }
 
                 // Prepara lógica de SLA
                 var req = ev.requisicao;
@@ -180,33 +217,34 @@
                 reqsMes[req].eventos.push(ev);
             });
 
-            // 2. Renderiza a Tabela de Produtividade Mensal
-            renderizarTabela(colaboradores);
+            // 2. Renderiza a Tabela de Produtividade Mensal com a linha de TOTAL
+            renderizarTabela(colaboradores, totais);
 
-            // 3. Organiza dados para o Gráfico de Produtividade
+            // 3. Desenha os NOVOS Gráficos de Etapas e Setores
+            desenharGraficoEtapas(totais);
+            desenharGraficoSetores(totais);
+
+            // 4. Organiza dados para o Gráfico de Produtividade
             var labelsNomes = [];
             var dataTotais = [];
             
-            // Ordena do que mais produziu para o que menos produziu
             var arrayColaboradores = Object.keys(colaboradores).map(function(nome) {
                 return { nome: nome, total: colaboradores[nome].total };
             });
             arrayColaboradores.sort((a, b) => b.total - a.total);
 
             arrayColaboradores.forEach(function(colab) {
-                labelsNomes.push(colab.nome.split(" ")[0]); // Pega só o 1º nome para caber no gráfico
+                labelsNomes.push(colab.nome.split(" ")[0]); 
                 dataTotais.push(colab.total);
             });
 
             desenharGraficoProdutividade(labelsNomes, dataTotais);
 
-            // 4. Lógica Otimizada de SLA Mensal
+            // 5. Lógica Otimizada de SLA Mensal
             var buscasHistoricas = [];
 
             Object.keys(reqsMes).forEach(function(req) {
                 var eventos = reqsMes[req].eventos;
-                
-                // Acha o primeiro e o último evento DENTRO deste mês
                 var minEvento = eventos[0];
                 var maxEvento = eventos[0];
                 var isEntregue = false;
@@ -223,10 +261,8 @@
                         slaPorDia[diaEntrega] = { somaApoioMs: 0, qtdApoio: 0, somaCentralMs: 0, qtdCentral: 0 };
                     }
 
-                    // Se o primeiro status que achamos não for "Separado", significa que começou no mês passado
                     var statusInicialMes = minEvento.status || "";
                     if (statusInicialMes.indexOf("Separado") === -1) {
-                        // Busca no passado
                         var promessa = bancoDeDados.collection("checkpoints_logistica")
                             .where("requisicao", "==", req).get().then(function(hist) {
                                 var verdadeiroMinimo = null;
@@ -238,14 +274,12 @@
                             });
                         buscasHistoricas.push(promessa);
                     } else {
-                        // Começou e terminou neste mês
                         processarLeadTime(minEvento, maxEvento, diaEntrega, slaPorDia);
                     }
                 }
             });
 
             Promise.all(buscasHistoricas).then(function() {
-                // Desenhar o Gráfico de Linhas (SLA)
                 var labelsDias = [];
                 var dataSlaApoio = [];
                 var dataSlaCentral = [];
@@ -255,8 +289,6 @@
                     
                     if (slaPorDia[i]) {
                         var diaData = slaPorDia[i];
-                        
-                        // Converte Milissegundos para HORAS (Float) para o gráfico
                         if (diaData.qtdApoio > 0) {
                             var mediaMs = diaData.somaApoioMs / diaData.qtdApoio;
                             dataSlaApoio.push((mediaMs / (1000 * 60 * 60)).toFixed(2));
@@ -266,7 +298,6 @@
                             var mediaMsC = diaData.somaCentralMs / diaData.qtdCentral;
                             dataSlaCentral.push((mediaMsC / (1000 * 60 * 60)).toFixed(2));
                         } else { dataSlaCentral.push(null); }
-
                     } else {
                         dataSlaApoio.push(null);
                         dataSlaCentral.push(null);
@@ -279,7 +310,6 @@
             });
         }
 
-        // Função auxiliar do SLA
         function processarLeadTime(minEv, maxEv, dia, slaPorDia) {
             var ms = maxEv.ordem - minEv.ordem;
             var origem = minEv.status || "";
@@ -293,7 +323,7 @@
             }
         }
 
-        function renderizarTabela(colaboradores) {
+        function renderizarTabela(colaboradores, totais) {
             var corpoTabela = document.getElementById('corpo-tabela');
             corpoTabela.innerHTML = ''; 
             var listaNomes = Object.keys(colaboradores).sort();
@@ -314,6 +344,20 @@
                                 '</tr>';
                 corpoTabela.innerHTML += linhaHTML;
             });
+
+            // LINHA DE TOTAL GERAL NO RODAPÉ
+            var somaTotalVolumes = totais.separado + totais.conferido + totais.carregado + totais.recebido + totais.sepCentral + totais.entregue;
+            var linhaTotalHTML = '<tr style="background-color: #e8f6f3; border-top: 2px solid #bdc3c7;">' +
+                                    '<td class="col-nome" style="color: #16a085; font-weight: bold;">TOTAL GERAL</td>' +
+                                    '<td style="font-weight: bold; color: #2c3e50;">' + totais.separado + '</td>' +
+                                    '<td style="font-weight: bold; color: #2c3e50;">' + totais.conferido + '</td>' +
+                                    '<td style="font-weight: bold; color: #2c3e50;">' + totais.carregado + '</td>' +
+                                    '<td style="font-weight: bold; color: #2c3e50;">' + totais.recebido + '</td>' +
+                                    '<td style="font-weight: bold; color: #2c3e50;">' + totais.sepCentral + '</td>' +
+                                    '<td style="font-weight: bold; color: #2c3e50;">' + totais.entregue + '</td>' +
+                                    '<td style="font-weight: bold; color: #c0392b; font-size: 16px;">' + somaTotalVolumes + '</td>' +
+                                 '</tr>';
+            corpoTabela.innerHTML += linhaTotalHTML;
         }
 
         // ==========================================
@@ -321,7 +365,7 @@
         // ==========================================
         function desenharGraficoProdutividade(labels, dados) {
             var ctx = document.getElementById('chartProdutividade').getContext('2d');
-            if (graficoProd) graficoProd.destroy(); // Apaga o anterior para não sobrepor
+            if (graficoProd) graficoProd.destroy(); 
 
             graficoProd = new Chart(ctx, {
                 type: 'bar',
@@ -334,10 +378,7 @@
                         borderRadius: 4
                     }]
                 },
-                options: {
-                    responsive: true,
-                    scales: { y: { beginAtZero: true } }
-                }
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } }, plugins: { legend: { display: false } } }
             });
         }
 
@@ -355,8 +396,7 @@
                     ]
                 },
                 options: {
-                    responsive: true,
-                    spanGaps: true, // Conecta a linha mesmo se um dia não teve entregas
+                    responsive: true, maintainAspectRatio: false, spanGaps: true, 
                     scales: { y: { beginAtZero: true, title: { display: true, text: 'Tempo Médio (Horas)'} } },
                     plugins: {
                         tooltip: {
@@ -370,6 +410,52 @@
                             }
                         }
                     }
+                }
+            });
+        }
+
+        // NOVO: Gráfico de Etapas (Barras)
+        function desenharGraficoEtapas(totais) {
+            var ctx = document.getElementById('chartEtapas').getContext('2d');
+            if (graficoEtapas) graficoEtapas.destroy();
+
+            graficoEtapas = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Sep. Apoio', 'Conferido', 'Carregado', 'Recebido', 'Sep. Central', 'Entregue'],
+                    datasets: [{
+                        label: 'Volumes Processados',
+                        data: [totais.separado, totais.conferido, totais.carregado, totais.recebido, totais.sepCentral, totais.entregue],
+                        backgroundColor: ['#f39c12', '#8e44ad', '#d35400', '#3498db', '#16a085', '#2ecc71'],
+                        borderRadius: 4
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } }, plugins: { legend: { display: false } } }
+            });
+        }
+
+        // NOVO: Gráfico de Setores (Doughnut/Rosca)
+        function desenharGraficoSetores(totais) {
+            var ctx = document.getElementById('chartSetores').getContext('2d');
+            if (graficoSetores) graficoSetores.destroy();
+
+            var totalApoio = totais.separado + totais.conferido + totais.carregado;
+            var totalCentral = totais.recebido + totais.sepCentral + totais.entregue;
+
+            graficoSetores = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Fluxo Apoio (Sep, Conf, Car)', 'Fluxo Central (Rec, Sep C, Ent)'],
+                    datasets: [{
+                        data: [totalApoio, totalCentral],
+                        backgroundColor: ['#e67e22', '#2980b9'],
+                        hoverOffset: 6
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } } 
                 }
             });
         }
