@@ -44,7 +44,7 @@
         
         #box-operador { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #ecf0f1; }
         
-        /* CRACHÁ DE DESTAQUE DO OPERADOR */
+        /* NOVO CRACHÁ DE DESTAQUE DO OPERADOR (Ajustado para 1 linha) */
         .nome-destaque { 
             color: #2c3e50; 
             font-weight: bold; 
@@ -200,19 +200,22 @@
         }
 
         // ==========================================
-        // FLUXO 1: VALIDAÇÃO E CRACHÁ DO OPERADOR (CORTADOR DE ZEROS ATIVO)
+        // FLUXO 1: VALIDAÇÃO E CRACHÁ DO OPERADOR (COM CORTADOR DE ZEROS)
         // ==========================================
         function validarAcesso() {
             var matRaw = document.getElementById('idMatricula').value.trim();
             if (matRaw === "") return;
 
-            // Extrai os últimos 6 dígitos e converte em inteiro para remover zeros à esquerda
+            // 1. Pega apenas os últimos 6 caracteres da string bipada
             var ultimosSeis = matRaw.slice(-6);
+            
+            // 2. Transforma em número para arrancar os Zeros à esquerda, e volta para texto
             var mat = parseInt(ultimosSeis, 10).toString();
 
             if (listaColaboradores[mat]) {
                 nomeOperadorAtual = listaColaboradores[mat];
                 
+                // Mostra na tela a matrícula já "limpa" para o operador
                 document.getElementById('idMatricula').value = mat;
                 document.getElementById('idMatricula').readOnly = true;
                 
