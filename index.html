@@ -194,12 +194,41 @@
             document.getElementById('idMatricula').focus();
         };
 
-        function mostrarToast(texto) {
-            var toast = document.getElementById("toast-sucesso");
-            toast.innerText = texto;
-            toast.className = "mostrar";
-            setTimeout(function(){ toast.className = toast.className.replace("mostrar", ""); }, 1200);
+    function mostrarToast(texto) {
+    var toast = document.getElementById("toast-sucesso");
+    toast.innerText = texto;
+    
+    // VERIFICAÇÃO DE ERRO PARA FEEDBACK HÁPTICO/SONORO
+    if (!texto.includes("✅")) {
+        // 1. Vibração: Padrão [Vibra 200ms, Pausa 100ms, Vibra 200ms]
+        if (navigator.vibrate) {
+            navigator.vibrate([200, 100, 200]);
         }
+        
+        // 2. Som: Toca um "Beep" de erro do sistema
+        try {
+            var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            var osc = audioCtx.createOscillator();
+            var gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.type = "sine"; // Som suave mas perceptível
+            osc.frequency.value = 150; // Tom grave para erro
+            gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.3); // Dura 0.3 segundos
+        } catch (e) { console.log("Áudio não suportado"); }
+        
+        // Estilo visual de erro para o Toast
+        toast.style.backgroundColor = "#e74c3c"; 
+    } else {
+        // Estilo visual de sucesso (verde original)
+        toast.style.backgroundColor = "#2ecc71";
+    }
+
+    toast.className = "mostrar";
+    setTimeout(function(){ toast.className = toast.className.replace("mostrar", ""); }, 1500);
+    }
 
         // ==========================================
         // FLUXO 1: VALIDAÇÃO E CRACHÁ DO OPERADOR (COM CORTADOR DE ZEROS)
