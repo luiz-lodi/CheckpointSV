@@ -367,26 +367,33 @@
             var opNome = nomeOperadorAtual;
 
             if (memoriaVolumes[chaveVolume] === undefined) {
-                // É a primeira vez que vemos isso. Trava a memória temporariamente e pergunta pro Firebase.
                 memoriaVolumes[chaveVolume] = 'Buscando...';
 
                 var dataAtual = new Date();
                 var inicioDoDia = new Date(dataAtual.getFullYear(), dataAtual.getMonth(), dataAtual.getDate()).getTime();
 
+                // NOVA BUSCA SIMPLIFICADA PARA EVITAR ERRO DE ÍNDICE NO FIREBASE
                 bancoDeDados.collection("checkpoints_logistica")
                     .where("requisicao", "==", requisicao)
-                    .where("status", "==", statusFinal)
-                    .where("ordem", ">=", inicioDoDia)
                     .get()
                     .then(function(resultado) {
-                        // Descobrimos o volume real oficial!
-                        memoriaVolumes[chaveVolume] = resultado.size + 1;
+                        var contagem = 0;
+                        
+                        // Faz a filtragem pelo status e data diretamente na memória do Palmtop
+                        resultado.forEach(function(doc) {
+                            var ev = doc.data();
+                            if (ev.status === statusFinal && ev.ordem >= inicioDoDia) {
+                                contagem++;
+                            }
+                        });
+                        
+                        memoriaVolumes[chaveVolume] = contagem + 1;
                         executarSalvamentoNuvem(requisicao, statusFinal, memoriaVolumes[chaveVolume], matricula, opNome);
                     })
                     .catch(function(erro) {
                         console.error(erro);
-                        memoriaVolumes[chaveVolume] = undefined; // Libera a trava pra tentar de novo
-                        alert("Falha de conexão ao calcular o volume.");
+                        memoriaVolumes[chaveVolume] = undefined; 
+                        alert("Erro ao conectar com a base de dados: " + erro.message);
                     });
 
             } else if (typeof memoriaVolumes[chaveVolume] === 'number') {
