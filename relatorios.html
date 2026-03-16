@@ -16,7 +16,7 @@
         h1 { color: #2c3e50; text-align: center; margin-bottom: 5px; }
         .subtitulo { text-align: center; color: #7f8c8d; margin-bottom: 30px; }
 
-        /* ESTILOS DO LOGIN (COPIADO DO ADMIN) */
+        /* ESTILOS DO LOGIN */
         #tela-login { background: white; max-width: 400px; margin: 50px auto; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; }
         .input-group { margin-bottom: 15px; text-align: left; }
         .input-group label { display: block; font-weight: bold; font-size: 14px; color: #2c3e50; margin-bottom: 5px;}
@@ -25,7 +25,7 @@
         #tela-login button { background-color: #9b59b6; color: white; border: none; padding: 15px; width: 100%; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; margin-top: 10px;}
         #tela-login button:hover { background-color: #8e44ad; }
 
-        #painel-relatorios { display: none; } /* Oculta o BI inicialmente */
+        #painel-relatorios { display: none; }
 
         .filtro-container { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 30px; flex-wrap: wrap;}
         .filtro-container label { font-weight: bold; color: #2c3e50; }
@@ -38,6 +38,9 @@
         .dashboard-grid { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 30px;}
         .chart-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); flex: 1; min-width: 450px; }
         .chart-container h3 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; font-size: 16px; text-align: center;}
+        
+        /* Gráfico de Micro-SLA Ocupa a Tela Toda */
+        .chart-full { flex: 100%; min-width: 100%; }
 
         .tabela-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow-x: auto; margin-bottom: 30px;}
         .tabela-container h3 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; font-size: 16px; text-align: center;}
@@ -49,7 +52,6 @@
         tr:hover { background-color: #f1f2f6; }
         .col-nome { text-align: left; font-weight: bold; }
         .col-total { font-weight: bold; background-color: #f8f9fa; color: #2c3e50;}
-        
         .celula-destaque { background-color: #fff9c4 !important; color: #d35400 !important; font-weight: bold !important; border-radius: 4px; box-shadow: inset 0 0 5px rgba(211, 84, 0, 0.1);}
         
         .loading { text-align: center; color: #e67e22; font-weight: bold; display: none; margin-top: 10px; width: 100%; font-size: 18px;}
@@ -93,10 +95,10 @@
                 <label for="filtroMes">Selecione o Mês e Ano:</label>
                 <input type="month" id="filtroMes">
                 <button class="btn-filtrar" onclick="gerarRelatorioMensal()">Gerar Gráficos</button>
-                <div class="loading" id="msg-loading">Analisando milhares de registros... Isso pode levar alguns segundos ⏳</div>
+                <div class="loading" id="msg-loading">Analisando milhares de registros e calculando SLAs... ⏳</div>
             </div>
 
-            <div class="secao-titulo">🎯 Desempenho e Tempos de Entrega</div>
+            <div class="secao-titulo">🎯 Desempenho e Tempos de Entrega Totais</div>
             <div class="dashboard-grid">
                 <div class="chart-container">
                     <h3>🏆 Produtividade Total por Colaborador</h3>
@@ -106,9 +108,19 @@
                 </div>
                 
                 <div class="chart-container">
-                    <h3>⏱️ Evolução Diária do Lead Time (Em Horas)</h3>
+                    <h3>⏱️ Evolução Diária do Lead Time Total (Em Horas)</h3>
                     <div style="position: relative; height:300px; width:100%;">
                         <canvas id="chartSLA"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="secao-titulo">⏱️ Flutuação Diária dos Micro-SLAs (Gargalos)</div>
+            <div class="dashboard-grid">
+                <div class="chart-container chart-full">
+                    <h3>🔍 Tempo Médio entre as Etapas Internas da Operação (Em Horas)</h3>
+                    <div style="position: relative; height:350px; width:100%;">
+                        <canvas id="chartMicroSLA"></canvas>
                     </div>
                 </div>
             </div>
@@ -171,21 +183,17 @@
 
         var graficoProd = null;
         var graficoSLA = null;
+        var graficoMicroSLA = null;
         var graficoEtapas = null;
         var graficoSetores = null;
 
-        // ==========================================
-        // BASE DE GESTORES PERMITIDOS E LOGIN
-        // ==========================================
         var gestores = {
             "151357": { nome: "LUIZ HENRIQUE LINK LODI", senha: "Martin" },
             "1249":   { nome: "BRUNA QUEVEDO DA SILVA",  senha: "Maria" },
             "139320": { nome: "RENAN RIBEIRO REIS",      senha: "Olivia" }
         };
 
-        function verificarEnter(e) {
-            if (e.key === 'Enter') fazerLogin();
-        }
+        function verificarEnter(e) { if (e.key === 'Enter') fazerLogin(); }
 
         function fazerLogin() {
             var matricula = document.getElementById('matriculaGestor').value.trim();
@@ -196,7 +204,6 @@
                 document.getElementById('painel-relatorios').style.display = 'block';
                 document.getElementById('identificacao-logado').innerText = "👤 Acesso Liberado: " + gestores[matricula].nome;
                 
-                // Configura o mês atual no filtro assim que logar
                 var hoje = new Date();
                 var mes = String(hoje.getMonth() + 1).padStart(2, '0');
                 var ano = hoje.getFullYear();
@@ -207,7 +214,7 @@
         }
 
         // ==========================================
-        // LÓGICA DE RELATÓRIOS BI
+        // LÓGICA DE RELATÓRIOS BI E SLAS (TOTAIS E MICRO)
         // ==========================================
         function gerarRelatorioMensal() {
             var dataInput = document.getElementById('filtroMes').value;
@@ -217,10 +224,8 @@
 
             var ano = parseInt(dataInput.split('-')[0]);
             var mes = parseInt(dataInput.split('-')[1]) - 1; 
-
             var inicioMes = new Date(ano, mes, 1, 0, 0, 0).getTime();
             var fimMes = new Date(ano, mes + 1, 0, 23, 59, 59).getTime();
-
             var qtdDiasNoMes = new Date(ano, mes + 1, 0).getDate();
 
             bancoDeDados.collection("checkpoints_logistica")
@@ -240,153 +245,160 @@
         function processarDadosParaGraficos(resultado, qtdDiasNoMes) {
             var colaboradores = {};
             var totais = { separado: 0, conferido: 0, carregado: 0, recebido: 0, sepCentral: 0, entregue: 0 };
-            var slaPorDia = {}; 
-            var reqsMes = {}; 
+            var mapasDeTempo = {}; // Armazena a timeline de cada requisição entregue
 
             resultado.forEach(function(documento) {
                 var ev = documento.data();
                 var nome = ev.nome || "DESCONHECIDO";
                 var status = ev.status || "";
                 var ordem = ev.ordem;
-
-                if (!colaboradores[nome]) {
-                    colaboradores[nome] = { separado: 0, conferido: 0, carregado: 0, recebido: 0, sepCentral: 0, entregue: 0, total: 0 };
-                }
-
-                if (status.indexOf("Separado (Central)") !== -1) { 
-                    colaboradores[nome].sepCentral++; colaboradores[nome].total++; totais.sepCentral++;
-                }
-                else if (status.indexOf("Separado (Apoio)") !== -1 || status === "Separado") { 
-                    colaboradores[nome].separado++; colaboradores[nome].total++; totais.separado++;
-                }
-                else if (status.indexOf("Conferido") !== -1) { 
-                    colaboradores[nome].conferido++; colaboradores[nome].total++; totais.conferido++;
-                }
-                else if (status.indexOf("Carregado") !== -1) { 
-                    colaboradores[nome].carregado++; colaboradores[nome].total++; totais.carregado++;
-                }
-                else if (status.indexOf("Recebido") !== -1) { 
-                    colaboradores[nome].recebido++; colaboradores[nome].total++; totais.recebido++;
-                }
-                else if (status.indexOf("Entregue") !== -1) { 
-                    colaboradores[nome].entregue++; colaboradores[nome].total++; totais.entregue++;
-                }
-
                 var req = ev.requisicao;
-                if (!reqsMes[req]) reqsMes[req] = { eventos: [] };
-                reqsMes[req].eventos.push(ev);
+
+                // Contagem de Produtividade
+                if (!colaboradores[nome]) { colaboradores[nome] = { separado: 0, conferido: 0, carregado: 0, recebido: 0, sepCentral: 0, entregue: 0, total: 0 }; }
+
+                if (status.indexOf("Separado (Central)") !== -1) { colaboradores[nome].sepCentral++; colaboradores[nome].total++; totais.sepCentral++; }
+                else if (status.indexOf("Separado (Apoio)") !== -1 || status === "Separado") { colaboradores[nome].separado++; colaboradores[nome].total++; totais.separado++; }
+                else if (status.indexOf("Conferido") !== -1) { colaboradores[nome].conferido++; colaboradores[nome].total++; totais.conferido++; }
+                else if (status.indexOf("Carregado") !== -1) { colaboradores[nome].carregado++; colaboradores[nome].total++; totais.carregado++; }
+                else if (status.indexOf("Recebido") !== -1) { colaboradores[nome].recebido++; colaboradores[nome].total++; totais.recebido++; }
+                else if (status.indexOf("Entregue") !== -1) { colaboradores[nome].entregue++; colaboradores[nome].total++; totais.entregue++; }
+
+                // Montagem do Mapa de Tempo (Apenas requisições que tiveram "Entregue" neste mês)
+                if (status.indexOf("Entregue") !== -1) {
+                    if (!mapasDeTempo[req]) { mapasDeTempo[req] = { fim: ordem, origem: "DESCONHECIDA", timeline: {}, diaEntrega: new Date(ordem).getDate() }; }
+                    if (ordem > mapasDeTempo[req].fim) {
+                        mapasDeTempo[req].fim = ordem;
+                        mapasDeTempo[req].diaEntrega = new Date(ordem).getDate();
+                    }
+                }
             });
 
+            // Geração Tabela e Gráficos Simples
             renderizarTabela(colaboradores, totais);
             desenharGraficoEtapas(totais);
             desenharGraficoSetores(totais);
 
             var labelsNomes = [];
             var dataTotais = [];
-            
-            var arrayColaboradores = Object.keys(colaboradores).map(function(nome) {
-                return { nome: nome, total: colaboradores[nome].total };
-            });
+            var arrayColaboradores = Object.keys(colaboradores).map(function(nome) { return { nome: nome, total: colaboradores[nome].total }; });
             arrayColaboradores.sort((a, b) => b.total - a.total);
-
-            arrayColaboradores.forEach(function(colab) {
-                labelsNomes.push(colab.nome.split(" ")[0]); 
-                dataTotais.push(colab.total);
-            });
-
+            arrayColaboradores.forEach(function(colab) { labelsNomes.push(colab.nome.split(" ")[0]); dataTotais.push(colab.total); });
             desenharGraficoProdutividade(labelsNomes, dataTotais);
 
-            var buscasHistoricas = [];
+            // ==========================================
+            // MÁQUINA DO TEMPO: HISTÓRICO DE TIMELINES
+            // ==========================================
+            var buscasHistoricas = Object.keys(mapasDeTempo).map(function(req) {
+                return bancoDeDados.collection("checkpoints_logistica")
+                    .where("requisicao", "==", req)
+                    .get()
+                    .then(function(resHist) {
+                        var primeiroEvento = null;
+                        resHist.forEach(function(doc) {
+                            var evHist = doc.data();
+                            var st = evHist.status || "";
+                            var t = evHist.ordem;
 
-            Object.keys(reqsMes).forEach(function(req) {
-                var eventos = reqsMes[req].eventos;
-                var minEvento = eventos[0];
-                var maxEvento = eventos[0];
-                var isEntregue = false;
+                            if (!primeiroEvento || t < primeiroEvento.ordem) primeiroEvento = evHist;
 
-                eventos.forEach(function(e) {
-                    if (e.ordem < minEvento.ordem) minEvento = e;
-                    if (e.ordem > maxEvento.ordem) maxEvento = e;
-                    if (e.status.indexOf("Entregue") !== -1) isEntregue = true;
-                });
+                            // Monta a Timeline das Etapas
+                            if (st.indexOf("Separado (Central)") !== -1) {
+                                if (!mapasDeTempo[req].timeline.sepCentral || t < mapasDeTempo[req].timeline.sepCentral) mapasDeTempo[req].timeline.sepCentral = t;
+                            } else if (st.indexOf("Separado (Apoio)") !== -1 || st === "Separado") {
+                                if (!mapasDeTempo[req].timeline.sepApoio || t < mapasDeTempo[req].timeline.sepApoio) mapasDeTempo[req].timeline.sepApoio = t;
+                            } else if (st.indexOf("Conferido") !== -1) {
+                                if (!mapasDeTempo[req].timeline.conferido || t < mapasDeTempo[req].timeline.conferido) mapasDeTempo[req].timeline.conferido = t;
+                            } else if (st.indexOf("Carregado") !== -1) {
+                                if (!mapasDeTempo[req].timeline.carregado || t < mapasDeTempo[req].timeline.carregado) mapasDeTempo[req].timeline.carregado = t;
+                            } else if (st.indexOf("Recebido") !== -1) {
+                                if (!mapasDeTempo[req].timeline.recebido || t < mapasDeTempo[req].timeline.recebido) mapasDeTempo[req].timeline.recebido = t;
+                            }
+                        });
 
-                if (isEntregue) {
-                    var diaEntrega = new Date(maxEvento.ordem).getDate();
-                    if (!slaPorDia[diaEntrega]) {
-                        slaPorDia[diaEntrega] = { somaApoioMs: 0, qtdApoio: 0, somaCentralMs: 0, qtdCentral: 0 };
-                    }
-
-                    var statusInicialMes = minEvento.status || "";
-                    if (statusInicialMes.indexOf("Separado") === -1) {
-                        var promessa = bancoDeDados.collection("checkpoints_logistica")
-                            .where("requisicao", "==", req).get().then(function(hist) {
-                                var verdadeiroMinimo = null;
-                                hist.forEach(docH => {
-                                    var evH = docH.data();
-                                    if (!verdadeiroMinimo || evH.ordem < verdadeiroMinimo.ordem) verdadeiroMinimo = evH;
-                                });
-                                if (verdadeiroMinimo) processarLeadTime(verdadeiroMinimo, maxEvento, diaEntrega, slaPorDia);
-                            });
-                        buscasHistoricas.push(promessa);
-                    } else {
-                        processarLeadTime(minEvento, maxEvento, diaEntrega, slaPorDia);
-                    }
-                }
+                        if (primeiroEvento) {
+                            var statusOrigem = primeiroEvento.status || "";
+                            if (statusOrigem.indexOf("Apoio") !== -1 || statusOrigem === "Separado") mapasDeTempo[req].origem = "APOIO";
+                            else if (statusOrigem.indexOf("Central") !== -1) mapasDeTempo[req].origem = "CENTRAL";
+                            mapasDeTempo[req].inicio = primeiroEvento.ordem;
+                        }
+                    });
             });
 
+            // Processamento Final dos Gaps Diários
             Promise.all(buscasHistoricas).then(function() {
+                var slaPorDia = {};
+                for(var i=1; i<=qtdDiasNoMes; i++) {
+                    slaPorDia[i] = {
+                        leadApoioSoma:0, leadApoioQtd:0,
+                        leadCentralSoma:0, leadCentralQtd:0,
+                        g1Soma:0, g1Qtd:0, // Sep -> Conf
+                        g2Soma:0, g2Qtd:0, // Conf -> Carr
+                        g3Soma:0, g3Qtd:0, // Carr -> Rec
+                        g4Soma:0, g4Qtd:0, // Rec -> Ent
+                        g5Soma:0, g5Qtd:0  // SepC -> Ent
+                    };
+                }
+
+                for (var req in mapasDeTempo) {
+                    var tempo = mapasDeTempo[req];
+                    var tLine = tempo.timeline;
+                    var fim = tempo.fim;
+                    var dia = tempo.diaEntrega;
+
+                    // Lead Time Total
+                    if (tempo.inicio && fim && fim >= tempo.inicio && tempo.origem !== "DESCONHECIDA") {
+                        var dif = fim - tempo.inicio;
+                        if (tempo.origem === "APOIO") { slaPorDia[dia].leadApoioSoma += dif; slaPorDia[dia].leadApoioQtd++; }
+                        else if (tempo.origem === "CENTRAL") { slaPorDia[dia].leadCentralSoma += dif; slaPorDia[dia].leadCentralQtd++; }
+                    }
+
+                    // Micro SLAs (Gaps Internos)
+                    if (tLine) {
+                        if (tLine.sepApoio && tLine.conferido && tLine.conferido >= tLine.sepApoio) { slaPorDia[dia].g1Soma += (tLine.conferido - tLine.sepApoio); slaPorDia[dia].g1Qtd++; }
+                        if (tLine.conferido && tLine.carregado && tLine.carregado >= tLine.conferido) { slaPorDia[dia].g2Soma += (tLine.carregado - tLine.conferido); slaPorDia[dia].g2Qtd++; }
+                        if (tLine.carregado && tLine.recebido && tLine.recebido >= tLine.carregado) { slaPorDia[dia].g3Soma += (tLine.recebido - tLine.carregado); slaPorDia[dia].g3Qtd++; }
+                        if (tLine.recebido && fim && fim >= tLine.recebido) { slaPorDia[dia].g4Soma += (fim - tLine.recebido); slaPorDia[dia].g4Qtd++; }
+                        if (tLine.sepCentral && fim && fim >= tLine.sepCentral) { slaPorDia[dia].g5Soma += (fim - tLine.sepCentral); slaPorDia[dia].g5Qtd++; }
+                    }
+                }
+
                 var labelsDias = [];
-                var dataSlaApoio = [];
-                var dataSlaCentral = [];
+                var dataLeadApoio = [], dataLeadCentral = [];
+                var dataG1 = [], dataG2 = [], dataG3 = [], dataG4 = [], dataG5 = [];
 
                 for (var i = 1; i <= qtdDiasNoMes; i++) {
                     labelsDias.push("Dia " + i);
+                    var d = slaPorDia[i];
                     
-                    if (slaPorDia[i]) {
-                        var diaData = slaPorDia[i];
-                        if (diaData.qtdApoio > 0) {
-                            var mediaMs = diaData.somaApoioMs / diaData.qtdApoio;
-                            dataSlaApoio.push((mediaMs / (1000 * 60 * 60)).toFixed(2));
-                        } else { dataSlaApoio.push(null); }
-
-                        if (diaData.qtdCentral > 0) {
-                            var mediaMsC = diaData.somaCentralMs / diaData.qtdCentral;
-                            dataSlaCentral.push((mediaMsC / (1000 * 60 * 60)).toFixed(2));
-                        } else { dataSlaCentral.push(null); }
-                    } else {
-                        dataSlaApoio.push(null);
-                        dataSlaCentral.push(null);
-                    }
+                    // Converte MS para Horas
+                    dataLeadApoio.push(d.leadApoioQtd > 0 ? ((d.leadApoioSoma/d.leadApoioQtd)/(1000*60*60)).toFixed(2) : null);
+                    dataLeadCentral.push(d.leadCentralQtd > 0 ? ((d.leadCentralSoma/d.leadCentralQtd)/(1000*60*60)).toFixed(2) : null);
+                    
+                    dataG1.push(d.g1Qtd > 0 ? ((d.g1Soma/d.g1Qtd)/(1000*60*60)).toFixed(2) : null);
+                    dataG2.push(d.g2Qtd > 0 ? ((d.g2Soma/d.g2Qtd)/(1000*60*60)).toFixed(2) : null);
+                    dataG3.push(d.g3Qtd > 0 ? ((d.g3Soma/d.g3Qtd)/(1000*60*60)).toFixed(2) : null);
+                    dataG4.push(d.g4Qtd > 0 ? ((d.g4Soma/d.g4Qtd)/(1000*60*60)).toFixed(2) : null);
+                    dataG5.push(d.g5Qtd > 0 ? ((d.g5Soma/d.g5Qtd)/(1000*60*60)).toFixed(2) : null);
                 }
 
-                desenharGraficoSLA(labelsDias, dataSlaApoio, dataSlaCentral);
+                desenharGraficoSLA(labelsDias, dataLeadApoio, dataLeadCentral);
+                desenharGraficoMicroSLA(labelsDias, dataG1, dataG2, dataG3, dataG4, dataG5);
+                
                 document.getElementById('msg-loading').style.display = 'none';
-
             });
         }
 
-        function processarLeadTime(minEv, maxEv, dia, slaPorDia) {
-            var ms = maxEv.ordem - minEv.ordem;
-            var origem = minEv.status || "";
-            
-            if (origem.indexOf("Apoio") !== -1 || origem === "Separado") {
-                slaPorDia[dia].somaApoioMs += ms;
-                slaPorDia[dia].qtdApoio++;
-            } else if (origem.indexOf("Central") !== -1) {
-                slaPorDia[dia].somaCentralMs += ms;
-                slaPorDia[dia].qtdCentral++;
-            }
-        }
-
+        // ==========================================
+        // RENDERIZAÇÃO TABELA
+        // ==========================================
         function renderizarTabela(colaboradores, totais) {
             var corpoTabela = document.getElementById('corpo-tabela');
             corpoTabela.innerHTML = ''; 
             var listaNomes = Object.keys(colaboradores).sort();
-
             if (listaNomes.length === 0) return;
 
             var maximos = { separado: 0, conferido: 0, carregado: 0, recebido: 0, sepCentral: 0, entregue: 0, total: 0 };
-            
             listaNomes.forEach(function(nome) {
                 var d = colaboradores[nome];
                 if(d.separado > maximos.separado) maximos.separado = d.separado;
@@ -400,9 +412,7 @@
 
             function formatarCelula(valor, valorMaximo, isTotal = false) {
                 var classe = isTotal ? "col-total" : "";
-                if (valor > 0 && valor === valorMaximo) {
-                    return '<td class="' + classe + ' celula-destaque">' + valor + ' 🏆</td>';
-                }
+                if (valor > 0 && valor === valorMaximo) { return '<td class="' + classe + ' celula-destaque">' + valor + ' 🏆</td>'; }
                 return '<td class="' + classe + '">' + valor + '</td>';
             }
 
@@ -438,21 +448,24 @@
         // ==========================================
         // CHART.JS - DESENHO DOS GRÁFICOS
         // ==========================================
+        // Função de formatação comum para Tooltips
+        var pluginTooltipHoras = {
+            callbacks: {
+                label: function(context) {
+                    var horasDecimais = context.parsed.y;
+                    var horas = Math.floor(horasDecimais);
+                    var minutos = Math.round((horasDecimais - horas) * 60);
+                    return context.dataset.label + ': ' + horas + 'h ' + minutos + 'm';
+                }
+            }
+        };
+
         function desenharGraficoProdutividade(labels, dados) {
             var ctx = document.getElementById('chartProdutividade').getContext('2d');
             if (graficoProd) graficoProd.destroy(); 
-
             graficoProd = new Chart(ctx, {
                 type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Total de Volumes',
-                        data: dados,
-                        backgroundColor: '#9b59b6',
-                        borderRadius: 4
-                    }]
-                },
+                data: { labels: labels, datasets: [{ label: 'Total de Volumes', data: dados, backgroundColor: '#9b59b6', borderRadius: 4 }] },
                 options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } }, plugins: { legend: { display: false } } }
             });
         }
@@ -460,49 +473,46 @@
         function desenharGraficoSLA(labels, apoio, central) {
             var ctx = document.getElementById('chartSLA').getContext('2d');
             if (graficoSLA) graficoSLA.destroy();
-
             graficoSLA = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: labels,
                     datasets: [
-                        { label: 'SLA Apoio (Horas)', data: apoio, borderColor: '#f39c12', backgroundColor: '#f39c12', tension: 0.3, pointRadius: 4 },
-                        { label: 'SLA Central (Horas)', data: central, borderColor: '#1abc9c', backgroundColor: '#1abc9c', tension: 0.3, pointRadius: 4 }
+                        { label: 'Lead Time Apoio', data: apoio, borderColor: '#f39c12', backgroundColor: '#f39c12', tension: 0.3, pointRadius: 4 },
+                        { label: 'Lead Time Central', data: central, borderColor: '#1abc9c', backgroundColor: '#1abc9c', tension: 0.3, pointRadius: 4 }
                     ]
                 },
-                options: {
-                    responsive: true, maintainAspectRatio: false, spanGaps: true, 
-                    scales: { y: { beginAtZero: true, title: { display: true, text: 'Tempo Médio (Horas)'} } },
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    var horasDecimais = context.parsed.y;
-                                    var horas = Math.floor(horasDecimais);
-                                    var minutos = Math.round((horasDecimais - horas) * 60);
-                                    return context.dataset.label + ': ' + horas + 'h ' + minutos + 'm';
-                                }
-                            }
-                        }
-                    }
-                }
+                options: { responsive: true, maintainAspectRatio: false, spanGaps: true, scales: { y: { beginAtZero: true, title: { display: true, text: 'Tempo (Horas)'} } }, plugins: { tooltip: pluginTooltipHoras } }
+            });
+        }
+
+        function desenharGraficoMicroSLA(labels, g1, g2, g3, g4, g5) {
+            var ctx = document.getElementById('chartMicroSLA').getContext('2d');
+            if (graficoMicroSLA) graficoMicroSLA.destroy();
+            graficoMicroSLA = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'Sep ➔ Conf', data: g1, borderColor: '#f1c40f', backgroundColor: '#f1c40f', tension: 0.4, pointRadius: 3 },
+                        { label: 'Conf ➔ Transp', data: g2, borderColor: '#e67e22', backgroundColor: '#e67e22', tension: 0.4, pointRadius: 3 },
+                        { label: 'Transp ➔ Rec', data: g3, borderColor: '#d35400', backgroundColor: '#d35400', tension: 0.4, pointRadius: 3, borderDash: [5, 5] },
+                        { label: 'Rec ➔ Entrega', data: g4, borderColor: '#3498db', backgroundColor: '#3498db', tension: 0.4, pointRadius: 3 },
+                        { label: 'Sep Central ➔ Entrega', data: g5, borderColor: '#9b59b6', backgroundColor: '#9b59b6', tension: 0.4, pointRadius: 3 }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, spanGaps: true, scales: { y: { beginAtZero: true, title: { display: true, text: 'Tempo do Trecho (Horas)'} } }, plugins: { tooltip: pluginTooltipHoras, legend: { position: 'bottom' } } }
             });
         }
 
         function desenharGraficoEtapas(totais) {
             var ctx = document.getElementById('chartEtapas').getContext('2d');
             if (graficoEtapas) graficoEtapas.destroy();
-
             graficoEtapas = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: ['Sep. Apoio', 'Conferido', 'Carregado', 'Recebido', 'Sep. Central', 'Entregue'],
-                    datasets: [{
-                        label: 'Volumes Processados',
-                        data: [totais.separado, totais.conferido, totais.carregado, totais.recebido, totais.sepCentral, totais.entregue],
-                        backgroundColor: ['#f39c12', '#8e44ad', '#d35400', '#3498db', '#16a085', '#2ecc71'],
-                        borderRadius: 4
-                    }]
+                    datasets: [{ label: 'Volumes Processados', data: [totais.separado, totais.conferido, totais.carregado, totais.recebido, totais.sepCentral, totais.entregue], backgroundColor: ['#f39c12', '#8e44ad', '#d35400', '#3498db', '#16a085', '#2ecc71'], borderRadius: 4 }]
                 },
                 options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } }, plugins: { legend: { display: false } } }
             });
@@ -511,25 +521,12 @@
         function desenharGraficoSetores(totais) {
             var ctx = document.getElementById('chartSetores').getContext('2d');
             if (graficoSetores) graficoSetores.destroy();
-
             var totalApoio = totais.separado + totais.conferido + totais.carregado;
             var totalCentral = totais.recebido + totais.sepCentral + totais.entregue;
-
             graficoSetores = new Chart(ctx, {
                 type: 'doughnut',
-                data: {
-                    labels: ['Fluxo Apoio (Sep, Conf, Car)', 'Fluxo Central (Rec, Sep C, Ent)'],
-                    datasets: [{
-                        data: [totalApoio, totalCentral],
-                        backgroundColor: ['#e67e22', '#2980b9'],
-                        hoverOffset: 6
-                    }]
-                },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom' } } 
-                }
+                data: { labels: ['Fluxo Apoio', 'Fluxo Central'], datasets: [{ data: [totalApoio, totalCentral], backgroundColor: ['#e67e22', '#2980b9'], hoverOffset: 6 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
             });
         }
     </script>
