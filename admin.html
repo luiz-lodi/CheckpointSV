@@ -40,6 +40,9 @@
         .msg-card { background: #fdfefe; border-left: 4px solid #f1c40f; padding: 12px 15px; margin-bottom: 10px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);}
         .msg-header { font-size: 12px; color: #7f8c8d; margin-bottom: 5px; border-bottom: 1px dashed #eee; padding-bottom: 5px;}
         .msg-texto { font-size: 15px; color: #2c3e50; white-space: pre-wrap;}
+        
+        .btn-excluir-msg { background: none; border: none; color: #e74c3c; float: right; cursor: pointer; font-size: 12px; font-weight: bold; transition: 0.2s; }
+        .btn-excluir-msg:hover { color: #c0392b; text-decoration: underline; }
 
         /* TABELA GERAL E EXCLUSÃO */
         .filtro-container { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 15px; }
@@ -213,7 +216,6 @@
         // ==========================================
         function fazerLogin() {
             var matricula = document.getElementById('matriculaGestor').value.trim();
-            // AQUI corrigimos o toLowerCase() para ele aceitar maiúsculas nas senhas!
             var senha = document.getElementById('senhaGestor').value.trim();
             
             if (gestores[matricula] && gestores[matricula].senha === senha) {
@@ -231,14 +233,14 @@
                 
                 carregarDados();
                 carregarMensagens();
-                carregarAuditoria(); // Puxa a tabela nova no final
+                carregarAuditoria(); 
             } else {
                 document.getElementById('msg-erro').style.display = 'block';
             }
         }
 
         // ==========================================
-        // MÓDULO DE MENSAGENS
+        // MÓDULO DE MENSAGENS (COM EXCLUSÃO)
         // ==========================================
         function salvarMensagem() {
             var texto = document.getElementById('textoMensagem').value.trim();
@@ -273,8 +275,13 @@
                         divLista.innerHTML = '';
                         resultado.forEach(function(doc) {
                             var msg = doc.data();
+                            var idMensagem = doc.id; // Pega o ID único do aviso no banco
+                            
                             var html = '<div class="msg-card">' +
-                                            '<div class="msg-header">🗣️ Postado por <strong>' + msg.autor + '</strong> em ' + msg.data + '</div>' +
+                                            '<div class="msg-header">' +
+                                                '🗣️ Postado por <strong>' + msg.autor + '</strong> em ' + msg.data + 
+                                                '<button class="btn-excluir-msg" onclick="excluirAviso(\'' + idMensagem + '\')">❌ Excluir</button>' +
+                                            '</div>' +
                                             '<div class="msg-texto">' + msg.texto + '</div>' +
                                        '</div>';
                             divLista.innerHTML += html;
@@ -283,8 +290,20 @@
                 });
         }
 
+        function excluirAviso(idMensagem) {
+            if (confirm("Tem certeza que deseja apagar este aviso do mural?")) {
+                bancoDeDados.collection("mensagens_gestao").doc(idMensagem).delete()
+                .then(function() {
+                    carregarMensagens(); // Recarrega a tela instantaneamente
+                })
+                .catch(function(erro) {
+                    alert("Erro ao excluir o aviso: " + erro.message);
+                });
+            }
+        }
+
         // ==========================================
-        // BUSCA E EXIBIÇÃO DA TELA DE EXCLUSÃO
+        // BUSCA E EXIBIÇÃO DA TELA DE EXCLUSÃO (LOGÍSTICA)
         // ==========================================
         function carregarDados() {
             var dataInput = document.getElementById('filtroData').value;
@@ -335,14 +354,14 @@
         }
 
         // ==========================================
-        // MÓDULO DE AUDITORIA (NOVO)
+        // MÓDULO DE AUDITORIA 
         // ==========================================
         function carregarAuditoria() {
             var corpoAuditoria = document.getElementById('corpo-auditoria');
             
             bancoDeDados.collection("historico_exclusoes")
                 .orderBy("ordemExclusao", "desc")
-                .limit(20) // Exibe apenas os últimos 20 para manter a tela limpa
+                .limit(20) 
                 .get()
                 .then(function(resultado) {
                     if (resultado.empty) {
@@ -352,7 +371,6 @@
                         resultado.forEach(function(doc) {
                             var log = doc.data();
                             
-                            // Formatação elegante da tabela de log
                             var html = '<tr>' +
                                             '<td>' + log.dataExclusao + '</td>' +
                                             '<td style="color:#2980b9;"><strong>' + log.requisicao + '</strong> (Vol ' + log.volume + ')</td>' +
@@ -422,8 +440,8 @@
                 return bancoDeDados.collection("checkpoints_logistica").doc(idParaExcluir).delete();
             }).then(function() {
                 fecharModal();
-                carregarDados(); // Recarrega os bipes do dia
-                carregarAuditoria(); // Já atualiza a tabela de histórico ali embaixo!
+                carregarDados(); 
+                carregarAuditoria(); 
             }).catch(function(erro) {
                 alert("❌ Erro ao processar exclusão: " + erro.message);
                 fecharModal();
