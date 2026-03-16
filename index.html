@@ -44,13 +44,13 @@
         
         #box-operador { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #ecf0f1; }
         
-        /* NOVO CRACHÁ DE DESTAQUE DO OPERADOR */
+        /* NOVO CRACHÁ DE DESTAQUE DO OPERADOR (Ajustado para 1 linha) */
         .nome-destaque { 
             color: #2c3e50; 
             font-weight: bold; 
-            font-size: 13px; 
+            font-size: 14px; 
             margin-top: 8px; 
-            padding: 10px; 
+            padding: 8px; /* Caixa levemente mais fina */
             background-color: #fadbd8; 
             border: 2px dashed #e74c3c; 
             border-radius: 5px; 
@@ -59,10 +59,9 @@
         }
         .nome-destaque .operador-nome { 
             color: #c0392b; /* Vermelho escuro de destaque */
-            font-size: 1.4em; /* 40% maior */
-            display: block; 
-            margin-top: 4px; 
+            font-size: 1.1em; /* Levemente maior que o texto base */
             text-transform: uppercase; 
+            margin-left: 4px; /* Espaço entre os dois pontos e o nome */
         }
 
         .area-lote { background: #fff; padding: 12px; border-radius: 6px; border: 2px solid #ccc; margin-bottom: 10px; }
@@ -210,8 +209,8 @@
                 document.getElementById('idMatricula').readOnly = true;
                 
                 var display = document.getElementById('displayOperador');
-                // Aqui injetamos o novo formato de destaque
-                display.innerHTML = "👤 Usuário logado: <span class='operador-nome'>" + nomeOperadorAtual + "</span>";
+                // Aqui injetamos o novo formato de destaque (agora na mesma linha)
+                display.innerHTML = "👤 Usuário logado:<span class='operador-nome'>" + nomeOperadorAtual + "</span>";
                 display.style.display = "block";
                 
                 document.getElementById('btn-trocar-operador').style.display = "block";
