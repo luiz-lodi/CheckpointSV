@@ -149,7 +149,7 @@
         var etapaLoteAtual = ""; 
         var contadorLoteSessao = 0; 
         
-        // A Nova Memória Inteligente
+        // A Nova Memória Inteligente (Agora guarda um MAPA de volumes)
         var memoriaVolumes = {};
         
         var dicionarioEtapas = {
@@ -256,7 +256,6 @@
                     statusFinal = "Entregue (" + qrCodeLido + ")";
                 }
 
-                // Limpa instantaneamente para não travar o operador
                 document.getElementById('idRequisicao').value = '';
                 document.getElementById('idLocalQR').value = '';
                 document.getElementById('idRequisicao').focus();
@@ -351,7 +350,6 @@
             var requisicao = document.getElementById('idReqLote').value.trim();
             var statusFinal = dicionarioEtapas[etapaLoteAtual];
 
-            // Limpa instantaneamente
             document.getElementById('idReqLote').value = '';
             document.getElementById('idReqLote').focus();
 
@@ -359,7 +357,7 @@
         }
 
         // ==========================================
-        // O MOTOR DE INTELIGÊNCIA: CONSULTA NUVEM X MEMÓRIA
+        // O MOTOR DE INTELIGÊNCIA: MAPEADOR DE BURACOS
         // ==========================================
         function processarBipeInteligente(requisicao, statusFinal) {
             var chaveVolume = requisicao + "-" + statusFinal;
@@ -372,23 +370,30 @@
                 var dataAtual = new Date();
                 var inicioDoDia = new Date(dataAtual.getFullYear(), dataAtual.getMonth(), dataAtual.getDate()).getTime();
 
-                // NOVA BUSCA SIMPLIFICADA PARA EVITAR ERRO DE ÍNDICE NO FIREBASE
                 bancoDeDados.collection("checkpoints_logistica")
                     .where("requisicao", "==", requisicao)
                     .get()
                     .then(function(resultado) {
-                        var contagem = 0;
+                        var volumesOcupados = [];
                         
-                        // Faz a filtragem pelo status e data diretamente na memória do Palmtop
+                        // Lista exatamente quais volumes já existem pra essa etapa
                         resultado.forEach(function(doc) {
                             var ev = doc.data();
                             if (ev.status === statusFinal && ev.ordem >= inicioDoDia) {
-                                contagem++;
+                                volumesOcupados.push(parseInt(ev.volume) || 1);
                             }
                         });
                         
-                        memoriaVolumes[chaveVolume] = contagem + 1;
-                        executarSalvamentoNuvem(requisicao, statusFinal, memoriaVolumes[chaveVolume], matricula, opNome);
+                        memoriaVolumes[chaveVolume] = volumesOcupados; 
+                        
+                        // Acha o primeiro buraco disponível
+                        var proximoVolume = 1;
+                        while(memoriaVolumes[chaveVolume].includes(proximoVolume)) {
+                            proximoVolume++;
+                        }
+                        
+                        memoriaVolumes[chaveVolume].push(proximoVolume);
+                        executarSalvamentoNuvem(requisicao, statusFinal, proximoVolume, matricula, opNome);
                     })
                     .catch(function(erro) {
                         console.error(erro);
@@ -396,14 +401,17 @@
                         alert("Erro ao conectar com a base de dados: " + erro.message);
                     });
 
-            } else if (typeof memoriaVolumes[chaveVolume] === 'number') {
-                // Já fomos na nuvem antes (ou o cara tá metralhando), apenas soma +1 e vai
-                memoriaVolumes[chaveVolume]++;
-                executarSalvamentoNuvem(requisicao, statusFinal, memoriaVolumes[chaveVolume], matricula, opNome);
+            } else if (Array.isArray(memoriaVolumes[chaveVolume])) {
+                // Já fomos na nuvem. Acha o próximo buraco baseado na lista da memória
+                var proximoVolume = 1;
+                while(memoriaVolumes[chaveVolume].includes(proximoVolume)) {
+                    proximoVolume++;
+                }
+                
+                memoriaVolumes[chaveVolume].push(proximoVolume);
+                executarSalvamentoNuvem(requisicao, statusFinal, proximoVolume, matricula, opNome);
 
             } else if (memoriaVolumes[chaveVolume] === 'Buscando...') {
-                // O cara tá metralhando TÃO rápido que a primeira consulta ainda não voltou.
-                // Coloca esse bipe numa fila de espera por meio segundo e tenta de novo.
                 setTimeout(function() {
                     processarBipeInteligente(requisicao, statusFinal);
                 }, 300);
@@ -427,7 +435,6 @@
                 mostrarToast("✅ Salvo! (Vol " + novoEvento.volume + ")");
                 adicionarRegistroNaTela(novoEvento);
 
-                // Atualiza o painel de lote se ele estiver aberto
                 if (document.getElementById('tela-lote').style.display === 'block') {
                     contadorLoteSessao++;
                     document.getElementById('qtd-lote').innerText = contadorLoteSessao;
