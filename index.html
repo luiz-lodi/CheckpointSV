@@ -99,7 +99,7 @@
                 <div class="instrucao" style="color:#16a085;">MODO UNITÁRIO</div>
                 <div class="input-group">
                     <label for="idRequisicao">1. Requisição Tasy (7 dígitos):</label>
-                    <input type="number" id="idRequisicao" placeholder="Bipe a requisição">
+                    <input type="number" id="idRequisicao" placeholder="Bipe a requisição" onkeydown="return impedirLetras(event)">
                 </div>
                 <div class="input-group">
                     <label for="idLocalQR">2. Local / Etapa (QR Code):</label>
@@ -134,7 +134,7 @@
                     <div class="instrucao">PASSO 2: Bipe as requisições sequencialmente.</div>
                     <div class="input-group">
                         <label for="idReqLote">Requisição (7 dígitos):</label>
-                        <input type="number" id="idReqLote" placeholder="Bipe e aguarde...">
+                        <input type="number" id="idReqLote" placeholder="Bipe e aguarde..." onkeydown="return impedirLetras(event)">
                     </div>
                     <div id="contador-lote" style="text-align:center; font-weight:bold; color:#7f8c8d; margin-top:10px; padding-top:10px; border-top:1px solid #eee;">
                         Itens processados:<br>
@@ -176,6 +176,49 @@
         console.log("%c🚀 Checkpoint HSVP | Criado por Luiz Henrique Link Lodi & Gemini", "color: #3498db; font-size: 14px; font-weight: bold;");
 
         // ==========================================
+        // FUNÇÕES DE TRAVA DE TECLAS E HARDWARE
+        // ==========================================
+        function impedirLetras(e) {
+            // Permite: Backspace(8), Tab(9), Enter(13), Delete(46), Números(48-57) e Numpad(96-105)
+            var permitidos = [8, 9, 13, 46, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105];
+            if (permitidos.indexOf(e.keyCode) === -1) {
+                dispararAlertaErro(); 
+                return false; 
+            }
+            return true;
+        }
+
+        function dispararAlertaErro() {
+            try {
+                var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                var osc = audioCtx.createOscillator();
+                var gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.type = "square"; 
+                osc.frequency.value = 100; 
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.4);
+            } catch (e) { console.log("Erro som"); }
+        }
+
+        function mostrarToast(texto) {
+            var toast = document.getElementById("toast-sucesso");
+            toast.innerText = texto;
+            
+            if (!texto.includes("✅")) {
+                dispararAlertaErro(); 
+                toast.style.backgroundColor = "#e74c3c"; 
+            } else {
+                toast.style.backgroundColor = "#2ecc71";
+            }
+
+            toast.className = "mostrar";
+            setTimeout(function(){ toast.className = toast.className.replace("mostrar", ""); }, 1500);
+        }
+
+        // ==========================================
         // VARIÁVEIS E DICIONÁRIOS
         // ==========================================
         var nomeOperadorAtual = "";
@@ -204,37 +247,6 @@
         window.onload = function() {
             document.getElementById('idMatricula').focus();
         };
-
-    function dispararAlertaErro() {
-        // Feedback Sonoro instantâneo para erro
-        try {
-            var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            var osc = audioCtx.createOscillator();
-            var gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.type = "square"; 
-            osc.frequency.value = 100; 
-            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.4);
-        } catch (e) { console.log("Erro som"); }
-    }
-
-    function mostrarToast(texto) {
-        var toast = document.getElementById("toast-sucesso");
-        toast.innerText = texto;
-        
-        if (!texto.includes("✅")) {
-            dispararAlertaErro(); 
-            toast.style.backgroundColor = "#e74c3c"; 
-        } else {
-            toast.style.backgroundColor = "#2ecc71";
-        }
-
-        toast.className = "mostrar";
-        setTimeout(function(){ toast.className = toast.className.replace("mostrar", ""); }, 1500);
-    }
 
         // ==========================================
         // FLUXO 1: VALIDAÇÃO E CRACHÁ DO OPERADOR
@@ -293,13 +305,10 @@
         // ==========================================
         document.getElementById('idRequisicao').addEventListener('input', function(e) {
             var valor = this.value.trim();
-            
-            // Impede a entrada de qualquer coisa que não seja número (incluindo 'e' e '-')
             if (/[^0-9]/.test(valor)) {
                 this.value = valor.replace(/\D/g, ''); 
                 return;
             }
-
             if (this.value.length === 7) { 
                 if(checarOperador()) document.getElementById('idLocalQR').focus(); 
                 else this.value = "";
@@ -419,15 +428,12 @@
 
         document.getElementById('idReqLote').addEventListener('input', function(e) {
             var valor = this.value.trim();
-
-            // Bloqueio de letras instantâneo
             if (/[^0-9]/.test(valor)) {
                 this.value = valor.replace(/\D/g, '');
                 dispararAlertaErro(); 
                 mostrarToast("❌ Use apenas números na Requisição");
                 return;
             }
-
             if (this.value.length === 7) { 
                 dispararBipeLote(); 
             }
@@ -440,10 +446,8 @@
         function dispararBipeLote() {
             var requisicao = document.getElementById('idReqLote').value.trim();
             var statusFinal = dicionarioEtapas[etapaLoteAtual];
-
             document.getElementById('idReqLote').value = '';
             document.getElementById('idReqLote').focus();
-
             processarBipeInteligente(requisicao, statusFinal);
         }
 
@@ -457,7 +461,6 @@
 
             if (memoriaVolumes[chaveVolume] === undefined) {
                 memoriaVolumes[chaveVolume] = 'Buscando...';
-
                 var dataAtual = new Date();
                 var inicioDoDia = new Date(dataAtual.getFullYear(), dataAtual.getMonth(), dataAtual.getDate()).getTime();
 
@@ -466,21 +469,15 @@
                     .get()
                     .then(function(resultado) {
                         var volumesOcupados = [];
-                        
                         resultado.forEach(function(doc) {
                             var ev = doc.data();
                             if (ev.status === statusFinal && ev.ordem >= inicioDoDia) {
                                 volumesOcupados.push(parseInt(ev.volume) || 1);
                             }
                         });
-                        
                         memoriaVolumes[chaveVolume] = volumesOcupados; 
-                        
                         var proximoVolume = 1;
-                        while(memoriaVolumes[chaveVolume].includes(proximoVolume)) {
-                            proximoVolume++;
-                        }
-                        
+                        while(memoriaVolumes[chaveVolume].includes(proximoVolume)) { proximoVolume++; }
                         memoriaVolumes[chaveVolume].push(proximoVolume);
                         executarSalvamentoNuvem(requisicao, statusFinal, proximoVolume, matricula, opNome);
                     })
@@ -492,17 +489,11 @@
 
             } else if (Array.isArray(memoriaVolumes[chaveVolume])) {
                 var proximoVolume = 1;
-                while(memoriaVolumes[chaveVolume].includes(proximoVolume)) {
-                    proximoVolume++;
-                }
-                
+                while(memoriaVolumes[chaveVolume].includes(proximoVolume)) { proximoVolume++; }
                 memoriaVolumes[chaveVolume].push(proximoVolume);
                 executarSalvamentoNuvem(requisicao, statusFinal, proximoVolume, matricula, opNome);
-
             } else if (memoriaVolumes[chaveVolume] === 'Buscando...') {
-                setTimeout(function() {
-                    processarBipeInteligente(requisicao, statusFinal);
-                }, 300);
+                setTimeout(function() { processarBipeInteligente(requisicao, statusFinal); }, 300);
             }
         }
 
@@ -517,20 +508,16 @@
                 data: dataAtual.toLocaleString('pt-BR'),
                 ordem: dataAtual.getTime()
             };
-
             bancoDeDados.collection("checkpoints_logistica").add(novoEvento)
             .then(function() {
                 mostrarToast("✅ Salvo! (Vol " + novoEvento.volume + ")");
                 adicionarRegistroNaTela(novoEvento);
-
                 if (document.getElementById('tela-lote').style.display === 'block') {
                     contadorLoteSessao++;
                     document.getElementById('qtd-lote').innerText = contadorLoteSessao;
                 }
             })
-            .catch(function(erro) {
-                mostrarToast("❌ Erro ao gravar."); 
-            });
+            .catch(function(erro) { mostrarToast("❌ Erro ao gravar."); });
         }
 
         function adicionarRegistroNaTela(evento) {
@@ -539,7 +526,6 @@
             novoItem.className = 'registro';
             novoItem.innerHTML = '<strong>Req:</strong> ' + evento.requisicao + ' <span style="color:#d35400; font-weight:bold;">(Vol ' + evento.volume + ')</span><br>' +
                                  '<strong>Status:</strong> ' + evento.status;
-            
             if (divLista.firstChild) { divLista.insertBefore(novoItem, divLista.firstChild); } 
             else { divLista.appendChild(novoItem); }
         }
