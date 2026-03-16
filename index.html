@@ -19,19 +19,9 @@
 
         .input-group { margin-bottom: 12px; }
         .input-group label { display: block; margin-bottom: 4px; font-weight: bold; font-size: 13px; color: #2c3e50;}
-        
-        /* Inputs normais (Requisição, Local, etc) */
-        .input-group input[type="number"], .input-group input[type="text"]:not(#idMatricula) { width: 100%; padding: 12px; border: 2px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 16px; margin-bottom: 2px; transition: 0.2s;}
+        .input-group input { width: 100%; padding: 12px; border: 2px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 16px; margin-bottom: 2px; transition: 0.2s;}
         .input-group input:focus { border-color: #3498db; outline: none; background-color: #f0f8ff; }
         .input-group input:read-only { background-color: #ecf0f1; border-color: #bdc3c7; color: #7f8c8d; }
-        
-        /* Flexbox exclusivo para colocar o input e o botão do teclado lado a lado apenas na Matrícula */
-        .input-flex { display: flex; gap: 5px; margin-bottom: 2px;}
-        .input-flex input { flex: 1; width: 100%; padding: 12px; border: 2px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 16px; transition: 0.2s;}
-        
-        /* Botão Teclado corrigido para texto em vez de emoji */
-        .btn-teclado { width: auto; padding: 0 15px; background-color: #bdc3c7; border: none; border-radius: 5px; font-size: 13px; font-weight: bold; color: #2c3e50; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s;}
-        .btn-teclado:hover { background-color: #95a5a6; }
 
         button { width: 100%; padding: 12px; border: none; border-radius: 5px; color: white; font-size: 14px; font-weight: bold; cursor: pointer; margin-bottom: 5px; }
         
@@ -97,10 +87,7 @@
         <div id="box-operador">
             <div class="input-group">
                 <label for="idMatricula">Matrícula (Bipe o crachá):</label>
-                <div class="input-flex">
-                    <input type="text" id="idMatricula" placeholder="Bipe ou digite..." inputmode="none">
-                    <button type="button" class="btn-teclado" onclick="ativarTecladoManual('idMatricula')">Teclado</button>
-                </div>
+                <input type="number" id="idMatricula" placeholder="Digite e Enter">
                 <div id="displayOperador" class="nome-destaque"></div>
             </div>
             <button id="btn-trocar-operador" class="btn-limpar" style="display:none;" onclick="trocarOperador()">🔄 Trocar Usuário</button>
@@ -111,11 +98,11 @@
                 <div class="instrucao" style="color:#16a085;">MODO UNITÁRIO</div>
                 <div class="input-group">
                     <label for="idRequisicao">1. Requisição Tasy (7 dígitos):</label>
-                    <input type="text" id="idRequisicao" placeholder="Bipe a requisição..." inputmode="none">
+                    <input type="number" id="idRequisicao" placeholder="Bipe a requisição">
                 </div>
                 <div class="input-group">
                     <label for="idLocalQR">2. Local / Etapa (QR Code):</label>
-                    <input type="text" id="idLocalQR" placeholder="Bipe a parede..." inputmode="none">
+                    <input type="text" id="idLocalQR" placeholder="Bipe a parede">
                 </div>
             </div>
 
@@ -137,7 +124,8 @@
                 <div id="passo1-lote">
                     <div class="instrucao" id="texto-passo1" style="color:#e74c3c;">PASSO 1: Bipe a parede.</div>
                     <div class="input-group">
-                        <input type="text" id="idLocalQRLote" placeholder="Bipe a parede..." inputmode="none">
+                        <label for="idLocalQRLote">Travar Local:</label>
+                        <input type="text" id="idLocalQRLote" placeholder="Bipe a parede...">
                     </div>
                 </div>
 
@@ -145,7 +133,7 @@
                     <div class="instrucao">PASSO 2: Bipe as requisições sequencialmente.</div>
                     <div class="input-group">
                         <label for="idReqLote">Requisição (7 dígitos):</label>
-                        <input type="text" id="idReqLote" placeholder="Bipe e aguarde..." inputmode="none">
+                        <input type="number" id="idReqLote" placeholder="Bipe e aguarde...">
                     </div>
                     <div id="contador-lote" style="text-align:center; font-weight:bold; color:#7f8c8d; margin-top:10px; padding-top:10px; border-top:1px solid #eee;">
                         Itens processados:<br>
@@ -212,31 +200,21 @@
         }
 
         // ==========================================
-        // CONTROLE DO TECLADO VIRTUAL
-        // ==========================================
-        function ativarTecladoManual(idCampo) {
-            var campo = document.getElementById(idCampo);
-            campo.inputMode = "text"; // Permite que o teclado virtual do Android suba
-            campo.focus();
-        }
-
-        // ==========================================
-        // FLUXO 1: VALIDAÇÃO E CRACHÁ DO OPERADOR
+        // FLUXO 1: VALIDAÇÃO E CRACHÁ DO OPERADOR (CORTADOR DE ZEROS ATIVO)
         // ==========================================
         function validarAcesso() {
-            var campoMatricula = document.getElementById('idMatricula');
-            var matRaw = campoMatricula.value.trim();
+            var matRaw = document.getElementById('idMatricula').value.trim();
             if (matRaw === "") return;
 
+            // Extrai os últimos 6 dígitos e converte em inteiro para remover zeros à esquerda
             var ultimosSeis = matRaw.slice(-6);
             var mat = parseInt(ultimosSeis, 10).toString();
 
             if (listaColaboradores[mat]) {
                 nomeOperadorAtual = listaColaboradores[mat];
                 
-                campoMatricula.value = mat;
-                campoMatricula.readOnly = true;
-                campoMatricula.inputMode = "none"; // Trava o teclado de novo
+                document.getElementById('idMatricula').value = mat;
+                document.getElementById('idMatricula').readOnly = true;
                 
                 var display = document.getElementById('displayOperador');
                 display.innerHTML = "👤 Usuário logado:<span class='operador-nome'>" + nomeOperadorAtual + "</span>";
@@ -246,9 +224,8 @@
                 document.getElementById('idRequisicao').focus();
             } else {
                 alert("Matrícula não encontrada!");
-                campoMatricula.value = "";
-                campoMatricula.inputMode = "none"; // Trava o teclado de novo
-                campoMatricula.focus();
+                document.getElementById('idMatricula').value = "";
+                document.getElementById('idMatricula').focus();
             }
         }
 
@@ -258,12 +235,11 @@
 
         function trocarOperador() {
             nomeOperadorAtual = "";
-            var campoMatricula = document.getElementById('idMatricula');
-            campoMatricula.readOnly = false;
-            campoMatricula.value = "";
+            document.getElementById('idMatricula').readOnly = false;
+            document.getElementById('idMatricula').value = "";
             document.getElementById('displayOperador').style.display = "none";
             document.getElementById('btn-trocar-operador').style.display = "none";
-            campoMatricula.focus();
+            document.getElementById('idMatricula').focus();
         }
 
         function checarOperador() {
@@ -288,7 +264,6 @@
         document.getElementById('idRequisicao').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault(); 
-                this.inputMode = "none"; 
                 if (this.value.trim().length === 7) { 
                     if(checarOperador()) document.getElementById('idLocalQR').focus();
                     else this.value = "";
@@ -299,7 +274,6 @@
         document.getElementById('idLocalQR').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') { 
                 e.preventDefault(); 
-                this.inputMode = "none";
                 if(!checarOperador()) return;
                 
                 var requisicao = document.getElementById('idRequisicao').value.trim();
@@ -364,7 +338,6 @@
         document.getElementById('idLocalQRLote').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault(); 
-                this.inputMode = "none";
                 var qrLido = document.getElementById('idLocalQRLote').value.trim().toUpperCase();
 
                 if (tipoLoteAtual === 'CONFERENTE' && qrLido !== "QR-CONFERIDO") {
@@ -399,18 +372,11 @@
         });
 
         document.getElementById('idReqLote').addEventListener('input', function(e) {
-            if (this.value.trim().length === 7) { 
-                this.inputMode = "none"; 
-                dispararBipeLote(); 
-            }
+            if (this.value.trim().length === 7) { dispararBipeLote(); }
         });
 
         document.getElementById('idReqLote').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') { 
-                e.preventDefault(); 
-                this.inputMode = "none"; 
-                if (this.value.trim().length === 7) dispararBipeLote(); 
-            }
+            if (e.key === 'Enter') { e.preventDefault(); if (this.value.trim().length === 7) dispararBipeLote(); }
         });
 
         function dispararBipeLote() {
