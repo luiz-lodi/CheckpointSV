@@ -72,7 +72,7 @@
         <div class="subtitulo">Visão macro da operação mensal com gráficos e tendências</div>
 
         <div id="tela-login">
-            <h3 style="color: #2c3e50; margin-top: 0;">Acesso Restrito - Diretoria e Gestão</h3>
+            <h3 style="color: #2c3e50; margin-top: 0;">Acesso Restrito - Gestores</h3>
             
             <div class="input-group">
                 <label>Matrícula:</label>
@@ -202,7 +202,7 @@
             if (gestores[matricula] && gestores[matricula].senha === senha) {
                 document.getElementById('tela-login').style.display = 'none';
                 document.getElementById('painel-relatorios').style.display = 'block';
-                document.getElementById('identificacao-logado').innerText = "👤 Acesso Liberado: " + gestores[matricula].nome;
+                document.getElementById('identificacao-logado').innerText = "👤 Usuário: " + gestores[matricula].nome;
                 
                 var hoje = new Date();
                 var mes = String(hoje.getMonth() + 1).padStart(2, '0');
