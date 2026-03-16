@@ -39,6 +39,9 @@
         .col-nome { text-align: left; font-weight: bold; }
         .col-total { font-weight: bold; background-color: #f8f9fa; color: #2c3e50;}
         
+        /* Estilo do Troféu */
+        .celula-destaque { background-color: #fff9c4 !important; color: #d35400 !important; font-weight: bold !important; border-radius: 4px; box-shadow: inset 0 0 5px rgba(211, 84, 0, 0.1);}
+        
         .loading { text-align: center; color: #e67e22; font-weight: bold; display: none; margin-top: 10px; width: 100%; font-size: 18px;}
     </style>
 </head>
@@ -181,7 +184,6 @@
             var slaPorDia = {}; 
             var reqsMes = {}; 
 
-            // 1. Varre todos os dados do mês e acumula Totais Globais + Colaboradores
             resultado.forEach(function(documento) {
                 var ev = documento.data();
                 var nome = ev.nome || "DESCONHECIDO";
@@ -211,20 +213,17 @@
                     colaboradores[nome].entregue++; colaboradores[nome].total++; totais.entregue++;
                 }
 
-                // Prepara lógica de SLA
                 var req = ev.requisicao;
                 if (!reqsMes[req]) reqsMes[req] = { eventos: [] };
                 reqsMes[req].eventos.push(ev);
             });
 
-            // 2. Renderiza a Tabela de Produtividade Mensal com a linha de TOTAL
+            // Chama a tabela passando os colaboradores e os totais
             renderizarTabela(colaboradores, totais);
 
-            // 3. Desenha os NOVOS Gráficos de Etapas e Setores
             desenharGraficoEtapas(totais);
             desenharGraficoSetores(totais);
 
-            // 4. Organiza dados para o Gráfico de Produtividade
             var labelsNomes = [];
             var dataTotais = [];
             
@@ -240,7 +239,6 @@
 
             desenharGraficoProdutividade(labelsNomes, dataTotais);
 
-            // 5. Lógica Otimizada de SLA Mensal
             var buscasHistoricas = [];
 
             Object.keys(reqsMes).forEach(function(req) {
@@ -330,17 +328,39 @@
 
             if (listaNomes.length === 0) return;
 
+            // Encontra os maiores valores de cada coluna para dar o troféu
+            var maximos = { separado: 0, conferido: 0, carregado: 0, recebido: 0, sepCentral: 0, entregue: 0, total: 0 };
+            
             listaNomes.forEach(function(nome) {
                 var d = colaboradores[nome];
+                if(d.separado > maximos.separado) maximos.separado = d.separado;
+                if(d.conferido > maximos.conferido) maximos.conferido = d.conferido;
+                if(d.carregado > maximos.carregado) maximos.carregado = d.carregado;
+                if(d.recebido > maximos.recebido) maximos.recebido = d.recebido;
+                if(d.sepCentral > maximos.sepCentral) maximos.sepCentral = d.sepCentral;
+                if(d.entregue > maximos.entregue) maximos.entregue = d.entregue;
+                if(d.total > maximos.total) maximos.total = d.total;
+            });
+
+            function formatarCelula(valor, valorMaximo, isTotal = false) {
+                var classe = isTotal ? "col-total" : "";
+                if (valor > 0 && valor === valorMaximo) {
+                    return '<td class="' + classe + ' celula-destaque">' + valor + ' 🏆</td>';
+                }
+                return '<td class="' + classe + '">' + valor + '</td>';
+            }
+
+            listaNomes.forEach(function(nome) {
+                var dados = colaboradores[nome];
                 var linhaHTML = '<tr>' +
                                     '<td class="col-nome">' + nome + '</td>' +
-                                    '<td>' + d.separado + '</td>' +
-                                    '<td>' + d.conferido + '</td>' +
-                                    '<td>' + d.carregado + '</td>' +
-                                    '<td>' + d.recebido + '</td>' +
-                                    '<td>' + d.sepCentral + '</td>' +
-                                    '<td>' + d.entregue + '</td>' +
-                                    '<td class="col-total">' + d.total + '</td>' +
+                                    formatarCelula(dados.separado, maximos.separado) +
+                                    formatarCelula(dados.conferido, maximos.conferido) +
+                                    formatarCelula(dados.carregado, maximos.carregado) +
+                                    formatarCelula(dados.recebido, maximos.recebido) +
+                                    formatarCelula(dados.sepCentral, maximos.sepCentral) +
+                                    formatarCelula(dados.entregue, maximos.entregue) +
+                                    formatarCelula(dados.total, maximos.total, true) +
                                 '</tr>';
                 corpoTabela.innerHTML += linhaHTML;
             });
@@ -414,7 +434,6 @@
             });
         }
 
-        // NOVO: Gráfico de Etapas (Barras)
         function desenharGraficoEtapas(totais) {
             var ctx = document.getElementById('chartEtapas').getContext('2d');
             if (graficoEtapas) graficoEtapas.destroy();
@@ -434,7 +453,6 @@
             });
         }
 
-        // NOVO: Gráfico de Setores (Doughnut/Rosca)
         function desenharGraficoSetores(totais) {
             var ctx = document.getElementById('chartSetores').getContext('2d');
             if (graficoSetores) graficoSetores.destroy();
