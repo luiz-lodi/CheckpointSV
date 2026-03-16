@@ -195,19 +195,16 @@
         };
 
     function dispararAlertaErro() {
-        // Feedback Tátil
-        if (window.navigator && window.navigator.vibrate) {
-            window.navigator.vibrate([300, 100, 300]);
-        }
-        // Feedback Sonoro
+        // Removida a vibração para evitar redundância
+        // Mantido apenas o Feedback Sonoro instantâneo
         try {
             var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             var osc = audioCtx.createOscillator();
             var gain = audioCtx.createGain();
             osc.connect(gain);
             gain.connect(audioCtx.destination);
-            osc.type = "square"; // Som mais "industrial" para erro
-            osc.frequency.value = 100; // Tom bem grave
+            osc.type = "square"; 
+            osc.frequency.value = 100; 
             gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
             osc.start();
             osc.stop(audioCtx.currentTime + 0.4);
@@ -219,7 +216,7 @@
         toast.innerText = texto;
         
         if (!texto.includes("✅")) {
-            dispararAlertaErro(); // Aciona hardware no erro
+            dispararAlertaErro(); 
             toast.style.backgroundColor = "#e74c3c"; 
         } else {
             toast.style.backgroundColor = "#2ecc71";
