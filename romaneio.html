@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emissão de Romaneio - HSVP</title>
+    
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚚</text></svg>">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f4f4f9; color: #333; }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        
+        .box-login { max-width: 400px; margin: 40px auto; text-align: center; }
+        .box-login input { width: 100%; padding: 12px; font-size: 16px; margin-bottom: 15px; border: 2px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        .btn-acao { width: 100%; padding: 15px; font-size: 16px; font-weight: bold; border: none; border-radius: 5px; cursor: pointer; color: white; transition: 0.2s; }
+        .btn-entrar { background-color: #3498db; }
+        .btn-imprimir { background-color: #8e44ad; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .btn-atualizar { background-color: #f39c12; margin-bottom: 20px; width: auto; padding: 10px 20px;}
+
+        /* Tabela de Revisão na Tela */
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 15px; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #2c3e50; color: white; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        tr:hover { background-color: #f1f1f1; }
+
+        .resumo { display: flex; justify-content: space-between; align-items: center; background: #e8f6f3; padding: 15px; border-left: 5px solid #1abc9c; margin-bottom: 20px; border-radius: 4px; }
+        .resumo h2 { margin: 0; color: #16a085; }
+
+        #tela-romaneio { display: none; }
+        .footer-impressao { display: none; }
+
+        /* MAGIA DO CSS: Transforma a tela em papel A4 ao imprimir */
+        @media print {
+            body { background: white; padding: 0; }
+            .container { box-shadow: none; border-radius: 0; padding: 0; max-width: 100%; }
+            .no-print { display: none !important; }
+            table { font-size: 13px; border: 1px solid #000; }
+            th, td { border: 1px solid #000; padding: 8px; color: #000; }
+            th { background-color: #eee; color: #000; }
+            .footer-impressao { display: flex; justify-content: space-between; margin-top: 60px; text-align: center; }
+            .assinatura { border-top: 1px solid #000; width: 30%; padding-top: 5px; font-weight: bold; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1 class="no-print">🚚 Emissão de Romaneio de Carga</h1>
+
+        <div id="box-login" class="box-login">
+            <h3 style="color: #7f8c8d; margin-bottom: 20px;">Identificação do Emissor</h3>
+            <input type="number" id="idMatricula" placeholder="Digite sua Matrícula e Enter">
+            <button class="btn-acao btn-entrar" onclick="validarAcesso()">Acessar Sistema</button>
+        </div>
+
+        <div id="tela-romaneio">
+            <div class="no-print">
+                <button class="btn-acao btn-atualizar" onclick="buscarCargaAtual()">🔄 Atualizar Dados da Carga</button>
+            </div>
+
+            <div class="resumo">
+                <div>
+                    <strong>Emissor:</strong> <span id="nomeEmissor"></span><br>
+                    <strong>Data da Emissão:</strong> <span id="dataEmissao"></span>
+                </div>
+                <h2>Total de Volumes: <span id="totalVolumes">0</span></h2>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th width="15%">Hora Carga</th>
+                        <th width="20%">Requisição</th>
+                        <th width="15%">Volume</th>
+                        <th width="30%">Operador (Quem carregou)</th>
+                        <th width="20%" style="text-align: center;">Conf. Destino</th>
+                    </tr>
+                </thead>
+                <tbody id="corpo-tabela">
+                    <tr><td colspan="5" style="text-align:center;">Buscando dados no Kanban...</td></tr>
+                </tbody>
+            </table>
+
+            <div class="no-print" style="margin-top: 30px;">
+                <button class="btn-acao btn-imprimir" onclick="window.print()" id="btnImprimir" style="display:none;">
+                    🖨️ Imprimir Documento de Romaneio
+                </button>
+            </div>
+
+            <div class="footer-impressao">
+                <div class="assinatura">Expedição (Apoio)</div>
+                <div class="assinatura">Motorista (Transporte)</div>
+                <div class="assinatura">Recebimento (Central)</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuração Firebase
+        var firebaseConfig = {
+            apiKey: "AIzaSyDHUlqzRw_vSyp9livOvQ0rjBYT9l_yofs",
+            authDomain: "checkpoint-pedidos.firebaseapp.com",
+            projectId: "checkpoint-pedidos",
+            storageBucket: "checkpoint-pedidos.firebasestorage.app",
+            messagingSenderId: "890832634523",
+            appId: "1:890832634523:web:7f8fa0ee6a2a9c60e27c3e"
+        };
+        firebase.initializeApp(firebaseConfig);
+        var bancoDeDados = firebase.firestore();
+
+        var nomeOperadorAtual = "";
+        var listaColaboradores = {
+            "144006": "BRUNA LOURENCO", "1249": "BRUNA QUEVEDO", "168314": "CAIO MATHEUS", "167407": "ENI", 
+            "1764": "GUILHERME", "163591": "HENZO", "167702": "JOAO GUSTAVO", "151357": "LUIZ HENRIQUE", 
+            "54976": "MAURO", "500008": "OTÁVIO", "76988": "ROSELIA", "168297": "STEFANI", "168604": "ALESSANDRO", 
+            "162513": "DANIEL", "166732": "ARMANDO", "168313": "ERICK", "104602": "EVANDRO", "164846": "FERNANDA", 
+            "147628": "GABRIEL", "292": "IDERALDO", "166913": "LUIS GUSTAVO", "167733": "RAFAEL", "139320": "RENAN"
+        };
+
+        window.onload = function() { document.getElementById('idMatricula').focus(); };
+
+        document.getElementById('idMatricula').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') { e.preventDefault(); validarAcesso(); }
+        });
+
+        function validarAcesso() {
+            var matRaw = document.getElementById('idMatricula').value.trim();
+            if (matRaw === "") return;
+            var mat = parseInt(matRaw.slice(-6), 10).toString();
+            
+            if (listaColaboradores[mat]) {
+                nomeOperadorAtual = listaColaboradores[mat];
+                document.getElementById('box-login').style.display = 'none';
+                document.getElementById('tela-romaneio').style.display = 'block';
+                document.getElementById('nomeEmissor').innerText = nomeOperadorAtual;
+                
+                buscarCargaAtual(); // Já busca a carga ao entrar
+            } else {
+                alert("Matrícula não encontrada!");
+                document.getElementById('idMatricula').value = "";
+            }
+        }
+
+        function buscarCargaAtual() {
+            document.getElementById('corpo-tabela').innerHTML = '<tr><td colspan="5" style="text-align:center;">⏳ Consultando Kanban em tempo real...</td></tr>';
+            document.getElementById('btnImprimir').style.display = 'none';
+            document.getElementById('dataEmissao').innerText = new Date().toLocaleString('pt-BR');
+
+            var inicioDoDia = new Date().setHours(0,0,0,0);
+
+            // Busca todos os eventos de hoje para entender onde as caixas pararam
+            bancoDeDados.collection("checkpoints_logistica")
+                .where("ordem", ">=", inicioDoDia)
+                .get()
+                .then(function(resultado) {
+                    var ultimaSituacao = {};
+
+                    // Mapeia o Kanban: guarda apenas o ÚLTIMO status de cada Caixa
+                    resultado.forEach(function(doc) {
+                        var ev = doc.data();
+                        var reqVol = ev.requisicao + "-" + ev.volume; 
+                        
+                        if (!ultimaSituacao[reqVol] || ultimaSituacao[reqVol].ordem < ev.ordem) {
+                            ultimaSituacao[reqVol] = ev;
+                        }
+                    });
+
+                    // Filtra apenas as caixas que estão paradas na Doca (Carregadas)
+                    var itensNaCarga = Object.values(ultimaSituacao).filter(function(item) {
+                        return item.status === "Carregado (Transporte)";
+                    });
+
+                    renderizarTabela(itensNaCarga);
+                })
+                .catch(function(erro) {
+                    alert("Erro ao buscar dados do servidor.");
+                    console.error(erro);
+                });
+        }
+
+        function renderizarTabela(itens) {
+            var tbody = document.getElementById('corpo-tabela');
+            tbody.innerHTML = "";
+            document.getElementById('totalVolumes').innerText = itens.length;
+
+            if (itens.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#e74c3c; font-weight:bold;">Nenhum volume aguardando transporte no momento.</td></tr>';
+                return;
+            }
+
+            // Ordena pela hora em que foi carregado
+            itens.sort(function(a, b) { return a.ordem - b.ordem; });
+
+            itens.forEach(function(item) {
+                var linha = `
+                    <tr>
+                        <td>${item.data.split(' ')[1]}</td>
+                        <td style="font-size: 18px;"><strong>${item.requisicao}</strong></td>
+                        <td>Vol <strong>${item.volume}</strong></td>
+                        <td>${item.nome}</td>
+                        <td style="text-align: center; font-weight: bold; color: #7f8c8d;">[ &nbsp;&nbsp;&nbsp;&nbsp; ] OK</td>
+                    </tr>
+                `;
+                tbody.innerHTML += linha;
+            });
+
+            // Libera o botão de imprimir
+            document.getElementById('btnImprimir').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
+
+<!--
+=========================================================================
+SISTEMA WMS - CHECKPOINT LOGÍSTICO HSVP
+⚙️ Arquitetura de Negócio e Idealização: Luiz Henrique Link Lodi
+🧠 Engenharia de Software e IA: Gemini
+📅 Versão Final (Go-Live): Março de 2026
+
+"Tecnologia à serviço da operação e da eficiência hospitalar."
+-->
