@@ -45,7 +45,6 @@
         
         #box-operador { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #ecf0f1; }
         
-        /* NOVO CRACHÁ DE DESTAQUE DO OPERADOR (Ajustado para 1 linha) */
         .nome-destaque { 
             color: #2c3e50; 
             font-weight: bold; 
@@ -76,6 +75,10 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.2); opacity: 0; transition: opacity 0.2s;
         }
         #toast-sucesso.mostrar { visibility: visible; opacity: 1; }
+
+        /* Estilo para o histórico dentro do modo lote */
+        .lista-lote-interna { max-height: 150px; overflow-y: auto; margin-top: 10px; border-top: 1px solid #eee; padding-top: 10px; }
+        .registro-lote { background: #f8f9fa; padding: 5px; margin-bottom: 4px; border-radius: 3px; font-size: 11px; border-left: 3px solid #7f8c8d; }
     </style>
 </head>
 <body>
@@ -137,9 +140,10 @@
                         <input type="number" id="idReqLote" placeholder="Bipe e aguarde..." onkeydown="return impedirLetras(event)">
                     </div>
                     <div id="contador-lote" style="text-align:center; font-weight:bold; color:#7f8c8d; margin-top:10px; padding-top:10px; border-top:1px solid #eee;">
-                        Itens processados:<br>
-                        <span id="qtd-lote" style="color:#2c3e50; font-size:28px; display:block; margin-top:5px;">0</span>
+                        Itens processados: <span id="qtd-lote" style="color:#2c3e50; font-size:24px;">0</span>
                     </div>
+                    
+                    <div class="lista-lote-interna" id="listaRegistrosLote"></div>
                 </div>
             </div>
 
@@ -149,9 +153,6 @@
     </div>
 
     <script>
-        // ==========================================
-        // CONFIGURAÇÃO DO FIREBASE
-        // ==========================================
         var firebaseConfig = {
             apiKey: "AIzaSyDHUlqzRw_vSyp9livOvQ0rjBYT9l_yofs",
             authDomain: "checkpoint-pedidos.firebaseapp.com",
@@ -163,23 +164,14 @@
         firebase.initializeApp(firebaseConfig);
         var bancoDeDados = firebase.firestore();
 
-        // ATIVAÇÃO DA PERSISTÊNCIA OFFLINE
         bancoDeDados.enablePersistence({synchronizeTabs: true})
         .catch(function(err) {
-            if (err.code == 'failed-precondition') {
-                console.log("Persistência falhou: multiplas abas abertas.");
-            } else if (err.code == 'unimplemented') {
-                console.log("O navegador deste Palmtop não suporta persistência.");
-            }
+            console.log("Persistência Offline Indisponível:", err.code);
         });
 
         console.log("%c🚀 Checkpoint HSVP | Criado por Luiz Henrique Link Lodi & Gemini", "color: #3498db; font-size: 14px; font-weight: bold;");
 
-        // ==========================================
-        // FUNÇÕES DE TRAVA DE TECLAS E HARDWARE
-        // ==========================================
         function impedirLetras(e) {
-            // Permite: Backspace(8), Tab(9), Enter(13), Delete(46), Números(48-57) e Numpad(96-105)
             var permitidos = [8, 9, 13, 46, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105];
             if (permitidos.indexOf(e.keyCode) === -1) {
                 dispararAlertaErro(); 
@@ -206,26 +198,20 @@
         function mostrarToast(texto) {
             var toast = document.getElementById("toast-sucesso");
             toast.innerText = texto;
-            
             if (!texto.includes("✅")) {
                 dispararAlertaErro(); 
                 toast.style.backgroundColor = "#e74c3c"; 
             } else {
                 toast.style.backgroundColor = "#2ecc71";
             }
-
             toast.className = "mostrar";
             setTimeout(function(){ toast.className = toast.className.replace("mostrar", ""); }, 1500);
         }
 
-        // ==========================================
-        // VARIÁVEIS E DICIONÁRIOS
-        // ==========================================
         var nomeOperadorAtual = "";
         var tipoLoteAtual = ""; 
         var etapaLoteAtual = ""; 
         var contadorLoteSessao = 0; 
-        
         var memoriaVolumes = {};
         
         var dicionarioEtapas = {
@@ -244,29 +230,20 @@
             "147628": "GABRIEL", "292": "IDERALDO", "166913": "LUIS GUSTAVO", "167733": "RAFAEL", "139320": "RENAN"
         };
 
-        window.onload = function() {
-            document.getElementById('idMatricula').focus();
-        };
+        window.onload = function() { document.getElementById('idMatricula').focus(); };
 
-        // ==========================================
-        // FLUXO 1: VALIDAÇÃO E CRACHÁ DO OPERADOR
-        // ==========================================
         function validarAcesso() {
             var matRaw = document.getElementById('idMatricula').value.trim();
             if (matRaw === "") return;
-
             var ultimosSeis = matRaw.slice(-6);
             var mat = parseInt(ultimosSeis, 10).toString();
-
             if (listaColaboradores[mat]) {
                 nomeOperadorAtual = listaColaboradores[mat];
                 document.getElementById('idMatricula').value = mat;
                 document.getElementById('idMatricula').readOnly = true;
-                
                 var display = document.getElementById('displayOperador');
                 display.innerHTML = "👤 Usuário logado:<span class='operador-nome'>" + nomeOperadorAtual + "</span>";
                 display.style.display = "block";
-                
                 document.getElementById('btn-trocar-operador').style.display = "block";
                 document.getElementById('idRequisicao').focus();
             } else {
@@ -300,15 +277,9 @@
             return true;
         }
 
-        // ==========================================
-        // FLUXO 2: MODO UNITÁRIO
-        // ==========================================
         document.getElementById('idRequisicao').addEventListener('input', function(e) {
             var valor = this.value.trim();
-            if (/[^0-9]/.test(valor)) {
-                this.value = valor.replace(/\D/g, ''); 
-                return;
-            }
+            if (/[^0-9]/.test(valor)) { this.value = valor.replace(/\D/g, ''); return; }
             if (this.value.length === 7) { 
                 if(checarOperador()) document.getElementById('idLocalQR').focus(); 
                 else this.value = "";
@@ -329,12 +300,9 @@
             if (e.key === 'Enter') { 
                 e.preventDefault(); 
                 if(!checarOperador()) return;
-                
                 var requisicao = document.getElementById('idRequisicao').value.trim();
                 var qrCodeLido = document.getElementById('idLocalQR').value.trim().toUpperCase();
-
                 if (requisicao.length !== 7 || qrCodeLido === "") { return; }
-
                 var statusFinal = dicionarioEtapas[qrCodeLido];
                 if (!statusFinal) {
                     if (qrCodeLido.startsWith("QR-")) {
@@ -343,28 +311,21 @@
                     }
                     statusFinal = "Entregue (" + qrCodeLido + ")";
                 }
-
                 document.getElementById('idRequisicao').value = '';
                 document.getElementById('idLocalQR').value = '';
                 document.getElementById('idRequisicao').focus();
-
                 processarBipeInteligente(requisicao, statusFinal);
             }
         });
 
-        // ==========================================
-        // FLUXO 3: MODOS DE LOTE (CONFERENTE E ROMANEIO)
-        // ==========================================
         function abrirModoLote(tipo) {
             if(!checarOperador()) return;
             tipoLoteAtual = tipo;
-
             document.getElementById('tela-logistica').style.display = 'none';
             document.getElementById('tela-lote').style.display = 'block';
-
+            document.getElementById('listaRegistrosLote').innerHTML = ''; // Limpa histórico do lote anterior
             var titulo = document.getElementById('titulo-lote');
             var inst1 = document.getElementById('texto-passo1');
-
             if (tipo === 'CONFERENTE') {
                 titulo.innerText = "🔍 MODO CONFERENTE";
                 inst1.innerText = "PASSO 1: Bipe a bancada (QR-CONFERIDO).";
@@ -372,7 +333,6 @@
                 titulo.innerText = "🚚 MODO ROMANEIO";
                 inst1.innerText = "PASSO 1: Bipe a doca (Carregado ou Recebido).";
             }
-            
             titulo.style.color = "#333";
             document.getElementById('caixa-lote').style.borderColor = "#ccc";
             document.getElementById('passo1-lote').style.display = 'block';
@@ -384,8 +344,7 @@
         function fecharModoLote() {
             document.getElementById('tela-lote').style.display = 'none';
             document.getElementById('tela-logistica').style.display = 'block';
-            etapaLoteAtual = "";
-            tipoLoteAtual = "";
+            etapaLoteAtual = ""; tipoLoteAtual = "";
             document.getElementById('idRequisicao').value = '';
             document.getElementById('idRequisicao').focus();
         }
@@ -394,7 +353,6 @@
             if (e.key === 'Enter') {
                 e.preventDefault(); 
                 var qrLido = document.getElementById('idLocalQRLote').value.trim().toUpperCase();
-
                 if (tipoLoteAtual === 'CONFERENTE' && qrLido !== "QR-CONFERIDO") {
                     mostrarToast("❌ Local inválido para Conferente."); 
                     document.getElementById('idLocalQRLote').value = ''; return;
@@ -403,14 +361,11 @@
                     mostrarToast("❌ Local inválido para Romaneio."); 
                     document.getElementById('idLocalQRLote').value = ''; return;
                 }
-
                 etapaLoteAtual = qrLido;
                 contadorLoteSessao = 0;
                 document.getElementById('qtd-lote').innerText = contadorLoteSessao;
-
                 var titulo = document.getElementById('titulo-lote');
                 var caixa = document.getElementById('caixa-lote');
-
                 if (etapaLoteAtual === 'QR-CONFERIDO') {
                     titulo.innerText = "🔍 CONFERINDO VOLUMES"; titulo.style.color = "#8e44ad"; caixa.style.borderColor = "#8e44ad";
                 } else if(etapaLoteAtual === 'QR-CARREGADO') {
@@ -418,7 +373,6 @@
                 } else {
                     titulo.innerText = "📥 RECEBENDO ROMANEIO"; titulo.style.color = "#3498db"; caixa.style.borderColor = "#3498db";
                 }
-
                 document.getElementById('passo1-lote').style.display = 'none';
                 document.getElementById('passo2-lote').style.display = 'block';
                 document.getElementById('idReqLote').value = '';
@@ -434,9 +388,7 @@
                 mostrarToast("❌ Use apenas números na Requisição");
                 return;
             }
-            if (this.value.length === 7) { 
-                dispararBipeLote(); 
-            }
+            if (this.value.length === 7) { dispararBipeLote(); }
         });
 
         document.getElementById('idReqLote').addEventListener('keypress', function(e) {
@@ -451,19 +403,14 @@
             processarBipeInteligente(requisicao, statusFinal);
         }
 
-        // ==========================================
-        // O MOTOR DE INTELIGÊNCIA: MAPEADOR DE BURACOS
-        // ==========================================
         function processarBipeInteligente(requisicao, statusFinal) {
             var chaveVolume = requisicao + "-" + statusFinal;
             var matricula = document.getElementById('idMatricula').value.trim();
             var opNome = nomeOperadorAtual;
-
             if (memoriaVolumes[chaveVolume] === undefined) {
                 memoriaVolumes[chaveVolume] = 'Buscando...';
                 var dataAtual = new Date();
                 var inicioDoDia = new Date(dataAtual.getFullYear(), dataAtual.getMonth(), dataAtual.getDate()).getTime();
-
                 bancoDeDados.collection("checkpoints_logistica")
                     .where("requisicao", "==", requisicao)
                     .get()
@@ -471,9 +418,7 @@
                         var volumesOcupados = [];
                         resultado.forEach(function(doc) {
                             var ev = doc.data();
-                            if (ev.status === statusFinal && ev.ordem >= inicioDoDia) {
-                                volumesOcupados.push(parseInt(ev.volume) || 1);
-                            }
+                            if (ev.status === statusFinal && ev.ordem >= inicioDoDia) { volumesOcupados.push(parseInt(ev.volume) || 1); }
                         });
                         memoriaVolumes[chaveVolume] = volumesOcupados; 
                         var proximoVolume = 1;
@@ -482,11 +427,9 @@
                         executarSalvamentoNuvem(requisicao, statusFinal, proximoVolume, matricula, opNome);
                     })
                     .catch(function(erro) {
-                        console.error(erro);
                         memoriaVolumes[chaveVolume] = undefined; 
                         mostrarToast("❌ Erro de conexão."); 
                     });
-
             } else if (Array.isArray(memoriaVolumes[chaveVolume])) {
                 var proximoVolume = 1;
                 while(memoriaVolumes[chaveVolume].includes(proximoVolume)) { proximoVolume++; }
@@ -500,30 +443,27 @@
         function executarSalvamentoNuvem(requisicao, statusFinal, volCalc, matricula, opNome) {
             var dataAtual = new Date();
             var novoEvento = {
-                matricula: matricula,
-                nome: opNome,
-                requisicao: requisicao,
-                status: statusFinal,
-                volume: volCalc,
-                data: dataAtual.toLocaleString('pt-BR'),
-                ordem: dataAtual.getTime()
+                matricula: matricula, nome: opNome, requisicao: requisicao, status: statusFinal,
+                volume: volCalc, data: dataAtual.toLocaleString('pt-BR'), ordem: dataAtual.getTime()
             };
             bancoDeDados.collection("checkpoints_logistica").add(novoEvento)
             .then(function() {
                 mostrarToast("✅ Salvo! (Vol " + novoEvento.volume + ")");
-                adicionarRegistroNaTela(novoEvento);
+                adicionarRegistroNaTela(novoEvento, 'listaRegistros'); // Histórico geral
                 if (document.getElementById('tela-lote').style.display === 'block') {
                     contadorLoteSessao++;
                     document.getElementById('qtd-lote').innerText = contadorLoteSessao;
+                    adicionarRegistroNaTela(novoEvento, 'listaRegistrosLote'); // Histórico do lote
                 }
             })
             .catch(function(erro) { mostrarToast("❌ Erro ao gravar."); });
         }
 
-        function adicionarRegistroNaTela(evento) {
-            var divLista = document.getElementById('listaRegistros');
+        function adicionarRegistroNaTela(evento, idLista) {
+            var divLista = document.getElementById(idLista);
+            if (!divLista) return;
             var novoItem = document.createElement('div');
-            novoItem.className = 'registro';
+            novoItem.className = idLista === 'listaRegistrosLote' ? 'registro-lote' : 'registro';
             novoItem.innerHTML = '<strong>Req:</strong> ' + evento.requisicao + ' <span style="color:#d35400; font-weight:bold;">(Vol ' + evento.volume + ')</span><br>' +
                                  '<strong>Status:</strong> ' + evento.status;
             if (divLista.firstChild) { divLista.insertBefore(novoItem, divLista.firstChild); } 
