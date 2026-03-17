@@ -173,6 +173,8 @@
         };
         firebase.initializeApp(firebaseConfig);
         var bancoDeDados = firebase.firestore();
+        
+        console.log("%c🚀 Checkpoint HSVP | Criado por Luiz Henrique Link Lodi & Gemini", "color: #3498db; font-size: 14px; font-weight: bold;");
 
         bancoDeDados.enablePersistence({synchronizeTabs: true}).catch(function(err) { console.log("Erro persistência:", err.code); });
 
