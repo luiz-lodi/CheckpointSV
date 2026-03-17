@@ -12,7 +12,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
     <style>
-        /* CSS Otimizado para telas pequenas (Palmtops) e Desktops */
+        /* CSS Base e Mobile (Otimizado para Palm EDA50) */
         body { font-family: Arial, sans-serif; margin: 0; padding: 10px; background-color: #f4f4f9; color: #333; }
         .container { max-width: 100%; margin: 0 auto; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         h1 { text-align: center; color: #2c3e50; font-size: 20px; margin-top: 0; margin-bottom: 15px;}
@@ -27,19 +27,16 @@
         button { width: 100%; padding: 12px; border: none; border-radius: 5px; color: white; font-size: 14px; font-weight: bold; cursor: pointer; margin-bottom: 5px; }
         
         .botoes-modos { display: flex; gap: 10px; margin-top: 10px; }
-        .btn-conferente { background-color: #f8df53; border-bottom: 3px solid #d6c806; flex: 1; padding: 15px 5px;color: #000000;}
-        .btn-romaneio { background-color: #0016e0; border-bottom: 3px solid #03009e; flex: 1; padding: 15px 5px;color: #fcfcfc;}
+        .btn-conferente { background-color: #f8df53; border-bottom: 3px solid #d6c806; flex: 1; padding: 15px 5px; color: #000; }
+        .btn-romaneio { background-color: #0016e0; border-bottom: 3px solid #03009e; flex: 1; padding: 15px 5px; color: #fcfcfc; }
         .btn-voltar { background-color: #e74c3c; margin-top: 10px; }
         .btn-limpar { background-color: #95a5a6; padding: 8px; font-size: 12px; margin-top: 5px; }
 
-        #historico { margin-top: 20px; }
         .registro { background: #ecf0f1; padding: 8px; margin-bottom: 6px; border-radius: 4px; font-size: 12px; line-height: 1.3; border-left: 4px solid #3498db; }
-        
         .area-scan { background: #e8f6f3; padding: 12px; border-radius: 6px; border: 2px dashed #1abc9c; margin-bottom: 10px;}
         .instrucao { font-size: 12px; color: #7f8c8d; text-align: center; margin-bottom: 8px; font-weight: bold; line-height: 1.3;}
         
         #box-operador { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #ecf0f1; }
-        
         .nome-destaque { color: #2c3e50; font-weight: bold; font-size: 14px; margin-top: 8px; padding: 8px; background-color: #fadbd8; border: 2px dashed #e74c3c; border-radius: 5px; text-align: center; display: none; }
         .nome-destaque .operador-nome { color: #c0392b; font-size: 1.1em; text-transform: uppercase; margin-left: 4px; }
 
@@ -48,7 +45,7 @@
 
         #tela-lote { display: none; }
 
-        /* --- ESTILOS PARA GRADE DE CONFERÊNCIA (PC/LOTE) --- */
+        /* --- ESTILOS DINÂMICOS PARA O HISTÓRICO DE LOTE --- */
         .lista-lote-interna { 
             max-height: 400px; 
             overflow-y: auto; 
@@ -61,19 +58,30 @@
             justify-content: center;
         }
 
+        /* Card de Registro no Palm (Padrão) */
         .registro-lote { 
             background: #fff; 
-            padding: 15px; 
+            padding: 10px; 
             border-radius: 8px; 
-            font-size: 22px; 
+            font-size: 16px; 
             border: 2px solid #8e44ad; 
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            min-width: 180px; 
+            width: 95%; /* Vertical no Palm */
             text-align: center;
-            flex-grow: 0;
+            box-sizing: border-box;
         }
+        .registro-lote strong { display: block; color: #2c3e50; font-size: 18px; }
 
-        .registro-lote strong { display: block; color: #2c3e50; margin-bottom: 5px; font-size: 24px; }
+        /* Ajuste para PC (Telas maiores que 600px) */
+        @media (min-width: 600px) {
+            .registro-lote { 
+                width: auto; 
+                min-width: 160px; 
+                padding: 15px;
+                font-size: 22px;
+            }
+            .registro-lote strong { font-size: 26px; }
+        }
 
         #toast-sucesso {
             visibility: hidden; min-width: 200px; background-color: #2ecc71; color: #fff; text-align: center; border-radius: 6px; padding: 12px;
@@ -166,7 +174,7 @@
         firebase.initializeApp(firebaseConfig);
         var bancoDeDados = firebase.firestore();
 
-        bancoDeDados.enablePersistence({synchronizeTabs: true}).catch(function(err) { console.log("Persistência Offline Indisponível:", err.code); });
+        bancoDeDados.enablePersistence({synchronizeTabs: true}).catch(function(err) { console.log("Erro persistência:", err.code); });
 
         function impedirLetras(e) {
             var permitidos = [8, 9, 13, 46, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105];
@@ -179,21 +187,16 @@
                 var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 var osc = audioCtx.createOscillator();
                 var gain = audioCtx.createGain();
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.type = "square"; 
-                osc.frequency.value = 100; 
-                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.4);
-            } catch (e) { console.log("Erro som"); }
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.type = "square"; osc.frequency.value = 100; gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+            } catch (e) { }
         }
 
         function mostrarToast(texto) {
             var toast = document.getElementById("toast-sucesso");
             toast.innerText = texto;
-            if (!texto.includes("✅")) { dispararAlertaErro(); toast.style.backgroundColor = "#e74c3c"; } 
-            else { toast.style.backgroundColor = "#2ecc71"; }
+            toast.style.backgroundColor = texto.includes("✅") ? "#2ecc71" : "#e74c3c";
             toast.className = "mostrar";
             setTimeout(function(){ toast.className = toast.className.replace("mostrar", ""); }, 1500);
         }
@@ -205,10 +208,8 @@
         var memoriaVolumes = {};
         
         var dicionarioEtapas = {
-            "QR-SEP-CENTRAL": "Separado (Central)",
-            "QR-SEP-APOIO": "Separado (Apoio)",
-            "QR-CONFERIDO": "Conferido (Apoio)",
-            "QR-CARREGADO": "Carregado (Transporte)",
+            "QR-SEP-CENTRAL": "Separado (Central)", "QR-SEP-APOIO": "Separado (Apoio)",
+            "QR-CONFERIDO": "Conferido (Apoio)", "QR-CARREGADO": "Carregado (Transporte)",
             "QR-RECEBIDO": "Recebido (Central)"
         };
 
@@ -225,18 +226,17 @@
         function validarAcesso() {
             var matRaw = document.getElementById('idMatricula').value.trim();
             if (matRaw === "") return;
-            var ultimosSeis = matRaw.slice(-6);
-            var mat = parseInt(ultimosSeis, 10).toString();
+            var mat = parseInt(matRaw.slice(-6), 10).toString();
             if (listaColaboradores[mat]) {
                 nomeOperadorAtual = listaColaboradores[mat];
                 document.getElementById('idMatricula').value = mat;
                 document.getElementById('idMatricula').readOnly = true;
                 var display = document.getElementById('displayOperador');
-                display.innerHTML = "👤 Usuário logado:<span class='operador-nome'>" + nomeOperadorAtual + "</span>";
+                display.innerHTML = "👤 Usuário:<span class='operador-nome'>" + nomeOperadorAtual + "</span>";
                 display.style.display = "block";
                 document.getElementById('btn-trocar-operador').style.display = "block";
                 document.getElementById('idRequisicao').focus();
-            } else { dispararAlertaErro(); alert("Matrícula não encontrada!"); document.getElementById('idMatricula').value = ""; document.getElementById('idMatricula').focus(); }
+            } else { dispararAlertaErro(); alert("Matrícula não encontrada!"); document.getElementById('idMatricula').value = ""; }
         }
 
         document.getElementById('idMatricula').addEventListener('keypress', function(e) { if (e.key === 'Enter') { e.preventDefault(); validarAcesso(); } });
@@ -247,43 +247,31 @@
             document.getElementById('idMatricula').focus();
         }
 
-        function checarOperador() {
-            if (!nomeOperadorAtual) { dispararAlertaErro(); alert("Por favor, bipe o crachá primeiro!"); document.getElementById('idMatricula').focus(); return false; }
-            return true;
-        }
-
-        document.getElementById('idRequisicao').addEventListener('input', function(e) {
-            var valor = this.value.trim();
-            if (/[^0-9]/.test(valor)) { this.value = valor.replace(/\D/g, ''); return; }
-            if (this.value.length === 7) { if(checarOperador()) document.getElementById('idLocalQR').focus(); else this.value = ""; }
-        });
-
-        document.getElementById('idLocalQR').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') { 
-                e.preventDefault(); 
-                if(!checarOperador()) return;
-                var requisicao = document.getElementById('idRequisicao').value.trim();
-                var qrCodeLido = document.getElementById('idLocalQR').value.trim().toUpperCase();
-                if (requisicao.length !== 7 || qrCodeLido === "") { return; }
-                var statusFinal = dicionarioEtapas[qrCodeLido] || "Entregue (" + qrCodeLido + ")";
-                document.getElementById('idRequisicao').value = ''; document.getElementById('idLocalQR').value = ''; document.getElementById('idRequisicao').focus();
-                processarBipeInteligente(requisicao, statusFinal);
-            }
-        });
-
         function abrirModoLote(tipo) {
-            if(!checarOperador()) return;
-            tipoLoteAtual = tipo; document.getElementById('tela-logistica').style.display = 'none'; document.getElementById('tela-lote').style.display = 'block';
-            document.getElementById('listaRegistrosLote').innerHTML = '';
+            if (!nomeOperadorAtual) { alert("Bipe seu crachá primeiro!"); return; }
+            tipoLoteAtual = tipo;
+            document.getElementById('tela-logistica').style.display = 'none';
+            document.getElementById('tela-lote').style.display = 'block';
+            document.getElementById('listaRegistrosLote').innerHTML = ''; // Limpa histórico ao abrir
             var titulo = document.getElementById('titulo-lote');
             var inst1 = document.getElementById('texto-passo1');
-            if (tipo === 'CONFERENTE') { titulo.innerText = "🔍 MODO CONFERENTE"; inst1.innerText = "PASSO 1: Bipe a bancada (QR-CONFERIDO)."; }
-            else { titulo.innerText = "🚚 MODO ROMANEIO"; inst1.innerText = "PASSO 1: Bipe a doca (Carregado ou Recebido)."; }
-            document.getElementById('passo1-lote').style.display = 'block'; document.getElementById('passo2-lote').style.display = 'none';
+            if (tipo === 'CONFERENTE') {
+                titulo.innerText = "🔍 MODO CONFERENTE";
+                inst1.innerText = "PASSO 1: Bipe a bancada (QR-CONFERIDO).";
+            } else {
+                titulo.innerText = "🚚 MODO ROMANEIO";
+                inst1.innerText = "PASSO 1: Bipe a doca (Carregado ou Recebido).";
+            }
+            document.getElementById('passo1-lote').style.display = 'block';
+            document.getElementById('passo2-lote').style.display = 'none';
             document.getElementById('idLocalQRLote').value = ''; document.getElementById('idLocalQRLote').focus();
         }
 
-        function fecharModoLote() { document.getElementById('tela-lote').style.display = 'none'; document.getElementById('tela-logistica').style.display = 'block'; document.getElementById('idRequisicao').focus(); }
+        function fecharModoLote() {
+            document.getElementById('tela-lote').style.display = 'none';
+            document.getElementById('tela-logistica').style.display = 'block';
+            document.getElementById('idRequisicao').focus();
+        }
 
         document.getElementById('idLocalQRLote').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
@@ -291,7 +279,8 @@
                 if (tipoLoteAtual === 'CONFERENTE' && qrLido !== "QR-CONFERIDO") { mostrarToast("❌ Local inválido."); this.value = ''; return; }
                 if (tipoLoteAtual === 'ROMANEIO' && qrLido !== "QR-CARREGADO" && qrLido !== "QR-RECEBIDO") { mostrarToast("❌ Local inválido."); this.value = ''; return; }
                 etapaLoteAtual = qrLido; contadorLoteSessao = 0; document.getElementById('qtd-lote').innerText = "0";
-                document.getElementById('passo1-lote').style.display = 'none'; document.getElementById('passo2-lote').style.display = 'block';
+                document.getElementById('passo1-lote').style.display = 'none';
+                document.getElementById('passo2-lote').style.display = 'block';
                 document.getElementById('idReqLote').focus();
             }
         });
@@ -304,6 +293,21 @@
             }
         });
 
+        // Lógica de Entrada Unitária
+        document.getElementById('idRequisicao').addEventListener('input', function(e) { if (this.value.length === 7) document.getElementById('idLocalQR').focus(); });
+        document.getElementById('idLocalQR').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                var req = document.getElementById('idRequisicao').value.trim();
+                var qr = this.value.trim().toUpperCase();
+                if (req.length === 7 && qr !== "") {
+                    var status = dicionarioEtapas[qr] || "Entregue (" + qr + ")";
+                    document.getElementById('idRequisicao').value = ''; this.value = ''; document.getElementById('idRequisicao').focus();
+                    processarBipeInteligente(req, status);
+                }
+            }
+        });
+
         function processarBipeInteligente(requisicao, statusFinal) {
             var chaveVolume = requisicao + "-" + statusFinal;
             if (memoriaVolumes[chaveVolume] === undefined) {
@@ -311,7 +315,9 @@
                 var inicioDoDia = new Date().setHours(0,0,0,0);
                 bancoDeDados.collection("checkpoints_logistica").where("requisicao", "==", requisicao).get().then(function(resultado) {
                     var volumesOcupados = [];
-                    resultado.forEach(function(doc) { if (doc.data().status === statusFinal && doc.data().ordem >= inicioDoDia) volumesOcupados.push(parseInt(doc.data().volume) || 1); });
+                    resultado.forEach(function(doc) { 
+                        if (doc.data().status === statusFinal && doc.data().ordem >= inicioDoDia) volumesOcupados.push(parseInt(doc.data().volume) || 1); 
+                    });
                     memoriaVolumes[chaveVolume] = volumesOcupados; 
                     var proximoVolume = 1; while(memoriaVolumes[chaveVolume].includes(proximoVolume)) proximoVolume++;
                     memoriaVolumes[chaveVolume].push(proximoVolume);
@@ -326,13 +332,17 @@
 
         function executarSalvamentoNuvem(requisicao, statusFinal, volCalc) {
             var dataAtual = new Date();
-            var novoEvento = { matricula: document.getElementById('idMatricula').value, nome: nomeOperadorAtual, requisicao: requisicao, status: statusFinal, volume: volCalc, data: dataAtual.toLocaleString('pt-BR'), ordem: dataAtual.getTime() };
+            var novoEvento = { 
+                matricula: document.getElementById('idMatricula').value, 
+                nome: nomeOperadorAtual, requisicao: requisicao, status: statusFinal, 
+                volume: volCalc, data: dataAtual.toLocaleString('pt-BR'), ordem: dataAtual.getTime() 
+            };
             bancoDeDados.collection("checkpoints_logistica").add(novoEvento).then(function() {
                 mostrarToast("✅ Salvo! (Vol " + volCalc + ")");
-                adicionarRegistroNaTela(novoEvento, 'listaRegistros');
+                adicionarRegistroNaTela(novoEvento, 'listaRegistros'); // Histórico Geral
                 if (document.getElementById('tela-lote').style.display === 'block') {
                     contadorLoteSessao++; document.getElementById('qtd-lote').innerText = contadorLoteSessao;
-                    adicionarRegistroNaTela(novoEvento, 'listaRegistrosLote');
+                    adicionarRegistroNaTela(novoEvento, 'listaRegistrosLote'); // Histórico Lote
                 }
             });
         }
@@ -343,7 +353,7 @@
             var novoItem = document.createElement('div');
             if (idLista === 'listaRegistrosLote') {
                 novoItem.className = 'registro-lote';
-                novoItem.innerHTML = '<strong>' + evento.requisicao + '</strong><span style="color:#d35400; font-weight:bold; font-size: 16px;">Vol ' + evento.volume + '</span>';
+                novoItem.innerHTML = '<strong>' + evento.requisicao + '</strong><span style="color:#d35400; font-weight:bold;">Vol ' + evento.volume + '</span>';
             } else {
                 novoItem.className = 'registro';
                 novoItem.innerHTML = '<strong>Req:</strong> ' + evento.requisicao + ' <span style="color:#d35400; font-weight:bold;">(Vol ' + evento.volume + ')</span><br><strong>Status:</strong> ' + evento.status;
