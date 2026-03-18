@@ -26,7 +26,6 @@
         #painel-gestao { display: none; }
         .layout-app { display: flex; gap: 20px; align-items: flex-start; }
         
-        /* MENU LATERAL ANINHADO */
         .sidebar { width: 280px; background: #34495e; border-radius: 8px; padding: 10px 0; flex-shrink: 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden;}
         .menu-btn { display: flex; justify-content: space-between; align-items: center; width: 100%; text-align: left; padding: 15px 20px; background: none; border: none; color: #ecf0f1; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.2s; border-left: 4px solid transparent; }
         .menu-btn:hover { background: #2c3e50; }
@@ -37,7 +36,6 @@
         .submenu-btn:hover { color: #fff; background: #1a252f; }
         .submenu-btn.ativo { color: #f1c40f; font-weight: bold; background: #1a252f; border-left: 3px solid #f1c40f;}
 
-        /* ÁREA DE CONTEÚDO */
         .conteudo-principal { flex: 1; background: white; border-radius: 8px; padding: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); min-width: 0; min-height: 600px;}
         .secao-app { display: none; }
         .secao-app.ativa { display: block; animation: fadeIn 0.3s; }
@@ -50,7 +48,6 @@
         .btn-acao { background-color: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; }
         .loading { color: #e67e22; font-weight: bold; display: none; margin-left: auto; }
 
-        /* TABELAS */
         .tabela-wrapper { overflow-x: auto; margin-bottom: 15px; border-radius: 8px; border: 1px solid #eee; }
         table { width: 100%; border-collapse: collapse; min-width: 700px; }
         th, td { padding: 12px; text-align: center; border-bottom: 1px solid #eee; font-size: 14px; }
@@ -65,11 +62,9 @@
         .paginacao button { background: #34495e; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
         .paginacao button:disabled { background: #bdc3c7; cursor: not-allowed; }
 
-        /* MURAL DE AVISOS */
         textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; margin-bottom: 10px; font-family: inherit;}
         .msg-card { background: #fdfefe; border-left: 4px solid #f1c40f; padding: 12px; margin-bottom: 10px; border-radius: 4px; border: 1px solid #eee;}
 
-        /* RAIO-X TIMELINE */
         .raiox-etapa { display: flex; align-items: center; margin-bottom: 15px; }
         .raiox-icone { width: 35px; height: 35px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; color: white; margin-right: 15px; }
         .icone-ok { background-color: #2ecc71; }
@@ -79,11 +74,9 @@
         .raiox-detalhe h4 { margin: 0; color: #2c3e50; }
         .raiox-detalhe p { margin: 2px 0 0 0; font-size: 13px; color: #7f8c8d; }
 
-        /* MODAL */
         .modal-overlay { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); }
         .modal-content { background: #fff; margin: 10% auto; padding: 25px; border-radius: 8px; width: 90%; max-width: 450px; }
         
-        /* GRÁFICOS BI */
         .dashboard-grid { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 30px;}
         .chart-box { background: #fff; padding: 15px; border-radius: 8px; flex: 1; min-width: 400px; border: 1px solid #eee; box-shadow: 0 2px 4px rgba(0,0,0,0.02);}
         .chart-full { flex: 100%; min-width: 100%; }
@@ -155,29 +148,14 @@
                         <div id="conteudo-processos" style="display:none;">
                             <h3 style="color:#2c3e50; border-bottom:1px solid #eee; padding-bottom:5px;">📋 Requisições Individuais Processadas (Desconsidera Volumes)</h3>
                             <div class="dashboard-grid" style="margin-bottom: 25px;">
-                                <div class="card-kpi" style="border-left-color: #f39c12;">
-                                    <h3>Nascidas no Apoio</h3>
-                                    <div class="valor" id="kpi-req-apoio">0</div>
-                                </div>
-                                <div class="card-kpi" style="border-left-color: #1abc9c;">
-                                    <h3>Nascidas na Central</h3>
-                                    <div class="valor" id="kpi-req-central">0</div>
-                                </div>
-                                <div class="card-kpi" style="border-left-color: #8e44ad; background:#f4f0f8;">
-                                    <h3>Total Único no Mês</h3>
-                                    <div class="valor" id="kpi-req-total" style="color:#8e44ad;">0</div>
-                                </div>
+                                <div class="card-kpi" style="border-left-color: #f39c12;"><h3>Nascidas no Apoio</h3><div class="valor" id="kpi-req-apoio">0</div></div>
+                                <div class="card-kpi" style="border-left-color: #1abc9c;"><h3>Nascidas na Central</h3><div class="valor" id="kpi-req-central">0</div></div>
+                                <div class="card-kpi" style="border-left-color: #8e44ad; background:#f4f0f8;"><h3>Total Único no Mês</h3><div class="valor" id="kpi-req-total" style="color:#8e44ad;">0</div></div>
                             </div>
 
                             <div class="dashboard-grid">
-                                <div class="chart-box">
-                                    <h3 style="text-align:center; margin-top:0;">📦 Distribuição de Volumes (Bipes) por Etapa</h3>
-                                    <div style="position: relative; height:300px;"><canvas id="chartEtapas"></canvas></div>
-                                </div>
-                                <div class="chart-box">
-                                    <h3 style="text-align:center; margin-top:0;">🏢 Comparativo de Esforço: Apoio vs Central</h3>
-                                    <div style="position: relative; height:300px; display:flex; justify-content:center;"><canvas id="chartSetores"></canvas></div>
-                                </div>
+                                <div class="chart-box"><h3 style="text-align:center; margin-top:0;">📦 Distribuição de Volumes (Bipes) por Etapa</h3><div style="position: relative; height:300px;"><canvas id="chartEtapas"></canvas></div></div>
+                                <div class="chart-box"><h3 style="text-align:center; margin-top:0;">🏢 Comparativo de Esforço: Apoio vs Central</h3><div style="position: relative; height:300px; display:flex; justify-content:center;"><canvas id="chartSetores"></canvas></div></div>
                             </div>
                         </div>
                     </div>
@@ -214,7 +192,6 @@
                             <p>Aqui entrarão os cálculos de Lead Time, Evolução Diária e o Filtro de SLA por Setor Destino. Em breve!</p>
                         </div>
                     </div>
-
 
                     <div id="aba-auditoria-raiox" class="secao-app">
                         <h2 class="secao-titulo">🔍 3.1 Ciclo de Vida da Requisição (Raio-X)</h2>
@@ -254,7 +231,11 @@
                     <div id="aba-auditoria-historico" class="secao-app">
                         <h2 class="secao-titulo">📜 3.3 Histórico de Auditoria de Exclusões</h2>
                         <div class="filtro-container">
-                            <label>Por pág:</label><select id="limiteAuditoria"><option value="10">10 itens</option><option value="20" selected>20 itens</option></select>
+                            <label>Por pág:</label>
+                            <select id="limiteAuditoria">
+                                <option value="10" selected>10 itens</option>
+                                <option value="20">20 itens</option>
+                            </select>
                             <button class="btn-acao" style="background-color: #7f8c8d;" onclick="carregarAuditoria(0)">🔄 Recarregar</button>
                             <span class="loading" id="load-auditoria">Buscando... ⏳</span>
                         </div>
@@ -358,58 +339,45 @@
         }
 
         // ==========================================
-        // 3. INTELIGÊNCIA BI (CACHE GLOBAL COMPARTILHADO)
+        // 3. INTELIGÊNCIA BI (CACHE GLOBAL)
         // ==========================================
         var cacheBI = { mes: "", documentos: [] };
         var gEtapas = null, gSetores = null, gProd = null;
 
         function carregarDadosBI(abaDestino) {
-            // Pega o mês da aba que o usuário está olhando
             var inputMes = abaDestino === 'processos' ? document.getElementById('filtroMesProcessos').value : document.getElementById('filtroMesProdutividade').value;
             if(!inputMes) return alert("Selecione um mês.");
 
             document.getElementById('load-' + abaDestino).style.display = 'inline-block';
 
-            // Se o mês selecionado já estiver no cache, não vai no Firebase! 🚀
             if (cacheBI.mes === inputMes && cacheBI.documentos.length > 0) {
                 renderizarBI(abaDestino, cacheBI.documentos);
                 document.getElementById('load-' + abaDestino).style.display = 'none';
                 return;
             }
 
-            // Se não tem no cache, busca no banco e guarda na memória
             var y = parseInt(inputMes.split('-')[0]), m = parseInt(inputMes.split('-')[1]) - 1;
             var tInicio = new Date(y, m, 1, 0, 0, 0).getTime(), tFim = new Date(y, m+1, 0, 23, 59, 59).getTime();
 
             bancoDeDados.collection("checkpoints_logistica").where("ordem", ">=", tInicio).where("ordem", "<=", tFim).get().then(res => {
-                cacheBI.mes = inputMes;
-                cacheBI.documentos = [];
+                cacheBI.mes = inputMes; cacheBI.documentos = [];
                 res.forEach(doc => cacheBI.documentos.push(doc.data()));
-                
                 renderizarBI(abaDestino, cacheBI.documentos);
                 document.getElementById('load-' + abaDestino).style.display = 'none';
-            }).catch(erro => {
-                alert("Erro ao buscar dados do Firebase.");
-                document.getElementById('load-' + abaDestino).style.display = 'none';
-            });
+            }).catch(erro => { alert("Erro ao buscar dados do Firebase."); document.getElementById('load-' + abaDestino).style.display = 'none'; });
         }
 
-        // Roteador de Renderização Baseado na Aba Ativa
         function renderizarBI(abaDestino, bipesDoMes) {
             if (abaDestino === 'processos') processarAbaProcessos(bipesDoMes);
             if (abaDestino === 'produtividade') processarAbaProdutividade(bipesDoMes);
         }
 
-        // (2.1) Processos Logísticos
         function processarAbaProcessos(bipes) {
             var tot = { sep: 0, conf: 0, carr: 0, rec: 0, sepc: 0, ent: 0 };
-            var reqsUnicasApoio = new Set();
-            var reqsUnicasCentral = new Set();
+            var reqsUnicasApoio = new Set(), reqsUnicasCentral = new Set();
 
             bipes.forEach(ev => {
                 var s = ev.status || "";
-                
-                // Contagem de Volumes Totais (Para Gráficos Básicos)
                 if (s.includes("Separado (Central)")) tot.sepc++;
                 else if (s.includes("Separado (Apoio)") || s === "Separado") tot.sep++;
                 else if (s.includes("Conferido")) tot.conf++;
@@ -417,45 +385,28 @@
                 else if (s.includes("Recebido")) tot.rec++;
                 else if (s.includes("Entregue")) tot.ent++;
 
-                // Lógica de Requisições Individuais (2.1.3) - IGNORA VOLUMES
-                if (s.includes("Central") && s.includes("Separado")) {
-                    reqsUnicasCentral.add(ev.requisicao);
-                } else if (s.includes("Apoio") || s === "Separado" || s.includes("Conferido") || s.includes("Carregado")) {
-                    reqsUnicasApoio.add(ev.requisicao);
-                }
+                if (s.includes("Central") && s.includes("Separado")) reqsUnicasCentral.add(ev.requisicao);
+                else if (s.includes("Apoio") || s === "Separado" || s.includes("Conferido") || s.includes("Carregado")) reqsUnicasApoio.add(ev.requisicao);
             });
 
-            // Atualiza KPIs Únicos
             document.getElementById('kpi-req-apoio').innerText = reqsUnicasApoio.size;
             document.getElementById('kpi-req-central').innerText = reqsUnicasCentral.size;
             document.getElementById('kpi-req-total').innerText = reqsUnicasApoio.size + reqsUnicasCentral.size;
 
-            // Desenha Gráficos
-            var ctxEtapas = document.getElementById('chartEtapas').getContext('2d');
             if(gEtapas) gEtapas.destroy();
-            gEtapas = new Chart(ctxEtapas, {
-                type: 'bar', data: { labels: ['Sep. Apoio', 'Conferido', 'Carregado', 'Recebido', 'Sep. Central', 'Entregue'], datasets: [{ label: 'Bipes', data: [tot.sep, tot.conf, tot.carr, tot.rec, tot.sepc, tot.ent], backgroundColor: ['#f39c12', '#8e44ad', '#d35400', '#3498db', '#16a085', '#2ecc71'], borderRadius: 4 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
-            });
+            gEtapas = new Chart(document.getElementById('chartEtapas').getContext('2d'), { type: 'bar', data: { labels: ['Sep. Apoio', 'Conferido', 'Carregado', 'Recebido', 'Sep. Central', 'Entregue'], datasets: [{ label: 'Bipes', data: [tot.sep, tot.conf, tot.carr, tot.rec, tot.sepc, tot.ent], backgroundColor: ['#f39c12', '#8e44ad', '#d35400', '#3498db', '#16a085', '#2ecc71'], borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
 
-            var ctxSetores = document.getElementById('chartSetores').getContext('2d');
             if(gSetores) gSetores.destroy();
-            gSetores = new Chart(ctxSetores, {
-                type: 'doughnut', data: { labels: ['Apoio (Sep/Conf/Carr)', 'Central (Rec/SepC/Ent)'], datasets: [{ data: [tot.sep+tot.conf+tot.carr, tot.rec+tot.sepc+tot.ent], backgroundColor: ['#e67e22', '#2980b9'] }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
-            });
+            gSetores = new Chart(document.getElementById('chartSetores').getContext('2d'), { type: 'doughnut', data: { labels: ['Apoio', 'Central'], datasets: [{ data: [tot.sep+tot.conf+tot.carr, tot.rec+tot.sepc+tot.ent], backgroundColor: ['#e67e22', '#2980b9'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } } });
 
             document.getElementById('conteudo-processos').style.display = 'block';
         }
 
-        // (2.2) Produtividade
         function processarAbaProdutividade(bipes) {
             var colabs = {}, totGer = { sep:0, conf:0, carr:0, rec:0, sepc:0, ent:0, tot:0 };
-            
             bipes.forEach(ev => {
                 var n = ev.nome || "DESCONHECIDO", s = ev.status || "";
                 if(!colabs[n]) colabs[n] = { sep:0, conf:0, carr:0, rec:0, sepc:0, ent:0, tot:0 };
-
                 if(s.includes("Separado (Central)")) { colabs[n].sepc++; colabs[n].tot++; totGer.sepc++; totGer.tot++;}
                 else if(s.includes("Separado (Apoio)") || s === "Separado") { colabs[n].sep++; colabs[n].tot++; totGer.sep++; totGer.tot++;}
                 else if(s.includes("Conferido")) { colabs[n].conf++; colabs[n].tot++; totGer.conf++; totGer.tot++;}
@@ -464,64 +415,51 @@
                 else if(s.includes("Entregue")) { colabs[n].ent++; colabs[n].tot++; totGer.ent++; totGer.tot++;}
             });
 
-            var nomes = Object.keys(colabs).sort();
-            var max = { sep:0, conf:0, carr:0, rec:0, sepc:0, ent:0, tot:0 };
+            var nomes = Object.keys(colabs).sort(), max = { sep:0, conf:0, carr:0, rec:0, sepc:0, ent:0, tot:0 };
+            nomes.forEach(n => { let d = colabs[n]; if(d.sep > max.sep) max.sep = d.sep; if(d.conf > max.conf) max.conf = d.conf; if(d.carr > max.carr) max.carr = d.carr; if(d.rec > max.rec) max.rec = d.rec; if(d.sepc > max.sepc) max.sepc = d.sepc; if(d.ent > max.ent) max.ent = d.ent; if(d.tot > max.tot) max.tot = d.tot; });
+
+            var tb = document.getElementById('corpo-tabela-prod'), dadosGrafico = []; tb.innerHTML = '';
             nomes.forEach(n => {
-                let d = colabs[n];
-                if(d.sep > max.sep) max.sep = d.sep; if(d.conf > max.conf) max.conf = d.conf; if(d.carr > max.carr) max.carr = d.carr;
-                if(d.rec > max.rec) max.rec = d.rec; if(d.sepc > max.sepc) max.sepc = d.sepc; if(d.ent > max.ent) max.ent = d.ent; if(d.tot > max.tot) max.tot = d.tot;
+                let d = colabs[n]; dadosGrafico.push({ nome: n.split(" ")[0], valor: d.tot });
+                tb.innerHTML += `<tr><td class="col-nome">${n}</td><td class="${d.sep>0&&d.sep===max.sep?'celula-destaque':''}">${d.sep}</td><td class="${d.conf>0&&d.conf===max.conf?'celula-destaque':''}">${d.conf}</td><td class="${d.carr>0&&d.carr===max.carr?'celula-destaque':''}">${d.carr}</td><td class="${d.rec>0&&d.rec===max.rec?'celula-destaque':''}">${d.rec}</td><td class="${d.sepc>0&&d.sepc===max.sepc?'celula-destaque':''}">${d.sepc}</td><td class="${d.ent>0&&d.ent===max.ent?'celula-destaque':''}">${d.ent}</td><td class="col-total ${d.tot>0&&d.tot===max.tot?'celula-destaque':''}">${d.tot}</td></tr>`;
             });
-
-            var tb = document.getElementById('corpo-tabela-prod'); tb.innerHTML = '';
-            var dadosGrafico = [];
-
-            nomes.forEach(n => {
-                let d = colabs[n];
-                dadosGrafico.push({ nome: n.split(" ")[0], valor: d.tot });
-                var h = `<tr><td class="col-nome">${n}</td>`+
-                        `<td class="${d.sep>0&&d.sep===max.sep?'celula-destaque':''}">${d.sep}</td>`+
-                        `<td class="${d.conf>0&&d.conf===max.conf?'celula-destaque':''}">${d.conf}</td>`+
-                        `<td class="${d.carr>0&&d.carr===max.carr?'celula-destaque':''}">${d.carr}</td>`+
-                        `<td class="${d.rec>0&&d.rec===max.rec?'celula-destaque':''}">${d.rec}</td>`+
-                        `<td class="${d.sepc>0&&d.sepc===max.sepc?'celula-destaque':''}">${d.sepc}</td>`+
-                        `<td class="${d.ent>0&&d.ent===max.ent?'celula-destaque':''}">${d.ent}</td>`+
-                        `<td class="col-total ${d.tot>0&&d.tot===max.tot?'celula-destaque':''}">${d.tot}</td></tr>`;
-                tb.innerHTML += h;
-            });
-
             tb.innerHTML += `<tr style="background:#e8f6f3; border-top:2px solid #bdc3c7;"><td class="col-nome" style="color:#16a085;">TOTAL</td><td><b>${totGer.sep}</b></td><td><b>${totGer.conf}</b></td><td><b>${totGer.carr}</b></td><td><b>${totGer.rec}</b></td><td><b>${totGer.sepc}</b></td><td><b>${totGer.ent}</b></td><td style="color:#c0392b;font-size:16px;"><b>${totGer.tot}</b></td></tr>`;
 
             dadosGrafico.sort((a,b) => b.valor - a.valor);
-            var ctxProd = document.getElementById('chartProdutividade').getContext('2d');
             if(gProd) gProd.destroy();
-            gProd = new Chart(ctxProd, {
-                type: 'bar', data: { labels: dadosGrafico.map(i=>i.nome), datasets: [{ label: 'Volumes Totais', data: dadosGrafico.map(i=>i.valor), backgroundColor: '#9b59b6', borderRadius: 4 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
-            });
+            gProd = new Chart(document.getElementById('chartProdutividade').getContext('2d'), { type: 'bar', data: { labels: dadosGrafico.map(i=>i.nome), datasets: [{ label: 'Volumes', data: dadosGrafico.map(i=>i.valor), backgroundColor: '#9b59b6', borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
 
             document.getElementById('conteudo-produtividade').style.display = 'block';
         }
 
-
         // ==========================================
-        // CÓDIGO DE AUDITORIA (3.1, 3.2, 3.3) JÁ MANTIDO DA FASE 1
-        // (Raio-X, Exclusões e Paginação já estão integrados e funcionais acima)
+        // 4. RAIO-X (CORRIGIDO: REMOVIDO ORDERBY DO FIREBASE)
         // ==========================================
-
         function buscarCicloVida() {
             var req = document.getElementById('inputRaioX').value.trim();
             if(req.length !== 7) return alert("Digite 7 dígitos.");
-            document.getElementById('load-raiox').style.display = 'block'; document.getElementById('resultado-raiox').style.display = 'none';
+            document.getElementById('load-raiox').style.display = 'inline-block'; document.getElementById('resultado-raiox').style.display = 'none';
+
             var fluxoIdeal = [ { nome: "Separado (Apoio)", filtro: "Separado" }, { nome: "Conferido (Apoio)", filtro: "Conferido" }, { nome: "Carregado (Transporte)", filtro: "Carregado" }, { nome: "Recebido (Central)", filtro: "Recebido" }, { nome: "Separado (Central)", filtro: "Separado (Central)" }, { nome: "Entregue", filtro: "Entregue" } ];
-            bancoDeDados.collection("checkpoints_logistica").where("requisicao", "==", req).orderBy("ordem", "asc").get().then(res => {
+
+            // A MÁGICA AQUI: Removi o .orderBy() para não dar erro de índice! A ordenação é feita no JavaScript abaixo.
+            bancoDeDados.collection("checkpoints_logistica").where("requisicao", "==", req).get().then(res => {
                 document.getElementById('load-raiox').style.display = 'none';
-                if(res.empty) return alert("Nenhum histórico encontrado.");
+                if(res.empty) return alert("Nenhum histórico encontrado para esta requisição.");
+
                 document.getElementById('raiox-titulo-req').innerText = req;
                 var tl = document.getElementById('raiox-timeline'); tl.innerHTML = "";
-                var bipes = []; res.forEach(d => bipes.push(d.data()));
+                
+                var bipes = []; 
+                res.forEach(d => bipes.push(d.data()));
+                
+                // Ordenação cronológica garantida na memória
+                bipes.sort((a, b) => a.ordem - b.ordem);
+
                 var isCentral = (bipes.length > 0 && bipes[0].status.includes("Central") && bipes[0].status.includes("Separado"));
                 var indexAlcancado = -1;
                 bipes.forEach(b => { fluxoIdeal.forEach((f, i) => { if(b.status.includes(f.filtro) && i > indexAlcancado) indexAlcancado = i; }); });
+
                 fluxoIdeal.forEach((etapa, i) => {
                     if(isCentral && i < 4) return;
                     var achou = bipes.find(b => b.status.includes(etapa.filtro));
@@ -532,9 +470,15 @@
                     tl.innerHTML += html + '</div>';
                 });
                 document.getElementById('resultado-raiox').style.display = 'block';
+            }).catch(erro => { 
+                document.getElementById('load-raiox').style.display = 'none';
+                alert("Erro ao consultar o banco."); console.error(erro); 
             });
         }
 
+        // ==========================================
+        // 5. EXCLUSÕES PAGINADAS E MODAL
+        // ==========================================
         var pagLog = 1, curPriLog = null, curUltLog = null;
         function carregarDadosLogistica(dir) {
             var data = document.getElementById('filtroDataLogistica').value; if(!data) return;
