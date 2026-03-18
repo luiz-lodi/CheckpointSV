@@ -43,20 +43,6 @@
         #card-sep-central { border-color: #16a085; }
         #card-entregue { border-color: #2ecc71; }
         
-        /* 3ª Linha (SLAs Totais) */
-        #card-sla-apoio { background-color: #2c3e50; border-color: #f39c12; min-width: 200px; } 
-        #card-sla-apoio h3 { color: #bdc3c7; }
-        #card-sla-apoio .numero { color: #f39c12; font-size: 34px; } 
-
-        #card-sla-central { background-color: #1a252f; border-color: #1abc9c; min-width: 200px; }
-        #card-sla-central h3 { color: #bdc3c7; }
-        #card-sla-central .numero { color: #1abc9c; font-size: 34px; } 
-
-        /* 4ª Linha (Micro SLAs - Etapas) */
-        .card-micro { min-width: 140px; padding: 15px 5px; border-color: #bdc3c7;}
-        .card-micro h3 { font-size: 11px; color: #95a5a6; }
-        .card-micro .numero { font-size: 26px; color: #34495e; }
-
         .tabela-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow-x: auto; margin-top: 15px;}
         .tabela-container h2 { margin-top: 0; color: #2c3e50; font-size: 18px; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; }
         
@@ -86,15 +72,15 @@
     </div>
 
     <div class="container">
-        <h1>📊 Dashboard de Produtividade e SLA</h1>
-        <div class="subtitulo">Monitoramento de Volumes Movimentados e Lead Time de Entrega</div>
+        <h1>📊 Dashboard de Produtividade</h1>
+        <div class="subtitulo">Acompanhamento de Volumes Movimentados por Setor e Colaborador</div>
 
         <div class="filtro-container">
             <label for="filtroData">Data do Relatório:</label>
             <input type="date" id="filtroData">
             <button class="btn-filtrar" onclick="carregarDados()">Buscar Dados</button>
             <button class="btn-exportar" onclick="exportarParaExcel()">📥 Exportar Excel</button>
-            <div class="loading" id="msg-loading">Processando dados e calculando SLAs... ⏳</div>
+            <div class="loading" id="msg-loading">Processando dados... ⏳</div>
         </div>
 
         <div class="secao-titulo">🏭 Equipe Almoxarifados Centro de Apoio</div>
@@ -129,43 +115,8 @@
             </div>
         </div>
 
-        <div class="secao-titulo">⏱️ Tempos Totais de Processamento (Lead Time)</div>
-        <div class="cards-grid" style="margin-bottom: 10px;">
-            <div class="card" id="card-sla-apoio">
-                <h3>Lead Time Total (Apoio ➔ Entregue)</h3>
-                <div class="numero" id="tot-leadtime-apoio">--h --m</div>
-            </div>
-            <div class="card" id="card-sla-central">
-                <h3>Lead Time Total (Central ➔ Entregue)</h3>
-                <div class="numero" id="tot-leadtime-central">--h --m</div>
-            </div>
-        </div>
-
-        <div class="cards-grid" style="margin-bottom: 30px;">
-            <div class="card card-micro" style="border-color: #f39c12; border-bottom-width: 3px;">
-                <h3>Sep ➔ Conferência</h3>
-                <div class="numero" id="gap-sep-conf">--h --m</div>
-            </div>
-            <div class="card card-micro" style="border-color: #f39c12; border-bottom-width: 3px;">
-                <h3>Conf ➔ Transporte</h3>
-                <div class="numero" id="gap-conf-carr">--h --m</div>
-            </div>
-            <div class="card card-micro" style="border-color: #f39c12; border-bottom-width: 3px;">
-                <h3>Transp ➔ Recebido</h3>
-                <div class="numero" id="gap-carr-rec">--h --m</div>
-            </div>
-            <div class="card card-micro" style="border-color: #f39c12; border-bottom-width: 3px;">
-                <h3>Recebido ➔ Entrega</h3>
-                <div class="numero" id="gap-rec-ent">--h --m</div>
-            </div>
-            <div class="card card-micro" style="border-color: #1abc9c; border-bottom-width: 3px;">
-                <h3>Sep. Central ➔ Entrega</h3>
-                <div class="numero" id="gap-sepc-ent">--h --m</div>
-            </div>
-        </div>
-
         <div class="tabela-container">
-            <h2>Produtividade por Colaborador</h2>
+            <h2>🏆 Tabela de Produtividade por Colaborador</h2>
             <table>
                 <thead>
                     <tr>
@@ -190,24 +141,22 @@
         // CONFIGURAÇÃO DO FIREBASE
         // ==========================================
         var firebaseConfig = {
-  		    apiKey: "AIzaSyDHUlqzRw_vSyp9livOvQ0rjBYT9l_yofs",
-  		    authDomain: "checkpoint-pedidos.firebaseapp.com",
-  		    projectId: "checkpoint-pedidos",
-  		    storageBucket: "checkpoint-pedidos.firebasestorage.app",
-  		    messagingSenderId: "890832634523",
-  		    appId: "1:890832634523:web:7f8fa0ee6a2a9c60e27c3e"
+            apiKey: "AIzaSyDHUlqzRw_vSyp9livOvQ0rjBYT9l_yofs",
+            authDomain: "checkpoint-pedidos.firebaseapp.com",
+            projectId: "checkpoint-pedidos",
+            storageBucket: "checkpoint-pedidos.firebasestorage.app",
+            messagingSenderId: "890832634523",
+            appId: "1:890832634523:web:7f8fa0ee6a2a9c60e27c3e"
         };
 
         firebase.initializeApp(firebaseConfig);
         var bancoDeDados = firebase.firestore();
 
-        console.log("%c🚀 Checkpoint HSVP | Criado por Luiz Henrique Link Lodi & Gemini", "color: #3498db; font-size: 14px; font-weight: bold;");
-
         var dadosParaExportar = {}; 
         var dataExportacao = "";
 
         // ==========================================
-        // INICIALIZAÇÃO 
+        // INICIALIZAÇÃO E BUSCA
         // ==========================================
         window.onload = function() {
             var hoje = new Date();
@@ -224,15 +173,6 @@
             if (!dataInput) { alert("Por favor, selecione uma data!"); return; }
 
             document.getElementById('msg-loading').style.display = 'block';
-            
-            // Reseta os relógios
-            document.getElementById('tot-leadtime-apoio').innerText = "... ⏳";
-            document.getElementById('tot-leadtime-central').innerText = "... ⏳";
-            document.getElementById('gap-sep-conf').innerText = "...";
-            document.getElementById('gap-conf-carr').innerText = "...";
-            document.getElementById('gap-carr-rec').innerText = "...";
-            document.getElementById('gap-rec-ent').innerText = "...";
-            document.getElementById('gap-sepc-ent').innerText = "...";
 
             var dataEscolhida = new Date(dataInput + "T00:00:00"); 
             var inicioDoDia = dataEscolhida.getTime();
@@ -249,15 +189,13 @@
                 .catch(function(erro) {
                     console.error("Erro ao buscar dados:", erro);
                     document.getElementById('msg-loading').style.display = 'none';
+                    alert("Erro ao carregar os dados. Verifique a conexão.");
                 });
         }
 
         function processarRelatorio(resultado) {
             var totais = { separado: 0, conferido: 0, carregado: 0, recebido: 0, sepCentral: 0, entregue: 0 };
             var colaboradores = {};
-            
-            var reqsEntreguesNoDia = [];
-            var mapasDeTempo = {}; 
 
             resultado.forEach(function(documento) {
                 var evento = documento.data();
@@ -280,15 +218,6 @@
                     totais.recebido++; colaboradores[nome].recebido++; colaboradores[nome].total++;
                 } else if (status.indexOf("Entregue") !== -1) {
                     totais.entregue++; colaboradores[nome].entregue++; colaboradores[nome].total++;
-                    
-                    if (!reqsEntreguesNoDia.includes(evento.requisicao)) {
-                        reqsEntreguesNoDia.push(evento.requisicao);
-                        mapasDeTempo[evento.requisicao] = { fim: evento.ordem, origem: "DESCONHECIDA", timeline: {} };
-                    } else {
-                        if (evento.ordem > mapasDeTempo[evento.requisicao].fim) {
-                            mapasDeTempo[evento.requisicao].fim = evento.ordem;
-                        }
-                    }
                 }
             });
 
@@ -308,9 +237,8 @@
             if (listaNomes.length === 0) {
                 corpoTabela.innerHTML = '<tr><td colspan="8" style="color: #e74c3c;">Nenhum registro encontrado para esta data.</td></tr>';
             } else {
-                
                 var maximos = { separado: 0, conferido: 0, carregado: 0, recebido: 0, sepCentral: 0, entregue: 0, total: 0 };
-                var somaTotalVolumes = 0; // Para o rodapé da tabela
+                var somaTotalVolumes = 0;
 
                 listaNomes.forEach(function(nome) {
                     var d = colaboradores[nome];
@@ -348,9 +276,7 @@
                     corpoTabela.innerHTML += linhaHTML;
                 });
 
-                // ==========================================
-                // LINHA DE TOTAL GERAL NO RODAPÉ DA TABELA
-                // ==========================================
+                // Rodapé de Totais
                 var linhaTotalHTML = '<tr style="background-color: #e8f6f3; border-top: 2px solid #bdc3c7;">' +
                                         '<td class="col-nome" style="color: #16a085; font-weight: bold;">TOTAL GERAL</td>' +
                                         '<td style="font-weight: bold; color: #2c3e50;">' + totais.separado + '</td>' +
@@ -364,136 +290,13 @@
                 corpoTabela.innerHTML += linhaTotalHTML;
             }
 
-            // ==========================================
-            // CÁLCULO ASSÍNCRONO DOS SLAs (TOTAIS E ETAPAS)
-            // ==========================================
-            if (reqsEntreguesNoDia.length === 0) {
-                document.getElementById('tot-leadtime-apoio').innerText = "0h 0m";
-                document.getElementById('tot-leadtime-central').innerText = "0h 0m";
-                document.getElementById('gap-sep-conf').innerText = "N/D";
-                document.getElementById('gap-conf-carr').innerText = "N/D";
-                document.getElementById('gap-carr-rec').innerText = "N/D";
-                document.getElementById('gap-rec-ent').innerText = "N/D";
-                document.getElementById('gap-sepc-ent').innerText = "N/D";
-                document.getElementById('msg-loading').style.display = 'none';
-                return;
-            }
-
-            var buscasHistoricas = reqsEntreguesNoDia.map(function(req) {
-                return bancoDeDados.collection("checkpoints_logistica")
-                    .where("requisicao", "==", req)
-                    .get()
-                    .then(function(resHist) {
-                        if (!resHist.empty) {
-                            var primeiroEvento = null;
-                            if(!mapasDeTempo[req].timeline) mapasDeTempo[req].timeline = {};
-
-                            resHist.forEach(function(doc) {
-                                var ev = doc.data();
-                                var st = ev.status || "";
-                                var t = ev.ordem;
-
-                                // Identifica o primeiro bipe para o Lead Time Total
-                                if (!primeiroEvento || t < primeiroEvento.ordem) {
-                                    primeiroEvento = ev;
-                                }
-
-                                // Mapeia o bipe mais antigo de cada etapa para os Micro-SLAs
-                                if (st.indexOf("Separado (Central)") !== -1) {
-                                    if (!mapasDeTempo[req].timeline.sepCentral || t < mapasDeTempo[req].timeline.sepCentral) mapasDeTempo[req].timeline.sepCentral = t;
-                                } else if (st.indexOf("Separado (Apoio)") !== -1 || st === "Separado") {
-                                    if (!mapasDeTempo[req].timeline.sepApoio || t < mapasDeTempo[req].timeline.sepApoio) mapasDeTempo[req].timeline.sepApoio = t;
-                                } else if (st.indexOf("Conferido") !== -1) {
-                                    if (!mapasDeTempo[req].timeline.conferido || t < mapasDeTempo[req].timeline.conferido) mapasDeTempo[req].timeline.conferido = t;
-                                } else if (st.indexOf("Carregado") !== -1) {
-                                    if (!mapasDeTempo[req].timeline.carregado || t < mapasDeTempo[req].timeline.carregado) mapasDeTempo[req].timeline.carregado = t;
-                                } else if (st.indexOf("Recebido") !== -1) {
-                                    if (!mapasDeTempo[req].timeline.recebido || t < mapasDeTempo[req].timeline.recebido) mapasDeTempo[req].timeline.recebido = t;
-                                }
-                            });
-
-                            if (primeiroEvento) {
-                                var statusOrigem = primeiroEvento.status || "";
-                                if (statusOrigem.indexOf("Apoio") !== -1 || statusOrigem === "Separado") {
-                                    mapasDeTempo[req].origem = "APOIO";
-                                } else if (statusOrigem.indexOf("Central") !== -1) {
-                                    mapasDeTempo[req].origem = "CENTRAL";
-                                }
-                                mapasDeTempo[req].inicio = primeiroEvento.ordem;
-                            }
-                        }
-                    });
-            });
-
-            Promise.all(buscasHistoricas).then(function() {
-                // Acumuladores Lead Time Total
-                var somaMsApoio = 0, qtdApoio = 0;
-                var somaMsCentral = 0, qtdCentral = 0;
-                
-                // Acumuladores Micro-SLAs (Etapas)
-                var gapSepConf = { soma: 0, qtd: 0 };
-                var gapConfCarr = { soma: 0, qtd: 0 };
-                var gapCarrRec = { soma: 0, qtd: 0 };
-                var gapRecEnt = { soma: 0, qtd: 0 };
-                var gapSepCEnt = { soma: 0, qtd: 0 };
-
-                for (var req in mapasDeTempo) {
-                    var tempo = mapasDeTempo[req];
-                    var tLine = tempo.timeline;
-                    var fim = tempo.fim;
-
-                    // Lógica Lead Time Total
-                    if (tempo.inicio && fim && fim >= tempo.inicio && tempo.origem !== "DESCONHECIDA") {
-                        var diferencaMs = fim - tempo.inicio;
-                        if (tempo.origem === "APOIO") {
-                            somaMsApoio += diferencaMs;
-                            qtdApoio++;
-                        } else if (tempo.origem === "CENTRAL") {
-                            somaMsCentral += diferencaMs;
-                            qtdCentral++;
-                        }
-                    }
-
-                    // Lógica Micro-SLAs (Etapas)
-                    if (tLine) {
-                        if (tLine.sepApoio && tLine.conferido && tLine.conferido >= tLine.sepApoio) { gapSepConf.soma += (tLine.conferido - tLine.sepApoio); gapSepConf.qtd++; }
-                        if (tLine.conferido && tLine.carregado && tLine.carregado >= tLine.conferido) { gapConfCarr.soma += (tLine.carregado - tLine.conferido); gapConfCarr.qtd++; }
-                        if (tLine.carregado && tLine.recebido && tLine.recebido >= tLine.carregado) { gapCarrRec.soma += (tLine.recebido - tLine.carregado); gapCarrRec.qtd++; }
-                        if (tLine.recebido && fim && fim >= tLine.recebido) { gapRecEnt.soma += (fim - tLine.recebido); gapRecEnt.qtd++; }
-                        if (tLine.sepCentral && fim && fim >= tLine.sepCentral) { gapSepCEnt.soma += (fim - tLine.sepCentral); gapSepCEnt.qtd++; }
-                    }
-                }
-
-                // Função auxiliar para formatar em 00h 00m
-                function formataSLA(ms) {
-                    if (ms < 0) return "N/D";
-                    var mediaMin = Math.floor(ms / (1000 * 60));
-                    var h = Math.floor(mediaMin / 60);
-                    var m = mediaMin % 60;
-                    return (h < 10 ? "0"+h : h) + "h " + (m < 10 ? "0"+m : m) + "m";
-                }
-
-                // Imprime Totais
-                document.getElementById('tot-leadtime-apoio').innerText = qtdApoio > 0 ? formataSLA(somaMsApoio / qtdApoio) : "N/D";
-                document.getElementById('tot-leadtime-central').innerText = qtdCentral > 0 ? formataSLA(somaMsCentral / qtdCentral) : "N/D";
-
-                // Imprime Etapas
-                document.getElementById('gap-sep-conf').innerText = gapSepConf.qtd > 0 ? formataSLA(gapSepConf.soma / gapSepConf.qtd) : "N/D";
-                document.getElementById('gap-conf-carr').innerText = gapConfCarr.qtd > 0 ? formataSLA(gapConfCarr.soma / gapConfCarr.qtd) : "N/D";
-                document.getElementById('gap-carr-rec').innerText = gapCarrRec.qtd > 0 ? formataSLA(gapCarrRec.soma / gapCarrRec.qtd) : "N/D";
-                document.getElementById('gap-rec-ent').innerText = gapRecEnt.qtd > 0 ? formataSLA(gapRecEnt.soma / gapRecEnt.qtd) : "N/D";
-                document.getElementById('gap-sepc-ent').innerText = gapSepCEnt.qtd > 0 ? formataSLA(gapSepCEnt.soma / gapSepCEnt.qtd) : "N/D";
-
-                document.getElementById('msg-loading').style.display = 'none';
-
-            }).catch(function(erro) {
-                console.error("Erro na Máquina do Tempo do SLA:", erro);
-                document.getElementById('tot-leadtime-apoio').innerText = "Erro";
-                document.getElementById('tot-leadtime-central').innerText = "Erro";
-                document.getElementById('msg-loading').style.display = 'none';
-            });
+            // Desliga o carregando (processamento ultra-rápido agora)
+            document.getElementById('msg-loading').style.display = 'none';
         }
 
+        // ==========================================
+        // EXPORTAÇÃO PARA EXCEL (Mantida e Funcional)
+        // ==========================================
         function exportarParaExcel() {
             var listaNomes = Object.keys(dadosParaExportar);
             if (listaNomes.length === 0) { alert("Não há dados na tabela para exportar."); return; }
