@@ -58,7 +58,6 @@
             justify-content: center;
         }
 
-        /* Card de Registro no Palm (Padrão) */
         .registro-lote { 
             background: #fff; 
             padding: 10px; 
@@ -66,20 +65,14 @@
             font-size: 16px; 
             border: 2px solid #8e44ad; 
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            width: 95%; /* Vertical no Palm */
+            width: 95%; 
             text-align: center;
             box-sizing: border-box;
         }
         .registro-lote strong { display: block; color: #2c3e50; font-size: 18px; }
 
-        /* Ajuste para PC (Telas maiores que 600px) */
         @media (min-width: 600px) {
-            .registro-lote { 
-                width: auto; 
-                min-width: 160px; 
-                padding: 15px;
-                font-size: 22px;
-            }
+            .registro-lote { width: auto; min-width: 160px; padding: 15px; font-size: 22px; }
             .registro-lote strong { font-size: 26px; }
         }
 
@@ -207,7 +200,9 @@
         var tipoLoteAtual = ""; 
         var etapaLoteAtual = ""; 
         var contadorLoteSessao = 0; 
-        var memoriaVolumes = {};
+        
+        // Cache Otimizado para reduzir leituras e validar retrocesso globalmente
+        var memoriaVolumes = {}; 
         
         var dicionarioEtapas = {
             "QR-SEP-CENTRAL": "Separado (Central)", "QR-SEP-APOIO": "Separado (Apoio)",
@@ -249,12 +244,22 @@
             document.getElementById('idMatricula').focus();
         }
 
+        function checarOperador() {
+            if (!nomeOperadorAtual || document.getElementById('idMatricula').value.trim() === "") { 
+                dispararAlertaErro(); 
+                mostrarToast("❌ Identifique-se!");
+                document.getElementById('idMatricula').focus(); 
+                return false; 
+            }
+            return true;
+        }
+
         function abrirModoLote(tipo) {
-            if (!nomeOperadorAtual) { alert("Bipe seu crachá primeiro!"); return; }
+            if (!checarOperador()) return;
             tipoLoteAtual = tipo;
             document.getElementById('tela-logistica').style.display = 'none';
             document.getElementById('tela-lote').style.display = 'block';
-            document.getElementById('listaRegistrosLote').innerHTML = ''; // Limpa histórico ao abrir
+            document.getElementById('listaRegistrosLote').innerHTML = ''; 
             var titulo = document.getElementById('titulo-lote');
             var inst1 = document.getElementById('texto-passo1');
             if (tipo === 'CONFERENTE') {
@@ -287,19 +292,31 @@
             }
         });
 
+        // ==========================================
+        // GATILHOS DOS LEITORES COM A TRAVA DE OURO
+        // ==========================================
         document.getElementById('idReqLote').addEventListener('input', function(e) {
             if (/[^0-9]/.test(this.value)) { this.value = this.value.replace(/\D/g, ''); dispararAlertaErro(); return; }
             if (this.value.length === 7) { 
+                if (!checarOperador()) { this.value = ''; return; }
                 var req = this.value.trim(); this.value = ''; this.focus();
                 processarBipeInteligente(req, dicionarioEtapas[etapaLoteAtual]);
             }
         });
 
-        // Lógica de Entrada Unitária
-        document.getElementById('idRequisicao').addEventListener('input', function(e) { if (this.value.length === 7) document.getElementById('idLocalQR').focus(); });
+        document.getElementById('idRequisicao').addEventListener('input', function(e) { 
+            var valor = this.value.trim();
+            if (/[^0-9]/.test(valor)) { this.value = valor.replace(/\D/g, ''); return; }
+            if (this.value.length === 7) {
+                if (!checarOperador()) { this.value = ''; return; }
+                document.getElementById('idLocalQR').focus(); 
+            }
+        });
+
         document.getElementById('idLocalQR').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
+                if (!checarOperador()) { this.value = ''; return; }
                 var req = document.getElementById('idRequisicao').value.trim();
                 var qr = this.value.trim().toUpperCase();
                 if (req.length === 7 && qr !== "") {
@@ -310,43 +327,114 @@
             }
         });
 
+        // ==========================================
+        // LÓGICA DE PESOS: BLOQUEIO DE RETROCESSO
+        // ==========================================
+        function getPesoDaEtapa(status) {
+            if (status.indexOf("Separado") !== -1) return 1;
+            if (status.indexOf("Conferido") !== -1) return 2;
+            if (status.indexOf("Carregado") !== -1) return 3;
+            if (status.indexOf("Recebido") !== -1) return 4;
+            if (status.indexOf("Entregue") !== -1) return 5;
+            return 0; // Exceções
+        }
+
+        // ==========================================
+        // MOTOR INTELIGENTE CENTRAL 
+        // ==========================================
         function processarBipeInteligente(requisicao, statusFinal) {
-            var chaveVolume = requisicao + "-" + statusFinal;
-            if (memoriaVolumes[chaveVolume] === undefined) {
-                memoriaVolumes[chaveVolume] = 'Buscando...';
+            if (!checarOperador()) return; // Trava de Segurança Definitiva
+
+            var pesoNovoStatus = getPesoDaEtapa(statusFinal);
+
+            if (memoriaVolumes[requisicao] === 'Buscando...') {
+                setTimeout(function() { processarBipeInteligente(requisicao, statusFinal); }, 300);
+                return;
+            }
+
+            if (memoriaVolumes[requisicao] === undefined) {
+                memoriaVolumes[requisicao] = 'Buscando...';
                 var inicioDoDia = new Date().setHours(0,0,0,0);
-                bancoDeDados.collection("checkpoints_logistica").where("requisicao", "==", requisicao).get().then(function(resultado) {
-                    var volumesOcupados = [];
-                    resultado.forEach(function(doc) { 
-                        if (doc.data().status === statusFinal && doc.data().ordem >= inicioDoDia) volumesOcupados.push(parseInt(doc.data().volume) || 1); 
+                
+                // Otimizado: Busca todo o histórico da requisição de uma vez
+                bancoDeDados.collection("checkpoints_logistica")
+                    .where("requisicao", "==", requisicao)
+                    .where("ordem", ">=", inicioDoDia)
+                    .get()
+                    .then(function(resultado) {
+                        var dadosReq = {
+                            statusVol: {}, // ex: { "Separado (Apoio)": [1,2] }
+                            pesoMaxVol: {} // ex: { 1: 5, 2: 1 } (O maior peso que a caixa já alcançou)
+                        };
+
+                        resultado.forEach(function(doc) { 
+                            var ev = doc.data();
+                            var v = parseInt(ev.volume) || 1;
+                            var p = getPesoDaEtapa(ev.status);
+                            
+                            if (!dadosReq.pesoMaxVol[v] || p > dadosReq.pesoMaxVol[v]) {
+                                dadosReq.pesoMaxVol[v] = p;
+                            }
+                            if (!dadosReq.statusVol[ev.status]) dadosReq.statusVol[ev.status] = [];
+                            dadosReq.statusVol[ev.status].push(v);
+                        });
+
+                        memoriaVolumes[requisicao] = dadosReq; 
+                        continuarProcessamento(requisicao, statusFinal, pesoNovoStatus);
+                    }).catch(function(erro) {
+                        memoriaVolumes[requisicao] = undefined; 
+                        mostrarToast("❌ Erro de Conexão.");
                     });
-                    memoriaVolumes[chaveVolume] = volumesOcupados; 
-                    var proximoVolume = 1; while(memoriaVolumes[chaveVolume].includes(proximoVolume)) proximoVolume++;
-                    memoriaVolumes[chaveVolume].push(proximoVolume);
-                    executarSalvamentoNuvem(requisicao, statusFinal, proximoVolume);
-                });
-            } else if (Array.isArray(memoriaVolumes[chaveVolume])) {
-                var proximoVolume = 1; while(memoriaVolumes[chaveVolume].includes(proximoVolume)) proximoVolume++;
-                memoriaVolumes[chaveVolume].push(proximoVolume);
-                executarSalvamentoNuvem(requisicao, statusFinal, proximoVolume);
+            } else {
+                continuarProcessamento(requisicao, statusFinal, pesoNovoStatus);
             }
         }
 
-        function executarSalvamentoNuvem(requisicao, statusFinal, volCalc) {
+        function continuarProcessamento(requisicao, statusFinal, pesoNovoStatus) {
+            var dadosReq = memoriaVolumes[requisicao];
+            if (!dadosReq.statusVol[statusFinal]) dadosReq.statusVol[statusFinal] = [];
+            
+            var volumesOcupados = dadosReq.statusVol[statusFinal];
+            var proximoVolume = 1; 
+            while (volumesOcupados.includes(proximoVolume)) proximoVolume++;
+
+            // ⛔ VALIDAÇÃO DE RETROCESSO LOGÍSTICO
+            if (dadosReq.pesoMaxVol[proximoVolume] && dadosReq.pesoMaxVol[proximoVolume] > pesoNovoStatus) {
+                dispararAlertaErro();
+                mostrarToast("⛔ Retrocesso Bloqueado!");
+                alert("ATENÇÃO!\nO Volume " + proximoVolume + " da requisição " + requisicao + " já passou por uma etapa mais avançada (ex: Entregue).\nEsta caixa não retornará para o início do Kanban.");
+                return; // Corta a execução, não salva nada.
+            }
+
+            // Atualiza a memória local para os próximos bipes
+            dadosReq.statusVol[statusFinal].push(proximoVolume);
+            if (!dadosReq.pesoMaxVol[proximoVolume] || pesoNovoStatus > dadosReq.pesoMaxVol[proximoVolume]) {
+                dadosReq.pesoMaxVol[proximoVolume] = pesoNovoStatus;
+            }
+
+            var matriculaSegura = document.getElementById('idMatricula').value;
+            executarSalvamentoNuvem(requisicao, statusFinal, proximoVolume, matriculaSegura, nomeOperadorAtual);
+        }
+
+        function executarSalvamentoNuvem(requisicao, statusFinal, volCalc, matricula, opNome) {
             var dataAtual = new Date();
             var novoEvento = { 
-                matricula: document.getElementById('idMatricula').value, 
-                nome: nomeOperadorAtual, requisicao: requisicao, status: statusFinal, 
-                volume: volCalc, data: dataAtual.toLocaleString('pt-BR'), ordem: dataAtual.getTime() 
+                matricula: matricula, 
+                nome: opNome, 
+                requisicao: requisicao, 
+                status: statusFinal, 
+                volume: volCalc, 
+                data: dataAtual.toLocaleString('pt-BR'), 
+                ordem: dataAtual.getTime() 
             };
             bancoDeDados.collection("checkpoints_logistica").add(novoEvento).then(function() {
                 mostrarToast("✅ Salvo! (Vol " + volCalc + ")");
-                adicionarRegistroNaTela(novoEvento, 'listaRegistros'); // Histórico Geral
+                adicionarRegistroNaTela(novoEvento, 'listaRegistros');
                 if (document.getElementById('tela-lote').style.display === 'block') {
                     contadorLoteSessao++; document.getElementById('qtd-lote').innerText = contadorLoteSessao;
-                    adicionarRegistroNaTela(novoEvento, 'listaRegistrosLote'); // Histórico Lote
+                    adicionarRegistroNaTela(novoEvento, 'listaRegistrosLote'); 
                 }
-            });
+            }).catch(function(erro) { mostrarToast("❌ Erro ao gravar."); });
         }
 
         function adicionarRegistroNaTela(evento, idLista) {
