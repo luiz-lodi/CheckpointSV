@@ -356,32 +356,36 @@
                 memoriaVolumes[requisicao] = 'Buscando...';
                 var inicioDoDia = new Date().setHours(0,0,0,0);
                 
-                // Otimizado: Busca todo o histórico da requisição de uma vez
+                // Correção: Busca simples apenas pela requisição (Não exige Índice Composto no Firebase)
                 bancoDeDados.collection("checkpoints_logistica")
                     .where("requisicao", "==", requisicao)
-                    .where("ordem", ">=", inicioDoDia)
                     .get()
                     .then(function(resultado) {
                         var dadosReq = {
-                            statusVol: {}, // ex: { "Separado (Apoio)": [1,2] }
-                            pesoMaxVol: {} // ex: { 1: 5, 2: 1 } (O maior peso que a caixa já alcançou)
+                            statusVol: {}, 
+                            pesoMaxVol: {} 
                         };
 
                         resultado.forEach(function(doc) { 
                             var ev = doc.data();
-                            var v = parseInt(ev.volume) || 1;
-                            var p = getPesoDaEtapa(ev.status);
                             
-                            if (!dadosReq.pesoMaxVol[v] || p > dadosReq.pesoMaxVol[v]) {
-                                dadosReq.pesoMaxVol[v] = p;
+                            // Filtro de data feito no lado do cliente (seguro e rápido)
+                            if (ev.ordem >= inicioDoDia) {
+                                var v = parseInt(ev.volume) || 1;
+                                var p = getPesoDaEtapa(ev.status);
+                                
+                                if (!dadosReq.pesoMaxVol[v] || p > dadosReq.pesoMaxVol[v]) {
+                                    dadosReq.pesoMaxVol[v] = p;
+                                }
+                                if (!dadosReq.statusVol[ev.status]) dadosReq.statusVol[ev.status] = [];
+                                dadosReq.statusVol[ev.status].push(v);
                             }
-                            if (!dadosReq.statusVol[ev.status]) dadosReq.statusVol[ev.status] = [];
-                            dadosReq.statusVol[ev.status].push(v);
                         });
 
                         memoriaVolumes[requisicao] = dadosReq; 
                         continuarProcessamento(requisicao, statusFinal, pesoNovoStatus);
                     }).catch(function(erro) {
+                        console.error("Erro na busca:", erro);
                         memoriaVolumes[requisicao] = undefined; 
                         mostrarToast("❌ Erro de Conexão.");
                     });
