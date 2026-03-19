@@ -514,7 +514,7 @@
             document.getElementById('load-processos').style.display = 'none';
         }
 
-        // (2.2) Produtividade (COM TROFÉUS)
+        // (2.2) Produtividade 
         function processarAbaProdutividade(bipes) {
             var colabs = {}, totGer = { sep:0, conf:0, carr:0, rec:0, sepc:0, ent:0, tot:0 };
             bipes.forEach(ev => {
@@ -684,7 +684,7 @@
         }
 
         // ==========================================
-        // RAIO-X (AGORA SEPARADO POR VOLUMES E FLUXOS)
+        // RAIO-X (AGORA COM HERANÇA DE SEPARAÇÃO)
         // ==========================================
         function buscarCicloVida() {
             var req = document.getElementById('inputRaioX').value.trim();
@@ -699,13 +699,36 @@
                 var tlContainer = document.getElementById('raiox-timeline'); 
                 tlContainer.innerHTML = "";
                 
+                var todosBipes = [];
+                res.forEach(d => todosBipes.push(d.data()));
+
+                // ENCONTRA O EVENTO PAI (Separação do Volume 1)
+                var eventoSeparadoVol1 = todosBipes.find(b => 
+                    (parseInt(b.volume) === 1 || !b.volume) && 
+                    b.status.includes("Separado")
+                );
+
                 var bipesPorVolume = {};
-                res.forEach(d => {
-                    var b = d.data();
-                    var v = b.volume || 1;
+                todosBipes.forEach(b => {
+                    var v = parseInt(b.volume) || 1;
                     if(!bipesPorVolume[v]) bipesPorVolume[v] = [];
                     bipesPorVolume[v].push(b);
                 });
+
+                // APLICA A HERANÇA PARA VOLUMES > 1
+                if (eventoSeparadoVol1) {
+                    for (var vol in bipesPorVolume) {
+                        if (parseInt(vol) > 1) {
+                            var temSeparado = bipesPorVolume[vol].some(b => b.status.includes("Separado"));
+                            if (!temSeparado) {
+                                // Clona o evento original para não bagunçar a memória
+                                var eventoHerdado = JSON.parse(JSON.stringify(eventoSeparadoVol1));
+                                eventoHerdado.herdado = true; // Flag visual
+                                bipesPorVolume[vol].push(eventoHerdado);
+                            }
+                        }
+                    }
+                }
 
                 var volumesOrdem = Object.keys(bipesPorVolume).sort((a,b) => parseInt(a) - parseInt(b));
 
@@ -756,7 +779,12 @@
                         htmlVolume += '<div class="raiox-etapa">';
                         if(achou) {
                             ultimaOrdemValida = achou.ordem;
-                            htmlVolume += `<div class="raiox-icone icone-ok">✓</div><div class="raiox-detalhe"><h4>${achou.status}</h4><p>👤 ${achou.nome} | 🕒 ${achou.data}</p></div>`;
+                            
+                            // Visual Diferenciado para Bipes Herdados
+                            var bgIcone = achou.herdado ? '#3498db' : '#2ecc71';
+                            var txHerdado = achou.herdado ? ' <span style="font-size:11px; color:#3498db; font-weight:normal;">(Herdado Vol 1)</span>' : '';
+                            
+                            htmlVolume += `<div class="raiox-icone" style="background-color:${bgIcone};">✓</div><div class="raiox-detalhe"><h4>${achou.status}${txHerdado}</h4><p>👤 ${achou.nome} | 🕒 ${achou.data}</p></div>`;
                         } else if(i < indexAlcancado) {
                             htmlVolume += `<div class="raiox-icone icone-falha">!</div><div class="raiox-detalhe"><h4 style="color:#e74c3c;">${etapa.nome}</h4><p style="color:#e74c3c;">(Pulou a etapa)</p></div>`;
                         } else {
