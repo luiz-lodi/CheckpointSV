@@ -22,9 +22,6 @@
         .filtro-container input[type="date"] { padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
         .btn-filtrar { background-color: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.2s; }
         .btn-filtrar:hover { background-color: #2980b9; }
-        
-        .btn-exportar { background-color: #27ae60; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        .btn-exportar:hover { background-color: #2ecc71; }
 
         .secao-titulo { color: #2c3e50; font-size: 16px; font-weight: bold; margin-top: 10px; margin-bottom: 15px; border-bottom: 2px solid #bdc3c7; padding-bottom: 5px; text-transform: uppercase; }
 
@@ -78,7 +75,6 @@
             <label for="filtroData">Data do Relatório:</label>
             <input type="date" id="filtroData">
             <button class="btn-filtrar" onclick="carregarDados()">Buscar Dados</button>
-            <button class="btn-exportar" onclick="exportarParaExcel()">📥 Exportar Excel</button>
             <div class="loading" id="msg-loading">Processando dados... ⏳</div>
         </div>
 
@@ -136,9 +132,6 @@
     </div>
 
     <script>
-        // ==========================================
-        // CONFIGURAÇÃO DO FIREBASE
-        // ==========================================
         var firebaseConfig = {
             apiKey: "AIzaSyDHUlqzRw_vSyp9livOvQ0rjBYT9l_yofs",
             authDomain: "checkpoint-pedidos.firebaseapp.com",
@@ -147,16 +140,11 @@
             messagingSenderId: "890832634523",
             appId: "1:890832634523:web:7f8fa0ee6a2a9c60e27c3e"
         };
-
         firebase.initializeApp(firebaseConfig);
         var bancoDeDados = firebase.firestore();
 
-        var dadosParaExportar = {}; 
-        var dataExportacao = "";
+        console.log("%c🚀 Checkpoint HSVP | Criado por Luiz Henrique Link Lodi & Gemini", "color: #3498db; font-size: 14px; font-weight: bold;");        
 
-        // ==========================================
-        // INICIALIZAÇÃO E BUSCA
-        // ==========================================
         window.onload = function() {
             var hoje = new Date();
             var dia = String(hoje.getDate()).padStart(2, '0');
@@ -182,7 +170,6 @@
                 .where("ordem", "<=", fimDoDia)
                 .get()
                 .then(function(resultado) {
-                    dataExportacao = dataInput;
                     processarRelatorio(resultado);
                 })
                 .catch(function(erro) {
@@ -219,8 +206,6 @@
                     totais.entregue++; colaboradores[nome].entregue++; colaboradores[nome].total++;
                 }
             });
-
-            dadosParaExportar = colaboradores;
 
             document.getElementById('tot-separado').innerText = totais.separado;
             document.getElementById('tot-conferido').innerText = totais.conferido;
@@ -275,7 +260,6 @@
                     corpoTabela.innerHTML += linhaHTML;
                 });
 
-                // Rodapé de Totais
                 var linhaTotalHTML = '<tr style="background-color: #e8f6f3; border-top: 2px solid #bdc3c7;">' +
                                         '<td class="col-nome" style="color: #16a085; font-weight: bold;">TOTAL GERAL</td>' +
                                         '<td style="font-weight: bold; color: #2c3e50;">' + totais.separado + '</td>' +
@@ -289,34 +273,7 @@
                 corpoTabela.innerHTML += linhaTotalHTML;
             }
 
-            // Desliga o carregando (processamento ultra-rápido agora)
             document.getElementById('msg-loading').style.display = 'none';
-        }
-
-        // ==========================================
-        // EXPORTAÇÃO PARA EXCEL (Mantida e Funcional)
-        // ==========================================
-        function exportarParaExcel() {
-            var listaNomes = Object.keys(dadosParaExportar);
-            if (listaNomes.length === 0) { alert("Não há dados na tabela para exportar."); return; }
-
-            var conteudoCSV = "Colaborador;Sep_Apoio;Conferido;Carregado;Recebido;Sep_Central;Entregue;Total_Volumes\n";
-
-            listaNomes.sort().forEach(function(nome) {
-                var d = dadosParaExportar[nome];
-                conteudoCSV += nome + ";" + d.separado + ";" + d.conferido + ";" + d.carregado + ";" + d.recebido + ";" + d.sepCentral + ";" + d.entregue + ";" + d.total + "\n";
-            });
-
-            var blob = new Blob(["\uFEFF" + conteudoCSV], { type: 'text/csv;charset=utf-8;' });
-            var link = document.createElement("a");
-            var url = URL.createObjectURL(blob);
-            link.setAttribute("href", url);
-            link.setAttribute("download", "Produtividade_Logistica_" + dataExportacao + ".csv");
-            link.style.visibility = 'hidden';
-            
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
         }
     </script>
 </body>
