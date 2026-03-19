@@ -229,7 +229,7 @@
         }
 
         // ==========================================
-        // FLUXO DO MODO MÚLTIPLO E RETIRADA
+        // FLUXO DO MODO MÚLTIPLO (E RETIRADA)
         // ==========================================
         function abrirModoLote(tipo) {
             if (!checarOperador()) return;
@@ -304,18 +304,28 @@
         });
 
         // ==========================================
-        // LEITURA DO LOTE (Otimizada para não engasgar o hardware)
+        // MODO LOTE: BLINDADO CONTRA CÓDIGOS SUJOS
         // ==========================================
         document.getElementById('idReqLote').addEventListener('input', function(e) {
-            // Só executa o replace se a string contiver alguma letra ou símbolo sujo
-            if (/\D/.test(this.value)) {
-                this.value = this.value.replace(/\D/g, '');
+            var apenasNumeros = this.value.replace(/\D/g, ''); 
+
+            // POKA-YOKE: Se o leitor jogar um código maior que 7 dígitos (ex: etiqueta de remédio)
+            if (apenasNumeros.length > 7) {
+                dispararAlertaErro();
+                mostrarToast("❌ Código Inválido!");
+                this.value = '';
+                return;
             }
 
-            if (this.value.length === 7) { 
+            this.value = apenasNumeros;
+
+            // Se for evento de apagar (backspace), não processa para evitar gravação acidental
+            var isBackspace = e.inputType && e.inputType.startsWith('delete');
+
+            if (apenasNumeros.length === 7 && !isBackspace) { 
                 if (!checarOperador()) { this.value = ''; return; }
                 
-                var req = this.value; 
+                var req = apenasNumeros; 
                 this.value = ''; 
                 this.focus();
                 
@@ -367,15 +377,23 @@
 
 
         // ==========================================
-        // MODO UNITÁRIO (Otimizado para não engasgar o hardware)
+        // MODO UNITÁRIO: BLINDADO CONTRA CÓDIGOS SUJOS
         // ==========================================
         document.getElementById('idRequisicao').addEventListener('input', function(e) { 
-            // Só executa o replace se a string contiver alguma letra ou símbolo sujo
-            if (/\D/.test(this.value)) {
-                this.value = this.value.replace(/\D/g, ''); 
+            var apenasNumeros = this.value.replace(/\D/g, ''); 
+
+            if (apenasNumeros.length > 7) {
+                dispararAlertaErro();
+                mostrarToast("❌ Código Inválido!");
+                this.value = '';
+                return;
             }
 
-            if (this.value.length === 7) {
+            this.value = apenasNumeros;
+
+            var isBackspace = e.inputType && e.inputType.startsWith('delete');
+
+            if (apenasNumeros.length === 7 && !isBackspace) {
                 if (!checarOperador()) { this.value = ''; return; }
                 document.getElementById('idLocalQR').focus(); 
             }
@@ -403,7 +421,7 @@
         });
 
         // ==========================================
-        // LÓGICA DE PESOS E SINCRONIZAÇÃO NUVEM
+        // LÓGICA DE PESOS E SINCRONIZAÇÃO
         // ==========================================
         function getPesoDaEtapa(status) {
             if (status.indexOf("Separado") !== -1) return 1;
