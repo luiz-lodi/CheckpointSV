@@ -8,6 +8,7 @@
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
 
@@ -27,6 +28,7 @@
         #painel-gestao { display: none; }
         .layout-app { display: flex; gap: 20px; align-items: flex-start; }
         
+        /* MENU LATERAL */
         .sidebar { width: 280px; background: #34495e; border-radius: 8px; padding: 10px 0; flex-shrink: 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden;}
         .menu-btn { display: flex; justify-content: space-between; align-items: center; width: 100%; text-align: left; padding: 15px 20px; background: none; border: none; color: #ecf0f1; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.2s; border-left: 4px solid transparent; }
         .menu-btn:hover { background: #2c3e50; }
@@ -49,6 +51,7 @@
         .btn-acao { background-color: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; }
         .loading { color: #e67e22; font-weight: bold; display: none; margin-left: auto; }
 
+        /* TABELAS */
         .tabela-wrapper { overflow-x: auto; margin-bottom: 15px; border-radius: 8px; border: 1px solid #eee; }
         table { width: 100%; border-collapse: collapse; min-width: 700px; }
         th, td { padding: 12px; text-align: center; border-bottom: 1px solid #eee; font-size: 14px; }
@@ -75,14 +78,12 @@
         .raiox-detalhe { flex: 1; border-bottom: 1px dashed #eee; padding-bottom: 8px; margin-top: 15px;}
         .raiox-detalhe h4 { margin: 0; color: #2c3e50; }
         .raiox-detalhe p { margin: 2px 0 0 0; font-size: 13px; color: #7f8c8d; }
-        
-        /* Linha conectora e tempo */
         .raiox-intervalo { margin-left: 16px; border-left: 3px dashed #bdc3c7; padding: 10px 0 10px 35px; color: #d35400; font-size: 13px; font-weight: bold; }
 
         .modal-overlay { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); }
         .modal-content { background: #fff; margin: 10% auto; padding: 25px; border-radius: 8px; width: 90%; max-width: 450px; }
         
-        /* GRÁFICOS BI */
+        /* GRÁFICOS BI E CARDS */
         .dashboard-grid { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 30px;}
         .chart-box { background: #fff; padding: 15px; border-radius: 8px; flex: 1; min-width: 400px; border: 1px solid #eee; box-shadow: 0 2px 4px rgba(0,0,0,0.02);}
         .chart-full { flex: 100%; min-width: 100%; }
@@ -99,7 +100,6 @@
         .card-micro h3 { font-size: 11px; color: #95a5a6; margin:0; text-transform:uppercase;}
         .card-micro .numero { font-size: 24px; color: #34495e; font-weight:bold; margin-top:8px;}
 
-        /* Listas de Ranking TOP 5 */
         .ranking-list { list-style: none; padding: 0; margin: 0; }
         .ranking-list li { padding: 10px 0; border-bottom: 1px solid #ecf0f1; display: flex; justify-content: space-between; align-items: center; font-size: 14px;}
         .ranking-list li:last-child { border-bottom: none; }
@@ -228,13 +228,27 @@
                                 </div>
                             </div>
 
+                            <div class="dashboard-grid" style="margin-bottom: 30px;">
+                                <div class="chart-box chart-full">
+                                    <h3 style="text-align:center; margin-top:0;">Evolução Diária do Lead Time (Horas)</h3>
+                                    <div style="position: relative; height:300px;"><canvas id="chartSLA"></canvas></div>
+                                </div>
+                            </div>
+
                             <h3 style="color:#2c3e50; border-bottom:1px solid #eee; padding-bottom:5px;">Micro-SLAs: Tempos Médios por Trecho</h3>
-                            <div class="dashboard-grid" style="margin-bottom: 30px; gap: 15px;">
+                            <div class="dashboard-grid" style="margin-bottom: 20px; gap: 15px;">
                                 <div class="card-micro" style="border-color:#f39c12;"><h3>Sep ➔ Conf</h3><div class="numero" id="gap-sep-conf">--h --m</div></div>
                                 <div class="card-micro" style="border-color:#f39c12;"><h3>Conf ➔ Transp</h3><div class="numero" id="gap-conf-carr">--h --m</div></div>
                                 <div class="card-micro" style="border-color:#f39c12;"><h3>Transp ➔ Rec</h3><div class="numero" id="gap-carr-rec">--h --m</div></div>
                                 <div class="card-micro" style="border-color:#f39c12;"><h3>Rec ➔ Entrega</h3><div class="numero" id="gap-rec-ent">--h --m</div></div>
                                 <div class="card-micro" style="border-color:#1abc9c;"><h3>SepC ➔ Entrega</h3><div class="numero" id="gap-sepc-ent">--h --m</div></div>
+                            </div>
+
+                            <div class="dashboard-grid" style="margin-bottom: 30px;">
+                                <div class="chart-box chart-full">
+                                    <h3 style="text-align:center; margin-top:0;">Evolução Diária: Tempo Médio Interno (Horas)</h3>
+                                    <div style="position: relative; height:300px;"><canvas id="chartMicroSLA"></canvas></div>
+                                </div>
                             </div>
 
                             <h3 style="color:#2c3e50; border-bottom:1px solid #eee; padding-bottom:5px;">🏆 Top 5: Extremos de Lead Time (Entregas do Mês)</h3>
@@ -246,17 +260,6 @@
                                 <div class="chart-box" style="border-top: 4px solid #e74c3c;">
                                     <h3 style="margin-top:0; color:#c0392b;">🐢 Mais Lentas (Maior SLA)</h3>
                                     <ul id="lista-top-slow" class="ranking-list"></ul>
-                                </div>
-                            </div>
-
-                            <div class="dashboard-grid" style="margin-bottom: 30px;">
-                                <div class="chart-box">
-                                    <h3 style="text-align:center; margin-top:0;">Evolução Diária do Lead Time (Horas)</h3>
-                                    <div style="position: relative; height:300px;"><canvas id="chartSLA"></canvas></div>
-                                </div>
-                                <div class="chart-box chart-full">
-                                    <h3 style="text-align:center; margin-top:0;">Evolução Diária: Tempo Médio Interno (Horas)</h3>
-                                    <div style="position: relative; height:300px;"><canvas id="chartMicroSLA"></canvas></div>
                                 </div>
                             </div>
 
@@ -315,7 +318,10 @@
                         <h2 class="secao-titulo">Histórico de Auditoria de Exclusões</h2>
                         <div class="filtro-container">
                             <label>Por pág:</label>
-                            <select id="limiteAuditoria"><option value="10" selected>10 itens</option><option value="20">20 itens</option></select>
+                            <select id="limiteAuditoria">
+                                <option value="10" selected>10 itens</option>
+                                <option value="20">20 itens</option>
+                            </select>
                             <button class="btn-acao" style="background-color: #7f8c8d;" onclick="carregarAuditoria(0)">🔄 Recarregar</button>
                             <span class="loading" id="load-auditoria">Buscando... ⏳</span>
                         </div>
@@ -350,13 +356,14 @@
     </div>
 
     <script>
+        // ASSINATURA OFICIAL DE ENGENHARIA 🚀
+        console.log("%c🚀 Checkpoint HSVP | Criado por Luiz Henrique Link Lodi & Gemini", "color: #3498db; font-size: 14px; font-weight: bold;");
+
         Chart.register(ChartDataLabels);
 
         var firebaseConfig = { apiKey: "AIzaSyDHUlqzRw_vSyp9livOvQ0rjBYT9l_yofs", authDomain: "checkpoint-pedidos.firebaseapp.com", projectId: "checkpoint-pedidos", storageBucket: "checkpoint-pedidos.firebasestorage.app", messagingSenderId: "890832634523", appId: "1:890832634523:web:7f8fa0ee6a2a9c60e27c3e" };
         firebase.initializeApp(firebaseConfig);
         var bancoDeDados = firebase.firestore();
-
-        console.log("%c🚀 Checkpoint HSVP | Criado por Luiz Henrique Link Lodi & Gemini", "color: #3498db; font-size: 14px; font-weight: bold;");
 
         var gestores = { "151357": { nome: "LUIZ HENRIQUE", senha: "Martin" }, "1249": { nome: "BRUNA QUEVEDO", senha: "Maria" }, "139320": { nome: "RENAN RIBEIRO", senha: "Olivia" } };
         var gestorLogado = null;
@@ -517,7 +524,6 @@
             var nomes = Object.keys(colabs).sort(), max = { sep:0, conf:0, carr:0, rec:0, sepc:0, ent:0, tot:0 };
             nomes.forEach(n => { let d = colabs[n]; if(d.sep > max.sep) max.sep = d.sep; if(d.conf > max.conf) max.conf = d.conf; if(d.carr > max.carr) max.carr = d.carr; if(d.rec > max.rec) max.rec = d.rec; if(d.sepc > max.sepc) max.sepc = d.sepc; if(d.ent > max.ent) max.ent = d.ent; if(d.tot > max.tot) max.tot = d.tot; });
 
-            // Função que injeta o Troféu se o valor for o Máximo daquela coluna
             function fmt(valor, maxVal, isTotal = false) {
                 var cls = isTotal ? "col-total " : "";
                 if (valor > 0 && valor === maxVal) return `<td class="${cls}celula-destaque">${valor} 🏆</td>`;
@@ -537,7 +543,7 @@
             gProd = new Chart(document.getElementById('chartProdutividade').getContext('2d'), { 
                 type: 'bar', 
                 data: { labels: dadosGrafico.map(i=>i.nome), datasets: [{ data: dadosGrafico.map(i=>i.valor), backgroundColor: '#9b59b6', borderRadius: 4 }] }, 
-                options: { layout: { padding: { top: 30 } }, responsive: true, maintainAspectRatio: false, plugins: { datalabels: { color: '#2c3e50', anchor: 'end', align: 'top', font: { weight: 'bold', size: 12 }, display: function(ctx) { return ctx.dataset.data[ctx.dataIndex] > 0; } }, legend: { display: false } } } 
+                options: { layout: { padding: { top: 30 } }, responsive: true, maintainAspectRatio: false, plugins: { datalabels: { color: '#2c3e50', anchor: 'end', align: 'top', offset: 4, font: { weight: 'bold', size: 12 }, display: function(ctx) { return ctx.dataset.data[ctx.dataIndex] > 0; } }, legend: { display: false } } } 
             });
 
             document.getElementById('conteudo-produtividade').style.display = 'block';
@@ -596,7 +602,7 @@
             var totApoio = { s:0, q:0 }, totCentral = { s:0, q:0 };
             var totG1 = {s:0,q:0}, totG2 = {s:0,q:0}, totG3 = {s:0,q:0}, totG4 = {s:0,q:0}, totG5 = {s:0,q:0}; 
             
-            var rankingSLA = []; // Para o Top 5
+            var rankingSLA = [];
 
             for(let r in cacheSLATempos) {
                 let m = cacheSLATempos[r], f = m.fim, d = m.diaEntrega, t = m.timeline;
@@ -604,7 +610,6 @@
                     let dif = f - m.inicio;
                     if(m.origem === "A") { slaDia[d].laS += dif; slaDia[d].laQ++; totApoio.s += dif; totApoio.q++; } 
                     else { slaDia[d].lcS += dif; slaDia[d].lcQ++; totCentral.s += dif; totCentral.q++; }
-                    // Guarda pro ranking
                     rankingSLA.push({ req: r, tempo: dif, setor: m.setor });
                 }
                 if(t) {
@@ -625,7 +630,6 @@
             document.getElementById('gap-rec-ent').innerText = totG4.q > 0 ? formataSLA(totG4.s / totG4.q) : "N/D";
             document.getElementById('gap-sepc-ent').innerText = totG5.q > 0 ? formataSLA(totG5.s / totG5.q) : "N/D";
 
-            // Montagem do Top 5
             rankingSLA.sort((a,b) => a.tempo - b.tempo);
             var htmlFast = "", htmlSlow = "";
             for(var i=0; i<5 && i<rankingSLA.length; i++) {
@@ -702,14 +706,13 @@
                     if(isCentral && i < 4) return;
                     var achou = bipes.find(b => b.status.includes(etapa.filtro));
                     
-                    // Desenha o Intervalo de Tempo (SE houver etapa anterior válida)
                     if(achou && ultimaOrdemValida && achou.ordem > ultimaOrdemValida) {
                         tl.innerHTML += `<div class="raiox-intervalo">⏳ Tempo na etapa anterior: ${formataSLA(achou.ordem - ultimaOrdemValida)}</div>`;
                     }
 
                     var html = '<div class="raiox-etapa">';
                     if(achou) {
-                        ultimaOrdemValida = achou.ordem; // Salva para o próximo intervalo
+                        ultimaOrdemValida = achou.ordem; 
                         html += `<div class="raiox-icone icone-ok">✓</div><div class="raiox-detalhe"><h4>${achou.status}</h4><p>👤 ${achou.nome} | 🕒 ${achou.data}</p></div>`;
                     }
                     else if(i < indexAlcancado) html += `<div class="raiox-icone icone-falha">!</div><div class="raiox-detalhe"><h4 style="color:#e74c3c;">${etapa.nome} (PULOU)</h4><p style="color:#e74c3c;">Etapa ignorada no fluxo.</p></div>`;
@@ -721,7 +724,7 @@
         }
 
         // ==========================================
-        // EXCLUSÕES PAGINADAS
+        // EXCLUSÕES PAGINADAS E MODAL
         // ==========================================
         var pagLog = 1, curPriLog = null, curUltLog = null;
         function carregarDadosLogistica(dir) {
