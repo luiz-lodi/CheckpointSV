@@ -8,7 +8,6 @@
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
 
@@ -28,7 +27,6 @@
         #painel-gestao { display: none; }
         .layout-app { display: flex; gap: 20px; align-items: flex-start; }
         
-        /* MENU LATERAL ANINHADO */
         .sidebar { width: 280px; background: #34495e; border-radius: 8px; padding: 10px 0; flex-shrink: 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden;}
         .menu-btn { display: flex; justify-content: space-between; align-items: center; width: 100%; text-align: left; padding: 15px 20px; background: none; border: none; color: #ecf0f1; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.2s; border-left: 4px solid transparent; }
         .menu-btn:hover { background: #2c3e50; }
@@ -39,7 +37,6 @@
         .submenu-btn:hover { color: #fff; background: #1a252f; }
         .submenu-btn.ativo { color: #f1c40f; font-weight: bold; background: #1a252f; border-left: 3px solid #f1c40f;}
 
-        /* ÁREA DE CONTEÚDO */
         .conteudo-principal { flex: 1; background: white; border-radius: 8px; padding: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); min-width: 0; min-height: 600px;}
         .secao-app { display: none; }
         .secao-app.ativa { display: block; animation: fadeIn 0.3s; }
@@ -52,7 +49,6 @@
         .btn-acao { background-color: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; }
         .loading { color: #e67e22; font-weight: bold; display: none; margin-left: auto; }
 
-        /* TABELAS E PAGINAÇÃO */
         .tabela-wrapper { overflow-x: auto; margin-bottom: 15px; border-radius: 8px; border: 1px solid #eee; }
         table { width: 100%; border-collapse: collapse; min-width: 700px; }
         th, td { padding: 12px; text-align: center; border-bottom: 1px solid #eee; font-size: 14px; }
@@ -67,11 +63,9 @@
         .paginacao button { background: #34495e; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
         .paginacao button:disabled { background: #bdc3c7; cursor: not-allowed; }
 
-        /* MURAL DE AVISOS */
         textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; margin-bottom: 10px; font-family: inherit;}
         .msg-card { background: #fdfefe; border-left: 4px solid #f1c40f; padding: 12px; margin-bottom: 10px; border-radius: 4px; border: 1px solid #eee;}
 
-        /* RAIO-X TIMELINE */
         .raiox-etapa { display: flex; align-items: center; margin-bottom: 15px; }
         .raiox-icone { width: 35px; height: 35px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; color: white; margin-right: 15px; }
         .icone-ok { background-color: #2ecc71; }
@@ -81,19 +75,21 @@
         .raiox-detalhe h4 { margin: 0; color: #2c3e50; }
         .raiox-detalhe p { margin: 2px 0 0 0; font-size: 13px; color: #7f8c8d; }
 
-        /* MODAL */
         .modal-overlay { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); }
         .modal-content { background: #fff; margin: 10% auto; padding: 25px; border-radius: 8px; width: 90%; max-width: 450px; }
         
-        /* GRÁFICOS BI */
         .dashboard-grid { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 30px;}
-        .chart-box { background: #fff; padding: 15px; border-radius: 8px; flex: 1; min-width: 400px; border: 1px solid #eee; box-shadow: 0 2px 4px rgba(0,0,0,0.02); padding-top: 25px; /* Espaço para as labels */}
+        .chart-box { background: #fff; padding: 15px; border-radius: 8px; flex: 1; min-width: 400px; border: 1px solid #eee; box-shadow: 0 2px 4px rgba(0,0,0,0.02);}
         .chart-full { flex: 100%; min-width: 100%; }
-        .em-construcao { text-align: center; padding: 50px; color: #7f8c8d; border: 2px dashed #ccc; border-radius: 8px; background: #f9f9f9;}
         
         .card-kpi { background: #ecf0f1; border-left: 5px solid #3498db; padding: 15px; border-radius: 6px; flex: 1; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .card-kpi h3 { margin: 0; font-size: 14px; color: #7f8c8d; text-transform: uppercase; }
         .card-kpi .valor { font-size: 32px; font-weight: bold; color: #2c3e50; margin-top: 10px; }
+
+        .card-destaque { background-color: #2c3e50; color: white; border-left-color: #f1c40f;}
+        .card-destaque h3 { color: #bdc3c7; }
+        .card-destaque .valor { color: #f1c40f; }
+
     </style>
 </head>
 <body>
@@ -123,30 +119,30 @@
                     
                     <button class="menu-btn" onclick="toggleSubmenu('sub-bi', this)">📈 Relatórios BI <span class="seta">▼</span></button>
                     <div id="sub-bi" class="submenu">
-                        <button class="submenu-btn" onclick="mudarAbaFilha('aba-bi-processos', this)">📊 Processos</button>
-                        <button class="submenu-btn" onclick="mudarAbaFilha('aba-bi-produtividade', this)">🏆 Produtividade</button>
-                        <button class="submenu-btn" onclick="mudarAbaFilha('aba-bi-tempos', this)">⏱️ Tempos (SLAs)</button>
+                        <button class="submenu-btn" onclick="mudarAbaFilha('aba-bi-processos', this)">Processos</button>
+                        <button class="submenu-btn" onclick="mudarAbaFilha('aba-bi-produtividade', this)">Produtividade</button>
+                        <button class="submenu-btn" onclick="mudarAbaFilha('aba-bi-tempos', this)">Tempos (SLAs)</button>
                     </div>
 
                     <button class="menu-btn" onclick="toggleSubmenu('sub-auditoria', this)">🛡️ Auditoria Logística <span class="seta">▼</span></button>
                     <div id="sub-auditoria" class="submenu">
-                        <button class="submenu-btn" onclick="mudarAbaFilha('aba-auditoria-raiox', this)">🔍 Ciclo de Vida (Raio-X)</button>
-                        <button class="submenu-btn" onclick="mudarAbaFilha('aba-auditoria-exclusao', this)">🗑️ Excluir Apontamentos</button>
-                        <button class="submenu-btn" onclick="mudarAbaFilha('aba-auditoria-historico', this)">📜 Histórico de Exclusões</button>
+                        <button class="submenu-btn" onclick="mudarAbaFilha('aba-auditoria-raiox', this)">Ciclo de Vida</button>
+                        <button class="submenu-btn" onclick="mudarAbaFilha('aba-auditoria-exclusao', this)">Excluir Apontamentos</button>
+                        <button class="submenu-btn" onclick="mudarAbaFilha('aba-auditoria-historico', this)">Histórico de Exclusões</button>
                     </div>
                 </div>
 
                 <div class="conteudo-principal">
 
                     <div id="aba-mural" class="secao-app ativa">
-                        <h2 class="secao-titulo">📌 Mural de Avisos da Gestão</h2>
+                        <h2 class="secao-titulo">Mural de Avisos da Gestão</h2>
                         <textarea id="textoMensagem" rows="3" placeholder="Escreva uma orientação para a equipe..."></textarea>
                         <div style="text-align: right;"><button class="btn-acao" onclick="salvarMensagem()">Salvar Mensagem</button></div>
                         <div id="lista-mensagens" style="margin-top: 20px;"></div>
                     </div>
 
                     <div id="aba-bi-processos" class="secao-app">
-                        <h2 class="secao-titulo">📊 Processos Logísticos</h2>
+                        <h2 class="secao-titulo">Processos Logísticos</h2>
                         <div class="filtro-container">
                             <label>Mês Base:</label>
                             <input type="month" id="filtroMesProcessos">
@@ -155,7 +151,7 @@
                         </div>
                         
                         <div id="conteudo-processos" style="display:none;">
-                            <h3 style="color:#2c3e50; border-bottom:1px solid #eee; padding-bottom:5px;">📋 Requisições Individuais Processadas (Desconsidera Volumes)</h3>
+                            <h3 style="color:#2c3e50; border-bottom:1px solid #eee; padding-bottom:5px;">Requisições Individuais Processadas (Desconsidera Volumes)</h3>
                             <div class="dashboard-grid" style="margin-bottom: 25px;">
                                 <div class="card-kpi" style="border-left-color: #f39c12;"><h3>Nascidas no Apoio</h3><div class="valor" id="kpi-req-apoio">0</div></div>
                                 <div class="card-kpi" style="border-left-color: #1abc9c;"><h3>Nascidas na Central</h3><div class="valor" id="kpi-req-central">0</div></div>
@@ -163,14 +159,14 @@
                             </div>
 
                             <div class="dashboard-grid">
-                                <div class="chart-box"><h3 style="text-align:center; margin-top:0;">📦 Distribuição de Volumes (Bipes) por Etapa</h3><div style="position: relative; height:300px;"><canvas id="chartEtapas"></canvas></div></div>
-                                <div class="chart-box"><h3 style="text-align:center; margin-top:0;">🏢 Comparativo de Esforço: Apoio vs Central</h3><div style="position: relative; height:300px; display:flex; justify-content:center;"><canvas id="chartSetores"></canvas></div></div>
+                                <div class="chart-box"><h3 style="text-align:center; margin-top:0;">Distribuição de Volumes (Bipes) por Etapa</h3><div style="position: relative; height:300px;"><canvas id="chartEtapas"></canvas></div></div>
+                                <div class="chart-box"><h3 style="text-align:center; margin-top:0;">Comparativo de Esforço: Apoio vs Central</h3><div style="position: relative; height:300px; display:flex; justify-content:center;"><canvas id="chartSetores"></canvas></div></div>
                             </div>
                         </div>
                     </div>
 
                     <div id="aba-bi-produtividade" class="secao-app">
-                        <h2 class="secao-titulo">🏆 Produtividade Operacional</h2>
+                        <h2 class="secao-titulo">Produtividade Operacional</h2>
                         <div class="filtro-container">
                             <label>Mês Base:</label>
                             <input type="month" id="filtroMesProdutividade">
@@ -180,7 +176,7 @@
 
                         <div id="conteudo-produtividade" style="display:none;">
                             <div class="chart-box chart-full" style="margin-bottom: 25px;">
-                                <h3 style="text-align:center; margin-top:0;">📈 Produtividade Total por Colaborador</h3>
+                                <h3 style="text-align:center; margin-top:0;">Produtividade Total por Colaborador</h3>
                                 <div style="position: relative; height:300px;"><canvas id="chartProdutividade"></canvas></div>
                             </div>
                             
@@ -195,15 +191,57 @@
                     </div>
 
                     <div id="aba-bi-tempos" class="secao-app">
-                        <h2 class="secao-titulo">⏱️ Tempos de Processamento (SLAs)</h2>
-                        <div class="em-construcao">
-                            <h2>🛠️ Em Construção (Fase 3)</h2>
-                            <p>Aqui entrarão os cálculos de Lead Time, Evolução Diária e o Filtro de SLA por Setor Destino. Em breve!</p>
+                        <h2 class="secao-titulo">Tempos de Processamento (SLAs)</h2>
+                        <div class="filtro-container">
+                            <label>Mês Base:</label>
+                            <input type="month" id="filtroMesTempos">
+                            <button class="btn-acao" onclick="carregarDadosBI('tempos')">Calcular SLAs da Base</button>
+                            <span class="loading" id="load-tempos">Processando Histórico Cronológico... ⏳</span>
+                        </div>
+
+                        <div id="conteudo-tempos" style="display:none;">
+                            <h3 style="color:#2c3e50; border-bottom:1px solid #eee; padding-bottom:5px;">Tempos Totais de Processamento (Lead Time Mensal)</h3>
+                            <div class="dashboard-grid" style="margin-bottom: 10px;">
+                                <div class="card-kpi card-destaque" style="border-left-color: #f39c12;">
+                                    <h3>Apoio ➔ Entregue</h3>
+                                    <div class="valor" id="sla-tot-apoio">--h --m</div>
+                                </div>
+                                <div class="card-kpi card-destaque" style="border-left-color: #1abc9c;">
+                                    <h3>Central ➔ Entregue</h3>
+                                    <div class="valor" id="sla-tot-central">--h --m</div>
+                                </div>
+                            </div>
+
+                            <div class="dashboard-grid" style="margin-bottom: 30px;">
+                                <div class="chart-box">
+                                    <h3 style="text-align:center; margin-top:0;">Evolução Diária do Lead Time (Horas)</h3>
+                                    <div style="position: relative; height:300px;"><canvas id="chartSLA"></canvas></div>
+                                </div>
+                                <div class="chart-box chart-full">
+                                    <h3 style="text-align:center; margin-top:0;">Micro-SLA: Tempo Médio Interno (Horas)</h3>
+                                    <div style="position: relative; height:300px;"><canvas id="chartMicroSLA"></canvas></div>
+                                </div>
+                            </div>
+
+                            <h3 style="color:#2c3e50; border-bottom:1px solid #eee; padding-bottom:5px; margin-top:30px;">Consulta de SLA por Setor de Destino</h3>
+                            <div class="filtro-container">
+                                <label>Setor Destino (QR):</label>
+                                <input type="text" id="filtroSetorSLA" placeholder="Ex: UTI">
+                                <button class="btn-acao" style="background:#8e44ad;" onclick="calcularSLASetor()">Filtrar Setor</button>
+                            </div>
+                            <div class="dashboard-grid" id="box-sla-setor" style="display:none;">
+                                <div class="card-kpi" style="border-left-color: #8e44ad;">
+                                    <h3 id="nome-setor-destaque">SLA - Setor</h3>
+                                    <div class="valor" id="sla-setor-resultado" style="color:#8e44ad;">--h --m</div>
+                                    <div style="font-size:12px; color:#7f8c8d; margin-top:5px;">Amostragem: <span id="amostra-setor">0</span> caixas entregues</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
+
                     <div id="aba-auditoria-raiox" class="secao-app">
-                        <h2 class="secao-titulo">🔍 Ciclo de Vida da Requisição (Raio-X)</h2>
+                        <h2 class="secao-titulo">Ciclo de Vida da Requisição (Raio-X)</h2>
                         <div class="filtro-container">
                             <label>Requisição:</label>
                             <input type="number" id="inputRaioX" placeholder="Ex: 1234567">
@@ -217,10 +255,9 @@
                     </div>
 
                     <div id="aba-auditoria-exclusao" class="secao-app">
-                        <h2 class="secao-titulo">🗑️ Exclusão de Apontamentos</h2>
+                        <h2 class="secao-titulo">Exclusão de Apontamentos</h2>
                         <div class="filtro-container">
                             <label>Data:</label><input type="date" id="filtroDataLogistica">
-                            <label>Por pág:</label><select id="limiteLogistica"><option value="10" selected>10 itens</option><option value="20">20 itens</option><option value="50">50 itens</option></select>
                             <button class="btn-acao" onclick="carregarDadosLogistica(0)">Buscar Apontamentos</button>
                             <span class="loading" id="load-logistica">Buscando... ⏳</span>
                         </div>
@@ -238,13 +275,8 @@
                     </div>
 
                     <div id="aba-auditoria-historico" class="secao-app">
-                        <h2 class="secao-titulo">📜 Histórico de Auditoria de Exclusões</h2>
+                        <h2 class="secao-titulo">Histórico de Auditoria de Exclusões</h2>
                         <div class="filtro-container">
-                            <label>Por pág:</label>
-                            <select id="limiteAuditoria">
-                                <option value="10" selected>10 itens</option>
-                                <option value="20">20 itens</option>
-                            </select>
                             <button class="btn-acao" style="background-color: #7f8c8d;" onclick="carregarAuditoria(0)">🔄 Recarregar</button>
                             <span class="loading" id="load-auditoria">Buscando... ⏳</span>
                         </div>
@@ -279,7 +311,6 @@
     </div>
 
     <script>
-        // Registro global do plugin de Legendas/Percentuais
         Chart.register(ChartDataLabels);
 
         var firebaseConfig = { apiKey: "AIzaSyDHUlqzRw_vSyp9livOvQ0rjBYT9l_yofs", authDomain: "checkpoint-pedidos.firebaseapp.com", projectId: "checkpoint-pedidos", storageBucket: "checkpoint-pedidos.firebasestorage.app", messagingSenderId: "890832634523", appId: "1:890832634523:web:7f8fa0ee6a2a9c60e27c3e" };
@@ -301,6 +332,7 @@
                 document.getElementById('filtroDataLogistica').value = y+'-'+m+'-'+d;
                 document.getElementById('filtroMesProcessos').value = y+'-'+m;
                 document.getElementById('filtroMesProdutividade').value = y+'-'+m;
+                document.getElementById('filtroMesTempos').value = y+'-'+m;
                 carregarMensagens(); 
             } else { document.getElementById('msg-erro').style.display = 'block'; }
         }
@@ -327,13 +359,8 @@
             document.getElementById(idAba).classList.add('ativa'); btn.classList.add('ativo');
             btn.parentElement.previousElementSibling.classList.add('ativo');
 
-            // Automação (Lazy Loading): Carrega automaticamente as abas de auditoria se estiverem vazias
-            if(idAba === 'aba-auditoria-exclusao' && document.getElementById('corpo-logistica').innerHTML === '') {
-                carregarDadosLogistica(0);
-            }
-            if(idAba === 'aba-auditoria-historico' && document.getElementById('corpo-auditoria').innerHTML === '') {
-                carregarAuditoria(0);
-            }
+            if(idAba === 'aba-auditoria-exclusao' && document.getElementById('corpo-logistica').innerHTML === '') carregarDadosLogistica(0);
+            if(idAba === 'aba-auditoria-historico' && document.getElementById('corpo-auditoria').innerHTML === '') carregarAuditoria(0);
         }
 
         // ==========================================
@@ -356,20 +383,21 @@
         }
 
         // ==========================================
-        // INTELIGÊNCIA BI (CACHE GLOBAL)
+        // INTELIGÊNCIA BI (CACHE GLOBAL E ROTAS)
         // ==========================================
         var cacheBI = { mes: "", documentos: [] };
-        var gEtapas = null, gSetores = null, gProd = null;
+        var cacheSLATempos = null; // Guarda a máquina do tempo montada para o filtro de setor
+        var gEtapas = null, gSetores = null, gProd = null, gSLA = null, gMicro = null;
 
         function carregarDadosBI(abaDestino) {
-            var inputMes = abaDestino === 'processos' ? document.getElementById('filtroMesProcessos').value : document.getElementById('filtroMesProdutividade').value;
+            var inputId = abaDestino === 'processos' ? 'filtroMesProcessos' : (abaDestino === 'produtividade' ? 'filtroMesProdutividade' : 'filtroMesTempos');
+            var inputMes = document.getElementById(inputId).value;
             if(!inputMes) return alert("Selecione um mês.");
 
             document.getElementById('load-' + abaDestino).style.display = 'inline-block';
 
             if (cacheBI.mes === inputMes && cacheBI.documentos.length > 0) {
                 renderizarBI(abaDestino, cacheBI.documentos);
-                document.getElementById('load-' + abaDestino).style.display = 'none';
                 return;
             }
 
@@ -380,15 +408,16 @@
                 cacheBI.mes = inputMes; cacheBI.documentos = [];
                 res.forEach(doc => cacheBI.documentos.push(doc.data()));
                 renderizarBI(abaDestino, cacheBI.documentos);
-                document.getElementById('load-' + abaDestino).style.display = 'none';
-            }).catch(erro => { alert("Erro ao buscar dados do Firebase."); document.getElementById('load-' + abaDestino).style.display = 'none'; });
+            }).catch(erro => { alert("Erro ao buscar dados."); document.getElementById('load-' + abaDestino).style.display = 'none'; });
         }
 
         function renderizarBI(abaDestino, bipesDoMes) {
             if (abaDestino === 'processos') processarAbaProcessos(bipesDoMes);
             if (abaDestino === 'produtividade') processarAbaProdutividade(bipesDoMes);
+            if (abaDestino === 'tempos') processarAbaTempos(bipesDoMes);
         }
 
+        // (2.1) Processos Logísticos
         function processarAbaProcessos(bipes) {
             var tot = { sep: 0, conf: 0, carr: 0, rec: 0, sepc: 0, ent: 0 };
             var reqsUnicasApoio = new Set(), reqsUnicasCentral = new Set();
@@ -413,8 +442,8 @@
             if(gEtapas) gEtapas.destroy();
             gEtapas = new Chart(document.getElementById('chartEtapas').getContext('2d'), { 
                 type: 'bar', 
-                data: { labels: ['Sep. Apoio', 'Conferido', 'Carregado', 'Recebido', 'Sep. Central', 'Entregue'], datasets: [{ label: 'Bipes', data: [tot.sep, tot.conf, tot.carr, tot.rec, tot.sepc, tot.ent], backgroundColor: ['#f39c12', '#8e44ad', '#d35400', '#3498db', '#16a085', '#2ecc71'], borderRadius: 4 }] }, 
-                options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { color: '#2c3e50', anchor: 'end', align: 'top', font: { weight: 'bold', size: 14 } }, legend: { display: false } } } 
+                data: { labels: ['Sep. Apoio', 'Conferido', 'Carregado', 'Recebido', 'Sep. Central', 'Entregue'], datasets: [{ data: [tot.sep, tot.conf, tot.carr, tot.rec, tot.sepc, tot.ent], backgroundColor: ['#f39c12', '#8e44ad', '#d35400', '#3498db', '#16a085', '#2ecc71'], borderRadius: 4 }] }, 
+                options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { color: '#fff', anchor: 'end', align: 'start', font: { weight: 'bold', size: 14 } }, legend: { display: false } } } 
             });
 
             if(gSetores) gSetores.destroy();
@@ -425,8 +454,10 @@
             });
 
             document.getElementById('conteudo-processos').style.display = 'block';
+            document.getElementById('load-processos').style.display = 'none';
         }
 
+        // (2.2) Produtividade
         function processarAbaProdutividade(bipes) {
             var colabs = {}, totGer = { sep:0, conf:0, carr:0, rec:0, sepc:0, ent:0, tot:0 };
             bipes.forEach(ev => {
@@ -454,15 +485,134 @@
             if(gProd) gProd.destroy();
             gProd = new Chart(document.getElementById('chartProdutividade').getContext('2d'), { 
                 type: 'bar', 
-                data: { labels: dadosGrafico.map(i=>i.nome), datasets: [{ label: 'Volumes', data: dadosGrafico.map(i=>i.valor), backgroundColor: '#9b59b6', borderRadius: 4 }] }, 
-                options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { color: '#2c3e50', anchor: 'end', align: 'top', font: { weight: 'bold', size: 12 } }, legend: { display: false } } } 
+                data: { labels: dadosGrafico.map(i=>i.nome), datasets: [{ data: dadosGrafico.map(i=>i.valor), backgroundColor: '#9b59b6', borderRadius: 4 }] }, 
+                options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { color: '#fff', anchor: 'end', align: 'start', font: { weight: 'bold', size: 12 } }, legend: { display: false } } } 
             });
 
             document.getElementById('conteudo-produtividade').style.display = 'block';
+            document.getElementById('load-produtividade').style.display = 'none';
+        }
+
+        // (2.3) TEMPOS E SLAs
+        function processarAbaTempos(bipes) {
+            var inputMes = document.getElementById('filtroMesTempos').value;
+            var diasNoMes = new Date(parseInt(inputMes.split('-')[0]), parseInt(inputMes.split('-')[1]), 0).getDate();
+            
+            var mapasDeTempo = {}; 
+            var reqsEntregues = new Set();
+
+            bipes.forEach(ev => {
+                if(ev.status.includes("Entregue")) {
+                    reqsEntregues.add(ev.requisicao);
+                    if(!mapasDeTempo[ev.requisicao]) mapasDeTempo[ev.requisicao] = { fim: ev.ordem, diaEntrega: new Date(ev.ordem).getDate(), timeline: {}, setor: ev.status.replace("Entregue (", "").replace(")", "").trim() };
+                    if(ev.ordem > mapasDeTempo[ev.requisicao].fim) mapasDeTempo[ev.requisicao].fim = ev.ordem;
+                }
+            });
+
+            if (reqsEntregues.size === 0) {
+                alert("Não há requisições entregues neste mês para calcular SLAs.");
+                document.getElementById('load-tempos').style.display = 'none';
+                return;
+            }
+
+            // Máquina do Tempo: Busca o histórico apenas das caixas entregues
+            var buscas = Array.from(reqsEntregues).map(req => {
+                return bancoDeDados.collection("checkpoints_logistica").where("requisicao", "==", req).get().then(res => {
+                    var pri = null;
+                    res.forEach(d => {
+                        var e = d.data(), s = e.status, t = e.ordem;
+                        if(!pri || t < pri.ordem) pri = e;
+                        if(s.includes("Separado (Central)")) { if(!mapasDeTempo[req].timeline.sc || t < mapasDeTempo[req].timeline.sc) mapasDeTempo[req].timeline.sc = t; }
+                        else if(s.includes("Separado")) { if(!mapasDeTempo[req].timeline.sa || t < mapasDeTempo[req].timeline.sa) mapasDeTempo[req].timeline.sa = t; }
+                        else if(s.includes("Conferido")) { if(!mapasDeTempo[req].timeline.co || t < mapasDeTempo[req].timeline.co) mapasDeTempo[req].timeline.co = t; }
+                        else if(s.includes("Carregado")) { if(!mapasDeTempo[req].timeline.ca || t < mapasDeTempo[req].timeline.ca) mapasDeTempo[req].timeline.ca = t; }
+                        else if(s.includes("Recebido")) { if(!mapasDeTempo[req].timeline.re || t < mapasDeTempo[req].timeline.re) mapasDeTempo[req].timeline.re = t; }
+                    });
+                    if(pri) {
+                        if(pri.status.includes("Apoio") || pri.status === "Separado") mapasDeTempo[req].origem = "A";
+                        else if(pri.status.includes("Central")) mapasDeTempo[req].origem = "C";
+                        mapasDeTempo[req].inicio = pri.ordem;
+                    }
+                });
+            });
+
+            Promise.all(buscas).then(() => {
+                cacheSLATempos = mapasDeTempo; // Salva para o filtro de setor não precisar buscar no banco de novo!
+                desenharInterfaceSLA(diasNoMes);
+                document.getElementById('conteudo-tempos').style.display = 'block';
+                document.getElementById('load-tempos').style.display = 'none';
+            });
+        }
+
+        function desenharInterfaceSLA(diasNoMes) {
+            var slaDia = {}; for(let i=1; i<=diasNoMes; i++) slaDia[i] = { laS:0, laQ:0, lcS:0, lcQ:0, g1S:0, g1Q:0, g2S:0, g2Q:0, g3S:0, g3Q:0, g4S:0, g4Q:0, g5S:0, g5Q:0 };
+            var totApoio = { s:0, q:0 }, totCentral = { s:0, q:0 };
+
+            for(let r in cacheSLATempos) {
+                let m = cacheSLATempos[r], f = m.fim, d = m.diaEntrega, t = m.timeline;
+                if(m.inicio && f >= m.inicio && m.origem) {
+                    let dif = f - m.inicio;
+                    if(m.origem === "A") { slaDia[d].laS += dif; slaDia[d].laQ++; totApoio.s += dif; totApoio.q++; } 
+                    else { slaDia[d].lcS += dif; slaDia[d].lcQ++; totCentral.s += dif; totCentral.q++; }
+                }
+                if(t) {
+                    if(t.sa && t.co && t.co >= t.sa) { slaDia[d].g1S += (t.co-t.sa); slaDia[d].g1Q++; }
+                    if(t.co && t.ca && t.ca >= t.co) { slaDia[d].g2S += (t.ca-t.co); slaDia[d].g2Q++; }
+                    if(t.ca && t.re && t.re >= t.ca) { slaDia[d].g3S += (t.re-t.ca); slaDia[d].g3Q++; }
+                    if(t.re && f && f >= t.re) { slaDia[d].g4S += (f-t.re); slaDia[d].g4Q++; }
+                    if(t.sc && f && f >= t.sc) { slaDia[d].g5S += (f-t.sc); slaDia[d].g5Q++; }
+                }
+            }
+
+            var formataSLA = (ms) => { if(ms<0||!ms) return "N/D"; let mm = Math.floor(ms/60000), h = Math.floor(mm/60), m = mm%60; return (h<10?"0"+h:h)+"h "+(m<10?"0"+m:m)+"m"; };
+            
+            document.getElementById('sla-tot-apoio').innerText = totApoio.q > 0 ? formataSLA(totApoio.s / totApoio.q) : "N/D";
+            document.getElementById('sla-tot-central').innerText = totCentral.q > 0 ? formataSLA(totCentral.s / totCentral.q) : "N/D";
+
+            var lbl = [], dLa=[], dLc=[], dG1=[], dG2=[], dG3=[], dG4=[], dG5=[];
+            for(let i=1; i<=diasNoMes; i++) {
+                lbl.push("Dia "+i); let s = slaDia[i];
+                dLa.push(s.laQ>0 ? ((s.laS/s.laQ)/3600000).toFixed(2) : null); dLc.push(s.lcQ>0 ? ((s.lcS/s.lcQ)/3600000).toFixed(2) : null);
+                dG1.push(s.g1Q>0 ? ((s.g1S/s.g1Q)/3600000).toFixed(2) : null); dG2.push(s.g2Q>0 ? ((s.g2S/s.g2Q)/3600000).toFixed(2) : null);
+                dG3.push(s.g3Q>0 ? ((s.g3S/s.g3Q)/3600000).toFixed(2) : null); dG4.push(s.g4Q>0 ? ((s.g4S/s.g4Q)/3600000).toFixed(2) : null);
+                dG5.push(s.g5Q>0 ? ((s.g5S/s.g5Q)/3600000).toFixed(2) : null);
+            }
+
+            var pTt = { callbacks: { label: c => c.dataset.label+': '+Math.floor(c.parsed.y)+'h '+Math.round((c.parsed.y-Math.floor(c.parsed.y))*60)+'m' }};
+            
+            if(gSLA) gSLA.destroy();
+            gSLA = new Chart(document.getElementById('chartSLA').getContext('2d'), { type: 'line', data: { labels: lbl, datasets: [{ label: 'Apoio', data: dLa, borderColor: '#f39c12', backgroundColor: '#f39c12', tension: 0.3 }, { label: 'Central', data: dLc, borderColor: '#1abc9c', backgroundColor: '#1abc9c', tension: 0.3 }] }, options: { responsive: true, maintainAspectRatio: false, spanGaps: true, plugins: { datalabels: { display: false }, tooltip: pTt } } });
+
+            if(gMicro) gMicro.destroy();
+            gMicro = new Chart(document.getElementById('chartMicroSLA').getContext('2d'), { type: 'line', data: { labels: lbl, datasets: [{ label: 'Sep ➔ Conf', data: dG1, borderColor: '#f1c40f', backgroundColor: '#f1c40f' }, { label: 'Conf ➔ Transp', data: dG2, borderColor: '#e67e22', backgroundColor: '#e67e22' }, { label: 'Transp ➔ Rec', data: dG3, borderColor: '#d35400', backgroundColor: '#d35400', borderDash:[5,5] }, { label: 'Rec ➔ Entrega', data: dG4, borderColor: '#3498db', backgroundColor: '#3498db' }, { label: 'SepC ➔ Entrega', data: dG5, borderColor: '#9b59b6', backgroundColor: '#9b59b6' }] }, options: { responsive: true, maintainAspectRatio: false, spanGaps: true, plugins: { datalabels: { display: false }, tooltip: pTt } } });
+        }
+
+        // Filtro de Setor Destino (Lembrete 2.3.3)
+        function calcularSLASetor() {
+            if(!cacheSLATempos) return alert("Gere o relatório mensal primeiro.");
+            var setorBuscado = document.getElementById('filtroSetorSLA').value.trim().toUpperCase();
+            if(!setorBuscado) return alert("Digite o nome do setor.");
+
+            var somaMs = 0, qtd = 0;
+            for(var req in cacheSLATempos) {
+                var m = cacheSLATempos[req];
+                if(m.setor.toUpperCase().includes(setorBuscado) && m.inicio && m.fim && m.fim >= m.inicio) {
+                    somaMs += (m.fim - m.inicio);
+                    qtd++;
+                }
+            }
+
+            document.getElementById('nome-setor-destaque').innerText = "SLA Médio - " + setorBuscado;
+            document.getElementById('amostra-setor').innerText = qtd;
+            
+            var formataSLA = (ms) => { let mm = Math.floor(ms/60000), h = Math.floor(mm/60), m = mm%60; return (h<10?"0"+h:h)+"h "+(m<10?"0"+m:m)+"m"; };
+            document.getElementById('sla-setor-resultado').innerText = qtd > 0 ? formataSLA(somaMs/qtd) : "N/D";
+            
+            document.getElementById('box-sla-setor').style.display = 'flex';
         }
 
         // ==========================================
-        // RAIO-X 
+        // RAIO-X (AUDITORIA)
         // ==========================================
         function buscarCicloVida() {
             var req = document.getElementById('inputRaioX').value.trim();
@@ -480,7 +630,7 @@
                 
                 var bipes = []; 
                 res.forEach(d => bipes.push(d.data()));
-                bipes.sort((a, b) => a.ordem - b.ordem); // Ordenação cronológica correta na memória
+                bipes.sort((a, b) => a.ordem - b.ordem); 
 
                 var isCentral = (bipes.length > 0 && bipes[0].status.includes("Central") && bipes[0].status.includes("Separado"));
                 var indexAlcancado = -1;
@@ -507,10 +657,10 @@
         // ==========================================
         var pagLog = 1, curPriLog = null, curUltLog = null;
         function carregarDadosLogistica(dir) {
-            var data = document.getElementById('filtroDataLogistica').value; if(!data) return;
-            var lim = parseInt(document.getElementById('limiteLogistica').value);
+            var lim = 10; // Padrão fixo solicitado
             document.getElementById('load-logistica').style.display = 'inline-block';
             var tb = document.getElementById('corpo-logistica');
+            var data = document.getElementById('filtroDataLogistica').value; 
             var dInicio = new Date(data+"T00:00:00").getTime();
             var query = bancoDeDados.collection("checkpoints_logistica").where("ordem", ">=", dInicio).where("ordem", "<=", dInicio+86399999).orderBy("ordem", "desc");
             if (dir === 1 && curUltLog) { query = query.startAfter(curUltLog).limit(lim); pagLog++; } else if (dir === -1 && curPriLog) { query = query.endBefore(curPriLog).limitToLast(lim); pagLog--; } else { query = query.limit(lim); pagLog = 1; }
@@ -537,7 +687,7 @@
 
         var pagAud = 1, curPriAud = null, curUltAud = null;
         function carregarAuditoria(dir) {
-            var lim = parseInt(document.getElementById('limiteAuditoria').value);
+            var lim = 10; // Padrão Fixo
             document.getElementById('load-auditoria').style.display = 'inline-block';
             var tb = document.getElementById('corpo-auditoria');
             var query = bancoDeDados.collection("historico_exclusoes").orderBy("ordemExclusao", "desc");
