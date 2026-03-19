@@ -74,7 +74,7 @@
         <div id="box-operador">
             <div class="input-group">
                 <label for="idMatricula">Matrícula (Bipe o crachá):</label>
-                <input type="text" id="idMatricula">
+                <input type="text" id="idMatricula" inputmode="numeric">
                 <div id="displayOperador" class="nome-destaque"></div>
             </div>
             <button id="btn-trocar-operador" class="btn-limpar" style="display:none;" onclick="trocarOperador()">🔄 Trocar Usuário</button>
@@ -85,7 +85,7 @@
                 <div class="instrucao" style="color:#16a085;">MODO UNITÁRIO (TRADICIONAL)</div>
                 <div class="input-group">
                     <label for="idRequisicao">1. Requisição Tasy (7 dígitos):</label>
-                    <input type="text" id="idRequisicao">
+                    <input type="text" id="idRequisicao" inputmode="numeric">
                 </div>
                 <div class="input-group">
                     <label for="idLocalQR">2. Etapa / Local de Entrega (QR Code):</label>
@@ -120,7 +120,7 @@
                     <div class="instrucao">PASSO 2: Bipe todas as requisições (Offline)</div>
                     <div class="input-group">
                         <label for="idReqLote">Requisição (7 dígitos):</label>
-                        <input type="text" id="idReqLote">
+                        <input type="text" id="idReqLote" inputmode="numeric">
                     </div>
                     
                     <div id="contador-lote" style="text-align:center; font-weight:bold; color:#7f8c8d; margin-top:10px; padding-top:10px; border-top:1px solid #eee;">
@@ -229,7 +229,7 @@
         }
 
         // ==========================================
-        // FLUXO DO MODO MÚLTIPLO (E RETIRADA)
+        // FLUXO DO MODO MÚLTIPLO E RETIRADA
         // ==========================================
         function abrirModoLote(tipo) {
             if (!checarOperador()) return;
@@ -303,15 +303,19 @@
             }
         });
 
-        // Metralhadora Offline do Lote
+        // ==========================================
+        // LEITURA DO LOTE (Otimizada para não engasgar o hardware)
+        // ==========================================
         document.getElementById('idReqLote').addEventListener('input', function(e) {
-            var apenasNumeros = this.value.replace(/\D/g, ''); 
-            this.value = apenasNumeros;
+            // Só executa o replace se a string contiver alguma letra ou símbolo sujo
+            if (/\D/.test(this.value)) {
+                this.value = this.value.replace(/\D/g, '');
+            }
 
-            if (apenasNumeros.length === 7) { 
+            if (this.value.length === 7) { 
                 if (!checarOperador()) { this.value = ''; return; }
                 
-                var req = apenasNumeros; 
+                var req = this.value; 
                 this.value = ''; 
                 this.focus();
                 
@@ -363,13 +367,15 @@
 
 
         // ==========================================
-        // MODO UNITÁRIO
+        // MODO UNITÁRIO (Otimizado para não engasgar o hardware)
         // ==========================================
         document.getElementById('idRequisicao').addEventListener('input', function(e) { 
-            var apenasNumeros = this.value.replace(/\D/g, ''); 
-            this.value = apenasNumeros;
+            // Só executa o replace se a string contiver alguma letra ou símbolo sujo
+            if (/\D/.test(this.value)) {
+                this.value = this.value.replace(/\D/g, ''); 
+            }
 
-            if (apenasNumeros.length === 7) {
+            if (this.value.length === 7) {
                 if (!checarOperador()) { this.value = ''; return; }
                 document.getElementById('idLocalQR').focus(); 
             }
@@ -383,8 +389,9 @@
                 var qrLido = this.value.trim().toUpperCase();
                 
                 if (req.length === 7 && qrLido !== "") {
-                    if (/^\d+$/.test(qrLido)) {
-                        dispararAlertaErro(); mostrarToast("❌ Bipe um Local válido!"); this.value = ''; return;
+                    var apenasNumeros = qrLido.replace(/\D/g, '');
+                    if (apenasNumeros !== "" && apenasNumeros.length >= 6) {
+                        qrLido = parseInt(apenasNumeros.slice(-6), 10).toString();
                     }
 
                     var status = dicionarioEtapas[qrLido] || "Entregue (" + qrLido + ")";
@@ -396,7 +403,7 @@
         });
 
         // ==========================================
-        // LÓGICA DE PESOS E SINCRONIZAÇÃO
+        // LÓGICA DE PESOS E SINCRONIZAÇÃO NUVEM
         // ==========================================
         function getPesoDaEtapa(status) {
             if (status.indexOf("Separado") !== -1) return 1;
