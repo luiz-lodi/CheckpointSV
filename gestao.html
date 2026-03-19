@@ -298,7 +298,12 @@
                         <h2 class="secao-titulo">Exclusão de Apontamentos</h2>
                         <div class="filtro-container">
                             <label>Data:</label><input type="date" id="filtroDataLogistica">
-                            <label>Por pág:</label><select id="limiteLogistica"><option value="10" selected>10 itens</option><option value="20">20 itens</option><option value="50">50 itens</option></select>
+                            <label>Por pág:</label>
+                            <select id="limiteLogistica" onchange="carregarDadosLogistica(0)">
+                                <option value="10" selected>10 itens</option>
+                                <option value="20">20 itens</option>
+                                <option value="50">50 itens</option>
+                            </select>
                             <button class="btn-acao" onclick="carregarDadosLogistica(0)">Buscar Apontamentos</button>
                             <span class="loading" id="load-logistica">Buscando... ⏳</span>
                         </div>
@@ -319,9 +324,10 @@
                         <h2 class="secao-titulo">Histórico de Auditoria de Exclusões</h2>
                         <div class="filtro-container">
                             <label>Por pág:</label>
-                            <select id="limiteAuditoria">
+                            <select id="limiteAuditoria" onchange="carregarAuditoria(0)">
                                 <option value="10" selected>10 itens</option>
                                 <option value="20">20 itens</option>
+                                <option value="50">50 itens</option>
                             </select>
                             <button class="btn-acao" style="background-color: #7f8c8d;" onclick="carregarAuditoria(0)">🔄 Recarregar</button>
                             <span class="loading" id="load-auditoria">Buscando... ⏳</span>
@@ -508,7 +514,7 @@
             document.getElementById('load-processos').style.display = 'none';
         }
 
-        // (2.2) Produtividade 
+        // (2.2) Produtividade (COM TROFÉUS)
         function processarAbaProdutividade(bipes) {
             var colabs = {}, totGer = { sep:0, conf:0, carr:0, rec:0, sepc:0, ent:0, tot:0 };
             bipes.forEach(ev => {
@@ -707,7 +713,6 @@
                     var bipes = bipesPorVolume[vol];
                     bipes.sort((a, b) => a.ordem - b.ordem);
 
-                    // Inteligência: O fluxo é Central ou Apoio?
                     var isApoio = bipes.some(b => b.status.includes("Apoio") || b.status === "Separado" || b.status.includes("Conferido") || b.status.includes("Carregado") || b.status.includes("Recebido"));
 
                     var fluxoIdeal = [];
@@ -775,11 +780,11 @@
         }
 
         // ==========================================
-        // EXCLUSÕES PAGINADAS E MODAL (Com Correção de Estado)
+        // EXCLUSÕES PAGINADAS E MODAL
         // ==========================================
         var pagLog = 1, curPriLog = null, curUltLog = null;
         function carregarDadosLogistica(dir) {
-            var lim = 10; 
+            var lim = parseInt(document.getElementById('limiteLogistica').value) || 10; 
             document.getElementById('load-logistica').style.display = 'inline-block';
             var tb = document.getElementById('corpo-logistica');
             var data = document.getElementById('filtroDataLogistica').value; 
@@ -808,7 +813,6 @@
             .then(() => bancoDeDados.collection("checkpoints_logistica").doc(idDel).delete())
             .then(() => { 
                 fecharModal(); 
-                // BUG CORRIGIDO (Custo Zero de Leitura): Apaga a linha da tela sem recarregar a tabela e mantém na mesma página!
                 var linhaApagada = document.getElementById('row-' + idDel);
                 if(linhaApagada) linhaApagada.remove();
                 mostrarToast("✅ Excluído com sucesso!");
@@ -817,7 +821,7 @@
 
         var pagAud = 1, curPriAud = null, curUltAud = null;
         function carregarAuditoria(dir) {
-            var lim = 10; 
+            var lim = parseInt(document.getElementById('limiteAuditoria').value) || 10; 
             document.getElementById('load-auditoria').style.display = 'inline-block';
             var tb = document.getElementById('corpo-auditoria');
             var query = bancoDeDados.collection("historico_exclusoes").orderBy("ordemExclusao", "desc");
