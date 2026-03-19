@@ -80,15 +80,15 @@
                     <input type="number" id="idRequisicao" placeholder="Bipe a requisição" onkeydown="return impedirLetras(event)">
                 </div>
                 <div class="input-group">
-                    <label for="idLocalQR">2. Local / Etapa (QR Code):</label>
+                    <label for="idLocalQR">2. Etapa / Local de Entrega (QR Code):</label>
                     <input type="text" id="idLocalQR" placeholder="Bipe a parede ou crachá">
                 </div>
             </div>
 
-            <button class="btn-lote" onclick="abrirModoLote()">📦 MODO BIPAGEM MÚLTIPLA<br><span style="font-size: 11px; font-weight: normal;">(Entregas, Romaneios e Conferência)</span></button>
+            <button class="btn-lote" onclick="abrirModoLote()">📦 MODO BIPAGEM MÚLTIPLA<br><span style="font-size: 11px; font-weight: normal;">(Conferência, Romaneio, Entregas)</span></button>
 
             <div id="historico" style="margin-top: 20px;">
-                <h3>Últimos Bipes</h3>
+                <h3>Últimos Lançamentos</h3>
                 <div id="listaRegistros"></div>
             </div>
         </div>
@@ -100,7 +100,7 @@
                 <div id="passo1-lote">
                     <div class="instrucao" style="color:#e74c3c;">PASSO 1: Onde estas caixas estão?</div>
                     <div class="input-group">
-                        <label for="idLocalQRLote">Bipe o Setor ou Crachá de Retirada:</label>
+                        <label for="idLocalQRLote">Bipe a Etapa, Setor Destino ou Crachá de Retirada:</label>
                         <input type="text" id="idLocalQRLote" placeholder="Bipe aqui...">
                     </div>
                 </div>
