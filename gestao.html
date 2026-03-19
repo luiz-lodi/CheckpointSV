@@ -66,30 +66,45 @@
         textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; margin-bottom: 10px; font-family: inherit;}
         .msg-card { background: #fdfefe; border-left: 4px solid #f1c40f; padding: 12px; margin-bottom: 10px; border-radius: 4px; border: 1px solid #eee;}
 
-        .raiox-etapa { display: flex; align-items: center; margin-bottom: 15px; }
-        .raiox-icone { width: 35px; height: 35px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; color: white; margin-right: 15px; }
+        /* ESTILOS DA TIMELINE (RAIO-X) */
+        .raiox-etapa { display: flex; align-items: center; margin-bottom: 0; }
+        .raiox-icone { width: 35px; height: 35px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; color: white; margin-right: 15px; z-index: 2; position: relative;}
         .icone-ok { background-color: #2ecc71; }
         .icone-falha { background-color: #e74c3c; }
         .icone-pendente { background-color: #bdc3c7; }
-        .raiox-detalhe { flex: 1; border-bottom: 1px dashed #eee; padding-bottom: 5px; }
+        .raiox-detalhe { flex: 1; border-bottom: 1px dashed #eee; padding-bottom: 8px; margin-top: 15px;}
         .raiox-detalhe h4 { margin: 0; color: #2c3e50; }
         .raiox-detalhe p { margin: 2px 0 0 0; font-size: 13px; color: #7f8c8d; }
+        
+        /* Linha conectora e tempo */
+        .raiox-intervalo { margin-left: 16px; border-left: 3px dashed #bdc3c7; padding: 10px 0 10px 35px; color: #d35400; font-size: 13px; font-weight: bold; }
 
         .modal-overlay { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); }
         .modal-content { background: #fff; margin: 10% auto; padding: 25px; border-radius: 8px; width: 90%; max-width: 450px; }
         
+        /* GRÁFICOS BI */
         .dashboard-grid { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 30px;}
         .chart-box { background: #fff; padding: 15px; border-radius: 8px; flex: 1; min-width: 400px; border: 1px solid #eee; box-shadow: 0 2px 4px rgba(0,0,0,0.02);}
         .chart-full { flex: 100%; min-width: 100%; }
         
         .card-kpi { background: #ecf0f1; border-left: 5px solid #3498db; padding: 15px; border-radius: 6px; flex: 1; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .card-kpi h3 { margin: 0; font-size: 14px; color: #7f8c8d; text-transform: uppercase; }
+        .card-kpi h3 { margin: 0; font-size: 13px; color: #7f8c8d; text-transform: uppercase; }
         .card-kpi .valor { font-size: 32px; font-weight: bold; color: #2c3e50; margin-top: 10px; }
 
         .card-destaque { background-color: #2c3e50; color: white; border-left-color: #f1c40f;}
         .card-destaque h3 { color: #bdc3c7; }
         .card-destaque .valor { color: #f1c40f; }
 
+        .card-micro { min-width: 130px; padding: 15px 5px; background: white; border: 1px solid #eee; border-bottom-width: 3px; border-radius: 6px; text-align: center; flex: 1; box-shadow: 0 2px 4px rgba(0,0,0,0.02);}
+        .card-micro h3 { font-size: 11px; color: #95a5a6; margin:0; text-transform:uppercase;}
+        .card-micro .numero { font-size: 24px; color: #34495e; font-weight:bold; margin-top:8px;}
+
+        /* Listas de Ranking TOP 5 */
+        .ranking-list { list-style: none; padding: 0; margin: 0; }
+        .ranking-list li { padding: 10px 0; border-bottom: 1px solid #ecf0f1; display: flex; justify-content: space-between; align-items: center; font-size: 14px;}
+        .ranking-list li:last-child { border-bottom: none; }
+        .ranking-list .req { font-weight: bold; color: #2c3e50; }
+        .ranking-list .setor { color: #7f8c8d; font-size: 12px; margin-left: 5px;}
     </style>
 </head>
 <body>
@@ -200,8 +215,9 @@
                         </div>
 
                         <div id="conteudo-tempos" style="display:none;">
+                            
                             <h3 style="color:#2c3e50; border-bottom:1px solid #eee; padding-bottom:5px;">Tempos Totais de Processamento (Lead Time Mensal)</h3>
-                            <div class="dashboard-grid" style="margin-bottom: 10px;">
+                            <div class="dashboard-grid" style="margin-bottom: 20px;">
                                 <div class="card-kpi card-destaque" style="border-left-color: #f39c12;">
                                     <h3>Apoio ➔ Entregue</h3>
                                     <div class="valor" id="sla-tot-apoio">--h --m</div>
@@ -212,13 +228,34 @@
                                 </div>
                             </div>
 
+                            <h3 style="color:#2c3e50; border-bottom:1px solid #eee; padding-bottom:5px;">Micro-SLAs: Tempos Médios por Trecho</h3>
+                            <div class="dashboard-grid" style="margin-bottom: 30px; gap: 15px;">
+                                <div class="card-micro" style="border-color:#f39c12;"><h3>Sep ➔ Conf</h3><div class="numero" id="gap-sep-conf">--h --m</div></div>
+                                <div class="card-micro" style="border-color:#f39c12;"><h3>Conf ➔ Transp</h3><div class="numero" id="gap-conf-carr">--h --m</div></div>
+                                <div class="card-micro" style="border-color:#f39c12;"><h3>Transp ➔ Rec</h3><div class="numero" id="gap-carr-rec">--h --m</div></div>
+                                <div class="card-micro" style="border-color:#f39c12;"><h3>Rec ➔ Entrega</h3><div class="numero" id="gap-rec-ent">--h --m</div></div>
+                                <div class="card-micro" style="border-color:#1abc9c;"><h3>SepC ➔ Entrega</h3><div class="numero" id="gap-sepc-ent">--h --m</div></div>
+                            </div>
+
+                            <h3 style="color:#2c3e50; border-bottom:1px solid #eee; padding-bottom:5px;">🏆 Top 5: Extremos de Lead Time (Entregas do Mês)</h3>
+                            <div class="dashboard-grid" style="margin-bottom: 30px;">
+                                <div class="chart-box" style="border-top: 4px solid #2ecc71;">
+                                    <h3 style="margin-top:0; color:#27ae60;">⚡ Mais Rápidas (Menor SLA)</h3>
+                                    <ul id="lista-top-fast" class="ranking-list"></ul>
+                                </div>
+                                <div class="chart-box" style="border-top: 4px solid #e74c3c;">
+                                    <h3 style="margin-top:0; color:#c0392b;">🐢 Mais Lentas (Maior SLA)</h3>
+                                    <ul id="lista-top-slow" class="ranking-list"></ul>
+                                </div>
+                            </div>
+
                             <div class="dashboard-grid" style="margin-bottom: 30px;">
                                 <div class="chart-box">
                                     <h3 style="text-align:center; margin-top:0;">Evolução Diária do Lead Time (Horas)</h3>
                                     <div style="position: relative; height:300px;"><canvas id="chartSLA"></canvas></div>
                                 </div>
                                 <div class="chart-box chart-full">
-                                    <h3 style="text-align:center; margin-top:0;">Micro-SLA: Tempo Médio Interno (Horas)</h3>
+                                    <h3 style="text-align:center; margin-top:0;">Evolução Diária: Tempo Médio Interno (Horas)</h3>
                                     <div style="position: relative; height:300px;"><canvas id="chartMicroSLA"></canvas></div>
                                 </div>
                             </div>
@@ -239,7 +276,6 @@
                         </div>
                     </div>
 
-
                     <div id="aba-auditoria-raiox" class="secao-app">
                         <h2 class="secao-titulo">Ciclo de Vida da Requisição (Raio-X)</h2>
                         <div class="filtro-container">
@@ -258,6 +294,7 @@
                         <h2 class="secao-titulo">Exclusão de Apontamentos</h2>
                         <div class="filtro-container">
                             <label>Data:</label><input type="date" id="filtroDataLogistica">
+                            <label>Por pág:</label><select id="limiteLogistica"><option value="10" selected>10 itens</option><option value="20">20 itens</option><option value="50">50 itens</option></select>
                             <button class="btn-acao" onclick="carregarDadosLogistica(0)">Buscar Apontamentos</button>
                             <span class="loading" id="load-logistica">Buscando... ⏳</span>
                         </div>
@@ -277,6 +314,8 @@
                     <div id="aba-auditoria-historico" class="secao-app">
                         <h2 class="secao-titulo">Histórico de Auditoria de Exclusões</h2>
                         <div class="filtro-container">
+                            <label>Por pág:</label>
+                            <select id="limiteAuditoria"><option value="10" selected>10 itens</option><option value="20">20 itens</option></select>
                             <button class="btn-acao" style="background-color: #7f8c8d;" onclick="carregarAuditoria(0)">🔄 Recarregar</button>
                             <span class="loading" id="load-auditoria">Buscando... ⏳</span>
                         </div>
@@ -316,6 +355,8 @@
         var firebaseConfig = { apiKey: "AIzaSyDHUlqzRw_vSyp9livOvQ0rjBYT9l_yofs", authDomain: "checkpoint-pedidos.firebaseapp.com", projectId: "checkpoint-pedidos", storageBucket: "checkpoint-pedidos.firebasestorage.app", messagingSenderId: "890832634523", appId: "1:890832634523:web:7f8fa0ee6a2a9c60e27c3e" };
         firebase.initializeApp(firebaseConfig);
         var bancoDeDados = firebase.firestore();
+
+        console.log("%c🚀 Checkpoint HSVP | Criado por Luiz Henrique Link Lodi & Gemini", "color: #3498db; font-size: 14px; font-weight: bold;");
 
         var gestores = { "151357": { nome: "LUIZ HENRIQUE", senha: "Martin" }, "1249": { nome: "BRUNA QUEVEDO", senha: "Maria" }, "139320": { nome: "RENAN RIBEIRO", senha: "Olivia" } };
         var gestorLogado = null;
@@ -386,8 +427,10 @@
         // INTELIGÊNCIA BI (CACHE GLOBAL E ROTAS)
         // ==========================================
         var cacheBI = { mes: "", documentos: [] };
-        var cacheSLATempos = null; // Guarda a máquina do tempo montada para o filtro de setor
+        var cacheSLATempos = null; 
         var gEtapas = null, gSetores = null, gProd = null, gSLA = null, gMicro = null;
+
+        function formataSLA(ms) { if(ms<0||!ms||isNaN(ms)) return "N/D"; let mm = Math.floor(ms/60000), h = Math.floor(mm/60), m = mm%60; return (h>0 ? h+"h " : "") + (m<10?"0"+m:m)+"m"; }
 
         function carregarDadosBI(abaDestino) {
             var inputId = abaDestino === 'processos' ? 'filtroMesProcessos' : (abaDestino === 'produtividade' ? 'filtroMesProdutividade' : 'filtroMesTempos');
@@ -443,21 +486,21 @@
             gEtapas = new Chart(document.getElementById('chartEtapas').getContext('2d'), { 
                 type: 'bar', 
                 data: { labels: ['Sep. Apoio', 'Conferido', 'Carregado', 'Recebido', 'Sep. Central', 'Entregue'], datasets: [{ data: [tot.sep, tot.conf, tot.carr, tot.rec, tot.sepc, tot.ent], backgroundColor: ['#f39c12', '#8e44ad', '#d35400', '#3498db', '#16a085', '#2ecc71'], borderRadius: 4 }] }, 
-                options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { color: '#fff', anchor: 'end', align: 'start', font: { weight: 'bold', size: 14 } }, legend: { display: false } } } 
+                options: { layout: { padding: { top: 30 } }, responsive: true, maintainAspectRatio: false, plugins: { datalabels: { color: '#2c3e50', anchor: 'end', align: 'top', font: { weight: 'bold', size: 14 } }, legend: { display: false } } } 
             });
 
             if(gSetores) gSetores.destroy();
             gSetores = new Chart(document.getElementById('chartSetores').getContext('2d'), { 
                 type: 'doughnut', 
                 data: { labels: ['Apoio', 'Central'], datasets: [{ data: [tot.sep+tot.conf+tot.carr, tot.rec+tot.sepc+tot.ent], backgroundColor: ['#e67e22', '#2980b9'] }] }, 
-                options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { color: '#fff', font: { weight: 'bold', size: 16 }, formatter: function(value, ctx) { var t = ctx.chart.data.datasets[0].data.reduce((a,b)=>a+b,0); return t > 0 ? Math.round((value/t)*100)+'%' : ''; } }, legend: { position: 'bottom', labels: { font: { size: 14 } } } } } 
+                options: { layout: { padding: { top: 10 } }, responsive: true, maintainAspectRatio: false, plugins: { datalabels: { color: '#fff', font: { weight: 'bold', size: 16 }, formatter: function(value, ctx) { var t = ctx.chart.data.datasets[0].data.reduce((a,b)=>a+b,0); return t > 0 ? Math.round((value/t)*100)+'%' : ''; } }, legend: { position: 'bottom', labels: { font: { size: 14 } } } } } 
             });
 
             document.getElementById('conteudo-processos').style.display = 'block';
             document.getElementById('load-processos').style.display = 'none';
         }
 
-        // (2.2) Produtividade
+        // (2.2) Produtividade (COM TROFÉUS)
         function processarAbaProdutividade(bipes) {
             var colabs = {}, totGer = { sep:0, conf:0, carr:0, rec:0, sepc:0, ent:0, tot:0 };
             bipes.forEach(ev => {
@@ -474,10 +517,18 @@
             var nomes = Object.keys(colabs).sort(), max = { sep:0, conf:0, carr:0, rec:0, sepc:0, ent:0, tot:0 };
             nomes.forEach(n => { let d = colabs[n]; if(d.sep > max.sep) max.sep = d.sep; if(d.conf > max.conf) max.conf = d.conf; if(d.carr > max.carr) max.carr = d.carr; if(d.rec > max.rec) max.rec = d.rec; if(d.sepc > max.sepc) max.sepc = d.sepc; if(d.ent > max.ent) max.ent = d.ent; if(d.tot > max.tot) max.tot = d.tot; });
 
+            // Função que injeta o Troféu se o valor for o Máximo daquela coluna
+            function fmt(valor, maxVal, isTotal = false) {
+                var cls = isTotal ? "col-total " : "";
+                if (valor > 0 && valor === maxVal) return `<td class="${cls}celula-destaque">${valor} 🏆</td>`;
+                return `<td class="${cls}">${valor}</td>`;
+            }
+
             var tb = document.getElementById('corpo-tabela-prod'), dadosGrafico = []; tb.innerHTML = '';
             nomes.forEach(n => {
                 let d = colabs[n]; dadosGrafico.push({ nome: n.split(" ")[0], valor: d.tot });
-                tb.innerHTML += `<tr><td class="col-nome">${n}</td><td class="${d.sep>0&&d.sep===max.sep?'celula-destaque':''}">${d.sep}</td><td class="${d.conf>0&&d.conf===max.conf?'celula-destaque':''}">${d.conf}</td><td class="${d.carr>0&&d.carr===max.carr?'celula-destaque':''}">${d.carr}</td><td class="${d.rec>0&&d.rec===max.rec?'celula-destaque':''}">${d.rec}</td><td class="${d.sepc>0&&d.sepc===max.sepc?'celula-destaque':''}">${d.sepc}</td><td class="${d.ent>0&&d.ent===max.ent?'celula-destaque':''}">${d.ent}</td><td class="col-total ${d.tot>0&&d.tot===max.tot?'celula-destaque':''}">${d.tot}</td></tr>`;
+                tb.innerHTML += `<tr><td class="col-nome">${n}</td>` +
+                    fmt(d.sep, max.sep) + fmt(d.conf, max.conf) + fmt(d.carr, max.carr) + fmt(d.rec, max.rec) + fmt(d.sepc, max.sepc) + fmt(d.ent, max.ent) + fmt(d.tot, max.tot, true) + `</tr>`;
             });
             tb.innerHTML += `<tr style="background:#e8f6f3; border-top:2px solid #bdc3c7;"><td class="col-nome" style="color:#16a085;">TOTAL</td><td><b>${totGer.sep}</b></td><td><b>${totGer.conf}</b></td><td><b>${totGer.carr}</b></td><td><b>${totGer.rec}</b></td><td><b>${totGer.sepc}</b></td><td><b>${totGer.ent}</b></td><td style="color:#c0392b;font-size:16px;"><b>${totGer.tot}</b></td></tr>`;
 
@@ -486,7 +537,7 @@
             gProd = new Chart(document.getElementById('chartProdutividade').getContext('2d'), { 
                 type: 'bar', 
                 data: { labels: dadosGrafico.map(i=>i.nome), datasets: [{ data: dadosGrafico.map(i=>i.valor), backgroundColor: '#9b59b6', borderRadius: 4 }] }, 
-                options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { color: '#fff', anchor: 'end', align: 'start', font: { weight: 'bold', size: 12 } }, legend: { display: false } } } 
+                options: { layout: { padding: { top: 30 } }, responsive: true, maintainAspectRatio: false, plugins: { datalabels: { color: '#2c3e50', anchor: 'end', align: 'top', font: { weight: 'bold', size: 12 }, display: function(ctx) { return ctx.dataset.data[ctx.dataIndex] > 0; } }, legend: { display: false } } } 
             });
 
             document.getElementById('conteudo-produtividade').style.display = 'block';
@@ -497,9 +548,7 @@
         function processarAbaTempos(bipes) {
             var inputMes = document.getElementById('filtroMesTempos').value;
             var diasNoMes = new Date(parseInt(inputMes.split('-')[0]), parseInt(inputMes.split('-')[1]), 0).getDate();
-            
-            var mapasDeTempo = {}; 
-            var reqsEntregues = new Set();
+            var mapasDeTempo = {}, reqsEntregues = new Set();
 
             bipes.forEach(ev => {
                 if(ev.status.includes("Entregue")) {
@@ -511,11 +560,9 @@
 
             if (reqsEntregues.size === 0) {
                 alert("Não há requisições entregues neste mês para calcular SLAs.");
-                document.getElementById('load-tempos').style.display = 'none';
-                return;
+                document.getElementById('load-tempos').style.display = 'none'; return;
             }
 
-            // Máquina do Tempo: Busca o histórico apenas das caixas entregues
             var buscas = Array.from(reqsEntregues).map(req => {
                 return bancoDeDados.collection("checkpoints_logistica").where("requisicao", "==", req).get().then(res => {
                     var pri = null;
@@ -537,7 +584,7 @@
             });
 
             Promise.all(buscas).then(() => {
-                cacheSLATempos = mapasDeTempo; // Salva para o filtro de setor não precisar buscar no banco de novo!
+                cacheSLATempos = mapasDeTempo; 
                 desenharInterfaceSLA(diasNoMes);
                 document.getElementById('conteudo-tempos').style.display = 'block';
                 document.getElementById('load-tempos').style.display = 'none';
@@ -547,6 +594,9 @@
         function desenharInterfaceSLA(diasNoMes) {
             var slaDia = {}; for(let i=1; i<=diasNoMes; i++) slaDia[i] = { laS:0, laQ:0, lcS:0, lcQ:0, g1S:0, g1Q:0, g2S:0, g2Q:0, g3S:0, g3Q:0, g4S:0, g4Q:0, g5S:0, g5Q:0 };
             var totApoio = { s:0, q:0 }, totCentral = { s:0, q:0 };
+            var totG1 = {s:0,q:0}, totG2 = {s:0,q:0}, totG3 = {s:0,q:0}, totG4 = {s:0,q:0}, totG5 = {s:0,q:0}; 
+            
+            var rankingSLA = []; // Para o Top 5
 
             for(let r in cacheSLATempos) {
                 let m = cacheSLATempos[r], f = m.fim, d = m.diaEntrega, t = m.timeline;
@@ -554,20 +604,39 @@
                     let dif = f - m.inicio;
                     if(m.origem === "A") { slaDia[d].laS += dif; slaDia[d].laQ++; totApoio.s += dif; totApoio.q++; } 
                     else { slaDia[d].lcS += dif; slaDia[d].lcQ++; totCentral.s += dif; totCentral.q++; }
+                    // Guarda pro ranking
+                    rankingSLA.push({ req: r, tempo: dif, setor: m.setor });
                 }
                 if(t) {
-                    if(t.sa && t.co && t.co >= t.sa) { slaDia[d].g1S += (t.co-t.sa); slaDia[d].g1Q++; }
-                    if(t.co && t.ca && t.ca >= t.co) { slaDia[d].g2S += (t.ca-t.co); slaDia[d].g2Q++; }
-                    if(t.ca && t.re && t.re >= t.ca) { slaDia[d].g3S += (t.re-t.ca); slaDia[d].g3Q++; }
-                    if(t.re && f && f >= t.re) { slaDia[d].g4S += (f-t.re); slaDia[d].g4Q++; }
-                    if(t.sc && f && f >= t.sc) { slaDia[d].g5S += (f-t.sc); slaDia[d].g5Q++; }
+                    if(t.sa && t.co && t.co >= t.sa) { let dif = t.co-t.sa; slaDia[d].g1S += dif; slaDia[d].g1Q++; totG1.s += dif; totG1.q++; }
+                    if(t.co && t.ca && t.ca >= t.co) { let dif = t.ca-t.co; slaDia[d].g2S += dif; slaDia[d].g2Q++; totG2.s += dif; totG2.q++; }
+                    if(t.ca && t.re && t.re >= t.ca) { let dif = t.re-t.ca; slaDia[d].g3S += dif; slaDia[d].g3Q++; totG3.s += dif; totG3.q++; }
+                    if(t.re && f && f >= t.re) { let dif = f-t.re; slaDia[d].g4S += dif; slaDia[d].g4Q++; totG4.s += dif; totG4.q++; }
+                    if(t.sc && f && f >= t.sc) { let dif = f-t.sc; slaDia[d].g5S += dif; slaDia[d].g5Q++; totG5.s += dif; totG5.q++; }
                 }
             }
 
-            var formataSLA = (ms) => { if(ms<0||!ms) return "N/D"; let mm = Math.floor(ms/60000), h = Math.floor(mm/60), m = mm%60; return (h<10?"0"+h:h)+"h "+(m<10?"0"+m:m)+"m"; };
-            
             document.getElementById('sla-tot-apoio').innerText = totApoio.q > 0 ? formataSLA(totApoio.s / totApoio.q) : "N/D";
             document.getElementById('sla-tot-central').innerText = totCentral.q > 0 ? formataSLA(totCentral.s / totCentral.q) : "N/D";
+            
+            document.getElementById('gap-sep-conf').innerText = totG1.q > 0 ? formataSLA(totG1.s / totG1.q) : "N/D";
+            document.getElementById('gap-conf-carr').innerText = totG2.q > 0 ? formataSLA(totG2.s / totG2.q) : "N/D";
+            document.getElementById('gap-carr-rec').innerText = totG3.q > 0 ? formataSLA(totG3.s / totG3.q) : "N/D";
+            document.getElementById('gap-rec-ent').innerText = totG4.q > 0 ? formataSLA(totG4.s / totG4.q) : "N/D";
+            document.getElementById('gap-sepc-ent').innerText = totG5.q > 0 ? formataSLA(totG5.s / totG5.q) : "N/D";
+
+            // Montagem do Top 5
+            rankingSLA.sort((a,b) => a.tempo - b.tempo);
+            var htmlFast = "", htmlSlow = "";
+            for(var i=0; i<5 && i<rankingSLA.length; i++) {
+                htmlFast += `<li><span class="req">${rankingSLA[i].req} <span class="setor">${rankingSLA[i].setor}</span></span> <span style="color:#27ae60; font-weight:bold;">${formataSLA(rankingSLA[i].tempo)}</span></li>`;
+            }
+            for(var i=0; i<5 && i<rankingSLA.length; i++) {
+                var item = rankingSLA[rankingSLA.length - 1 - i];
+                htmlSlow += `<li><span class="req">${item.req} <span class="setor">${item.setor}</span></span> <span style="color:#c0392b; font-weight:bold;">${formataSLA(item.tempo)}</span></li>`;
+            }
+            document.getElementById('lista-top-fast').innerHTML = htmlFast || "<li>Sem dados suficientes.</li>";
+            document.getElementById('lista-top-slow').innerHTML = htmlSlow || "<li>Sem dados suficientes.</li>";
 
             var lbl = [], dLa=[], dLc=[], dG1=[], dG2=[], dG3=[], dG4=[], dG5=[];
             for(let i=1; i<=diasNoMes; i++) {
@@ -587,7 +656,6 @@
             gMicro = new Chart(document.getElementById('chartMicroSLA').getContext('2d'), { type: 'line', data: { labels: lbl, datasets: [{ label: 'Sep ➔ Conf', data: dG1, borderColor: '#f1c40f', backgroundColor: '#f1c40f' }, { label: 'Conf ➔ Transp', data: dG2, borderColor: '#e67e22', backgroundColor: '#e67e22' }, { label: 'Transp ➔ Rec', data: dG3, borderColor: '#d35400', backgroundColor: '#d35400', borderDash:[5,5] }, { label: 'Rec ➔ Entrega', data: dG4, borderColor: '#3498db', backgroundColor: '#3498db' }, { label: 'SepC ➔ Entrega', data: dG5, borderColor: '#9b59b6', backgroundColor: '#9b59b6' }] }, options: { responsive: true, maintainAspectRatio: false, spanGaps: true, plugins: { datalabels: { display: false }, tooltip: pTt } } });
         }
 
-        // Filtro de Setor Destino (Lembrete 2.3.3)
         function calcularSLASetor() {
             if(!cacheSLATempos) return alert("Gere o relatório mensal primeiro.");
             var setorBuscado = document.getElementById('filtroSetorSLA').value.trim().toUpperCase();
@@ -596,23 +664,16 @@
             var somaMs = 0, qtd = 0;
             for(var req in cacheSLATempos) {
                 var m = cacheSLATempos[req];
-                if(m.setor.toUpperCase().includes(setorBuscado) && m.inicio && m.fim && m.fim >= m.inicio) {
-                    somaMs += (m.fim - m.inicio);
-                    qtd++;
-                }
+                if(m.setor.toUpperCase().includes(setorBuscado) && m.inicio && m.fim && m.fim >= m.inicio) { somaMs += (m.fim - m.inicio); qtd++; }
             }
 
-            document.getElementById('nome-setor-destaque').innerText = "SLA Médio - " + setorBuscado;
-            document.getElementById('amostra-setor').innerText = qtd;
-            
-            var formataSLA = (ms) => { let mm = Math.floor(ms/60000), h = Math.floor(mm/60), m = mm%60; return (h<10?"0"+h:h)+"h "+(m<10?"0"+m:m)+"m"; };
+            document.getElementById('nome-setor-destaque').innerText = "SLA Médio - " + setorBuscado; document.getElementById('amostra-setor').innerText = qtd;
             document.getElementById('sla-setor-resultado').innerText = qtd > 0 ? formataSLA(somaMs/qtd) : "N/D";
-            
             document.getElementById('box-sla-setor').style.display = 'flex';
         }
 
         // ==========================================
-        // RAIO-X (AUDITORIA)
+        // RAIO-X (COM CRONÔMETRO DE INTERVALOS)
         // ==========================================
         function buscarCicloVida() {
             var req = document.getElementById('inputRaioX').value.trim();
@@ -628,36 +689,43 @@
                 document.getElementById('raiox-titulo-req').innerText = req;
                 var tl = document.getElementById('raiox-timeline'); tl.innerHTML = "";
                 
-                var bipes = []; 
-                res.forEach(d => bipes.push(d.data()));
+                var bipes = []; res.forEach(d => bipes.push(d.data()));
                 bipes.sort((a, b) => a.ordem - b.ordem); 
 
                 var isCentral = (bipes.length > 0 && bipes[0].status.includes("Central") && bipes[0].status.includes("Separado"));
                 var indexAlcancado = -1;
                 bipes.forEach(b => { fluxoIdeal.forEach((f, i) => { if(b.status.includes(f.filtro) && i > indexAlcancado) indexAlcancado = i; }); });
 
+                var ultimaOrdemValida = null; 
+
                 fluxoIdeal.forEach((etapa, i) => {
                     if(isCentral && i < 4) return;
                     var achou = bipes.find(b => b.status.includes(etapa.filtro));
+                    
+                    // Desenha o Intervalo de Tempo (SE houver etapa anterior válida)
+                    if(achou && ultimaOrdemValida && achou.ordem > ultimaOrdemValida) {
+                        tl.innerHTML += `<div class="raiox-intervalo">⏳ Tempo na etapa anterior: ${formataSLA(achou.ordem - ultimaOrdemValida)}</div>`;
+                    }
+
                     var html = '<div class="raiox-etapa">';
-                    if(achou) html += `<div class="raiox-icone icone-ok">✓</div><div class="raiox-detalhe"><h4>${achou.status}</h4><p>👤 ${achou.nome} | 🕒 ${achou.data}</p></div>`;
+                    if(achou) {
+                        ultimaOrdemValida = achou.ordem; // Salva para o próximo intervalo
+                        html += `<div class="raiox-icone icone-ok">✓</div><div class="raiox-detalhe"><h4>${achou.status}</h4><p>👤 ${achou.nome} | 🕒 ${achou.data}</p></div>`;
+                    }
                     else if(i < indexAlcancado) html += `<div class="raiox-icone icone-falha">!</div><div class="raiox-detalhe"><h4 style="color:#e74c3c;">${etapa.nome} (PULOU)</h4><p style="color:#e74c3c;">Etapa ignorada no fluxo.</p></div>`;
                     else html += `<div class="raiox-icone icone-pendente">...</div><div class="raiox-detalhe"><h4 style="color:#95a5a6;">${etapa.nome}</h4><p>Aguardando...</p></div>`;
                     tl.innerHTML += html + '</div>';
                 });
                 document.getElementById('resultado-raiox').style.display = 'block';
-            }).catch(erro => { 
-                document.getElementById('load-raiox').style.display = 'none';
-                alert("Erro ao consultar o banco."); console.error(erro); 
-            });
+            }).catch(erro => { document.getElementById('load-raiox').style.display = 'none'; alert("Erro ao consultar o banco."); console.error(erro); });
         }
 
         // ==========================================
-        // EXCLUSÕES PAGINADAS E MODAL
+        // EXCLUSÕES PAGINADAS
         // ==========================================
         var pagLog = 1, curPriLog = null, curUltLog = null;
         function carregarDadosLogistica(dir) {
-            var lim = 10; // Padrão fixo solicitado
+            var lim = 10; 
             document.getElementById('load-logistica').style.display = 'inline-block';
             var tb = document.getElementById('corpo-logistica');
             var data = document.getElementById('filtroDataLogistica').value; 
@@ -687,7 +755,7 @@
 
         var pagAud = 1, curPriAud = null, curUltAud = null;
         function carregarAuditoria(dir) {
-            var lim = 10; // Padrão Fixo
+            var lim = 10; 
             document.getElementById('load-auditoria').style.display = 'inline-block';
             var tb = document.getElementById('corpo-auditoria');
             var query = bancoDeDados.collection("historico_exclusoes").orderBy("ordemExclusao", "desc");
