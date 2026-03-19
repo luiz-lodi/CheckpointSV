@@ -10,6 +10,9 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+
     <style>
         body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; color: #333; }
         .container { max-width: 1100px; margin: 0 auto; }
@@ -23,7 +26,10 @@
         .btn-filtrar { background-color: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.2s; }
         .btn-filtrar:hover { background-color: #2980b9; }
 
-        .secao-titulo { color: #2c3e50; font-size: 16px; font-weight: bold; margin-top: 10px; margin-bottom: 15px; border-bottom: 2px solid #bdc3c7; padding-bottom: 5px; text-transform: uppercase; }
+        .header-equipe { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; margin-bottom: 15px; border-bottom: 2px solid #bdc3c7; padding-bottom: 5px; flex-wrap: wrap; gap: 10px;}
+        .secao-titulo { color: #2c3e50; font-size: 16px; font-weight: bold; margin: 0; text-transform: uppercase; border: none; padding: 0;}
+        .badge-total { background-color: #2c3e50; color: white; padding: 6px 15px; border-radius: 20px; font-size: 13px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1);}
+        .badge-total span { color: #f1c40f; font-size: 16px; margin-left: 5px; }
 
         .cards-grid { display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; justify-content: space-between; }
         .card { background: white; flex: 1; min-width: 130px; padding: 20px 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-align: center; border-bottom: 4px solid #bdc3c7; }
@@ -40,7 +46,7 @@
         #card-sep-central { border-color: #16a085; }
         #card-entregue { border-color: #2ecc71; }
         
-        .tabela-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow-x: auto; margin-top: 15px;}
+        .tabela-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow-x: auto; margin-top: 25px; margin-bottom: 30px;}
         .tabela-container h2 { margin-top: 0; color: #2c3e50; font-size: 18px; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; }
         
         table { width: 100%; border-collapse: collapse; margin-top: 15px; min-width: 800px;}
@@ -50,10 +56,13 @@
         tr:hover { background-color: #f1f2f6; }
         .col-nome { text-align: left; font-weight: bold; }
         .col-total { font-weight: bold; background-color: #f8f9fa; color: #2c3e50;}
-        
-        /* Estilo do Troféu */
         .celula-destaque { background-color: #fff9c4 !important; color: #d35400 !important; font-weight: bold !important; border-radius: 4px; box-shadow: inset 0 0 5px rgba(211, 84, 0, 0.1);}
         
+        /* Layout dos Gráficos */
+        .dashboard-grid { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 20px;}
+        .chart-box { background: #fff; padding: 15px; border-radius: 8px; flex: 1; min-width: 400px; border: 1px solid #eee; box-shadow: 0 2px 4px rgba(0,0,0,0.02);}
+        .chart-container { position: relative; height: 250px; width: 100%; }
+
         .loading { text-align: center; color: #e67e22; font-weight: bold; display: none; margin-top: 10px; width: 100%; font-size: 18px;}
     </style>
 </head>
@@ -78,7 +87,10 @@
             <div class="loading" id="msg-loading">Processando dados... ⏳</div>
         </div>
 
-        <div class="secao-titulo">🏭 Equipe Almoxarifados Centro de Apoio</div>
+        <div class="header-equipe">
+            <div class="secao-titulo">🏭 Equipe Almoxarifados Centro de Apoio</div>
+            <div class="badge-total">Total Processado: <span id="soma-apoio">0</span></div>
+        </div>
         <div class="cards-grid">
             <div class="card" id="card-separado">
                 <h3>📦 Separado (Apoio)</h3>
@@ -94,7 +106,10 @@
             </div>
         </div>
 
-        <div class="secao-titulo">🏥 Equipe Almoxarifados Teixeira Soares</div>
+        <div class="header-equipe">
+            <div class="secao-titulo">🏥 Equipe Almoxarifados Teixeira Soares</div>
+            <div class="badge-total">Total Processado: <span id="soma-central">0</span></div>
+        </div>
         <div class="cards-grid">
             <div class="card" id="card-recebido">
                 <h3>📥 Recebido (Central)</h3>
@@ -107,6 +122,37 @@
             <div class="card" id="card-entregue">
                 <h3>✅ Entregue (Total)</h3>
                 <div class="numero" id="tot-entregue">0</div>
+            </div>
+        </div>
+
+        <div class="header-equipe">
+            <div class="secao-titulo">📈 Desempenho Diário por Etapa Operacional</div>
+        </div>
+        
+        <div class="dashboard-grid">
+            <div class="chart-box">
+                <div class="chart-container"><canvas id="grafico-separado"></canvas></div>
+            </div>
+            <div class="chart-box">
+                <div class="chart-container"><canvas id="grafico-conferido"></canvas></div>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+            <div class="chart-box">
+                <div class="chart-container"><canvas id="grafico-carregado"></canvas></div>
+            </div>
+            <div class="chart-box">
+                <div class="chart-container"><canvas id="grafico-recebido"></canvas></div>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+            <div class="chart-box">
+                <div class="chart-container"><canvas id="grafico-sep-central"></canvas></div>
+            </div>
+            <div class="chart-box">
+                <div class="chart-container"><canvas id="grafico-entregue"></canvas></div>
             </div>
         </div>
 
@@ -129,6 +175,7 @@
                 </tbody>
             </table>
         </div>
+
     </div>
 
     <script>
@@ -144,6 +191,9 @@
         var bancoDeDados = firebase.firestore();
 
         console.log("%c🚀 Checkpoint HSVP | Criado por Luiz Henrique Link Lodi & Gemini", "color: #3498db; font-size: 14px; font-weight: bold;");        
+
+        Chart.register(ChartDataLabels);
+        var instanciasGraficos = {}; 
 
         window.onload = function() {
             var hoje = new Date();
@@ -189,7 +239,11 @@
                 var status = evento.status || "";
 
                 if (!colaboradores[nome]) {
-                    colaboradores[nome] = { separado: 0, conferido: 0, carregado: 0, recebido: 0, sepCentral: 0, entregue: 0, total: 0 };
+                    colaboradores[nome] = { 
+                        separado: 0, conferido: 0, carregado: 0, 
+                        recebido: 0, sepCentral: 0, entregue: 0, 
+                        total: 0 
+                    };
                 }
 
                 if (status.indexOf("Separado (Central)") !== -1) {
@@ -213,6 +267,9 @@
             document.getElementById('tot-recebido').innerText = totais.recebido;
             document.getElementById('tot-sep-central').innerText = totais.sepCentral;
             document.getElementById('tot-entregue').innerText = totais.entregue;
+
+            document.getElementById('soma-apoio').innerText = totais.separado + totais.conferido + totais.carregado;
+            document.getElementById('soma-central').innerText = totais.recebido + totais.sepCentral + totais.entregue;
 
             var corpoTabela = document.getElementById('corpo-tabela');
             corpoTabela.innerHTML = ''; 
@@ -273,11 +330,88 @@
                 corpoTabela.innerHTML += linhaTotalHTML;
             }
 
+            renderizarGrafico('grafico-separado', '📦 Separado (Apoio)', colaboradores, 'separado', '#f39c12');
+            renderizarGrafico('grafico-conferido', '🔍 Conferido (Apoio)', colaboradores, 'conferido', '#8e44ad');
+            renderizarGrafico('grafico-carregado', '🚚 Carregado (Transporte)', colaboradores, 'carregado', '#d35400');
+            renderizarGrafico('grafico-recebido', '📥 Recebido (Central)', colaboradores, 'recebido', '#3498db');
+            renderizarGrafico('grafico-sep-central', '📦 Separado (Central)', colaboradores, 'sepCentral', '#16a085');
+            renderizarGrafico('grafico-entregue', '✅ Entregue', colaboradores, 'entregue', '#2ecc71');
+            
             document.getElementById('msg-loading').style.display = 'none';
+        }
+
+        function renderizarGrafico(idCanvas, tituloTexto, dadosColaboradores, chavePropriedade, corPrimaria) {
+            var ctx = document.getElementById(idCanvas).getContext('2d');
+            
+            if (instanciasGraficos[idCanvas]) {
+                instanciasGraficos[idCanvas].destroy();
+            }
+
+            var dadosFiltrados = [];
+            for (var nomeCompleto in dadosColaboradores) {
+                var valor = dadosColaboradores[nomeCompleto][chavePropriedade];
+                if (valor > 0) {
+                    var primeiroNome = nomeCompleto.split(' ')[0];
+                    dadosFiltrados.push({ nome: primeiroNome, valor: valor });
+                }
+            }
+
+            dadosFiltrados.sort(function(a, b) { return b.valor - a.valor; });
+
+            var nomes = dadosFiltrados.map(function(d) { return d.nome; });
+            var valores = dadosFiltrados.map(function(d) { return d.valor; });
+
+            if (valores.length === 0) {
+                nomes = ['Sem dados'];
+                valores = [0];
+                corPrimaria = '#bdc3c7';
+            }
+
+            instanciasGraficos[idCanvas] = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: nomes,
+                    datasets: [{
+                        data: valores,
+                        backgroundColor: corPrimaria,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    layout: { padding: { top: 30 } },
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: { 
+                            display: true, 
+                            text: tituloTexto, 
+                            font: { size: 15, family: 'Arial', weight: 'bold' }, 
+                            color: '#2c3e50',
+                            padding: { bottom: 15 }
+                        },
+                        legend: { display: false },
+                        datalabels: {
+                            color: '#2c3e50',
+                            anchor: 'end',
+                            align: 'top',
+                            offset: 4,
+                            font: { weight: 'bold', size: 14 },
+                            display: function(context) {
+                                return context.dataset.data[context.dataIndex] > 0;
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { grid: { display: false } },
+                        y: { display: false, beginAtZero: true } 
+                    }
+                }
+            });
         }
     </script>
 </body>
 </html>
+
 
 <!--
 =========================================================================
