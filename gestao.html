@@ -289,8 +289,8 @@
                             <span class="loading" id="load-raiox">Mapeando... ⏳</span>
                         </div>
                         <div id="resultado-raiox" style="display:none; padding: 15px; background: #fdfefe; border: 1px solid #eee; border-radius: 8px;">
-                            <h3 style="margin-top:0; text-align:center;">Fluxo Físico <span id="raiox-titulo-req" style="color:#8e44ad;"></span></h3>
-                            <div id="raiox-timeline"></div>
+                            <h3 style="margin-top:0; text-align:center;">Fluxo Físico - Req <span id="raiox-titulo-req" style="color:#8e44ad;"></span></h3>
+                            <div id="raiox-timeline" style="display: flex; gap: 20px; overflow-x: auto; padding-bottom: 15px; align-items: flex-start;"></div>
                         </div>
                     </div>
 
@@ -508,7 +508,7 @@
             document.getElementById('load-processos').style.display = 'none';
         }
 
-        // (2.2) Produtividade (COM TROFÉUS)
+        // (2.2) Produtividade 
         function processarAbaProdutividade(bipes) {
             var colabs = {}, totGer = { sep:0, conf:0, carr:0, rec:0, sepc:0, ent:0, tot:0 };
             bipes.forEach(ev => {
@@ -583,7 +583,7 @@
                         else if(s.includes("Recebido")) { if(!mapasDeTempo[req].timeline.re || t < mapasDeTempo[req].timeline.re) mapasDeTempo[req].timeline.re = t; }
                     });
                     if(pri) {
-                        if(pri.status.includes("Apoio") || pri.status === "Separado") mapasDeTempo[req].origem = "A";
+                        if(pri.status.includes("Apoio") || pri.status === "Separado" || pri.status.includes("Conferido") || pri.status.includes("Carregado")) mapasDeTempo[req].origem = "A";
                         else if(pri.status.includes("Central")) mapasDeTempo[req].origem = "C";
                         mapasDeTempo[req].inicio = pri.ordem;
                     }
@@ -678,54 +678,104 @@
         }
 
         // ==========================================
-        // RAIO-X (COM CRONÔMETRO DE INTERVALOS)
+        // RAIO-X (AGORA SEPARADO POR VOLUMES E FLUXOS)
         // ==========================================
         function buscarCicloVida() {
             var req = document.getElementById('inputRaioX').value.trim();
             if(req.length !== 7) return alert("Digite 7 dígitos.");
             document.getElementById('load-raiox').style.display = 'inline-block'; document.getElementById('resultado-raiox').style.display = 'none';
 
-            var fluxoIdeal = [ { nome: "Separado (Apoio)", filtro: "Separado" }, { nome: "Conferido (Apoio)", filtro: "Conferido" }, { nome: "Carregado (Transporte)", filtro: "Carregado" }, { nome: "Recebido (Central)", filtro: "Recebido" }, { nome: "Separado (Central)", filtro: "Separado (Central)" }, { nome: "Entregue", filtro: "Entregue" } ];
-
             bancoDeDados.collection("checkpoints_logistica").where("requisicao", "==", req).get().then(res => {
                 document.getElementById('load-raiox').style.display = 'none';
                 if(res.empty) return alert("Nenhum histórico encontrado para esta requisição.");
 
                 document.getElementById('raiox-titulo-req').innerText = req;
-                var tl = document.getElementById('raiox-timeline'); tl.innerHTML = "";
+                var tlContainer = document.getElementById('raiox-timeline'); 
+                tlContainer.innerHTML = "";
                 
-                var bipes = []; res.forEach(d => bipes.push(d.data()));
-                bipes.sort((a, b) => a.ordem - b.ordem); 
-
-                var isCentral = (bipes.length > 0 && bipes[0].status.includes("Central") && bipes[0].status.includes("Separado"));
-                var indexAlcancado = -1;
-                bipes.forEach(b => { fluxoIdeal.forEach((f, i) => { if(b.status.includes(f.filtro) && i > indexAlcancado) indexAlcancado = i; }); });
-
-                var ultimaOrdemValida = null; 
-
-                fluxoIdeal.forEach((etapa, i) => {
-                    if(isCentral && i < 4) return;
-                    var achou = bipes.find(b => b.status.includes(etapa.filtro));
-                    
-                    if(achou && ultimaOrdemValida && achou.ordem > ultimaOrdemValida) {
-                        tl.innerHTML += `<div class="raiox-intervalo">⏳ Tempo na etapa anterior: ${formataSLA(achou.ordem - ultimaOrdemValida)}</div>`;
-                    }
-
-                    var html = '<div class="raiox-etapa">';
-                    if(achou) {
-                        ultimaOrdemValida = achou.ordem; 
-                        html += `<div class="raiox-icone icone-ok">✓</div><div class="raiox-detalhe"><h4>${achou.status}</h4><p>👤 ${achou.nome} | 🕒 ${achou.data}</p></div>`;
-                    }
-                    else if(i < indexAlcancado) html += `<div class="raiox-icone icone-falha">!</div><div class="raiox-detalhe"><h4 style="color:#e74c3c;">${etapa.nome} (PULOU)</h4><p style="color:#e74c3c;">Etapa ignorada no fluxo.</p></div>`;
-                    else html += `<div class="raiox-icone icone-pendente">...</div><div class="raiox-detalhe"><h4 style="color:#95a5a6;">${etapa.nome}</h4><p>Aguardando...</p></div>`;
-                    tl.innerHTML += html + '</div>';
+                var bipesPorVolume = {};
+                res.forEach(d => {
+                    var b = d.data();
+                    var v = b.volume || 1;
+                    if(!bipesPorVolume[v]) bipesPorVolume[v] = [];
+                    bipesPorVolume[v].push(b);
                 });
+
+                var volumesOrdem = Object.keys(bipesPorVolume).sort((a,b) => parseInt(a) - parseInt(b));
+
+                volumesOrdem.forEach(vol => {
+                    var bipes = bipesPorVolume[vol];
+                    bipes.sort((a, b) => a.ordem - b.ordem);
+
+                    // Inteligência: O fluxo é Central ou Apoio?
+                    var isApoio = bipes.some(b => b.status.includes("Apoio") || b.status === "Separado" || b.status.includes("Conferido") || b.status.includes("Carregado") || b.status.includes("Recebido"));
+
+                    var fluxoIdeal = [];
+                    if (isApoio) {
+                        fluxoIdeal = [
+                            { nome: "Separado (Apoio)", filtros: ["Separado (Apoio)", "Separado"] },
+                            { nome: "Conferido (Apoio)", filtros: ["Conferido"] },
+                            { nome: "Carregado (Transporte)", filtros: ["Carregado"] },
+                            { nome: "Recebido (Central)", filtros: ["Recebido"] },
+                            { nome: "Entregue", filtros: ["Entregue"] }
+                        ];
+                    } else {
+                        fluxoIdeal = [
+                            { nome: "Separado (Central)", filtros: ["Separado (Central)"] },
+                            { nome: "Entregue", filtros: ["Entregue"] }
+                        ];
+                    }
+
+                    var htmlVolume = `<div style="min-width:320px; background:#fff; padding:15px; border:2px solid #bdc3c7; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">`;
+                    htmlVolume += `<h4 style="text-align:center; color:#d35400; margin-top:0; border-bottom:2px solid #eee; padding-bottom:10px;">Volume ${vol}</h4>`;
+
+                    var ultimaOrdemValida = null;
+                    var primeiraOrdem = bipes[0].ordem;
+                    var ultimaOrdem = bipes[bipes.length-1].ordem;
+                    var temEntrega = bipes.some(b => b.status.includes("Entregue"));
+
+                    var indexAlcancado = -1;
+                    bipes.forEach(b => {
+                        fluxoIdeal.forEach((f, i) => {
+                            if(f.filtros.some(fil => b.status.includes(fil)) && i > indexAlcancado) indexAlcancado = i;
+                        });
+                    });
+
+                    fluxoIdeal.forEach((etapa, i) => {
+                        var achou = bipes.find(b => etapa.filtros.some(fil => b.status.includes(fil)));
+
+                        if(achou && ultimaOrdemValida && achou.ordem > ultimaOrdemValida) {
+                            htmlVolume += `<div class="raiox-intervalo">⏳ Tempo na etapa: ${formataSLA(achou.ordem - ultimaOrdemValida)}</div>`;
+                        }
+
+                        htmlVolume += '<div class="raiox-etapa">';
+                        if(achou) {
+                            ultimaOrdemValida = achou.ordem;
+                            htmlVolume += `<div class="raiox-icone icone-ok">✓</div><div class="raiox-detalhe"><h4>${achou.status}</h4><p>👤 ${achou.nome} | 🕒 ${achou.data}</p></div>`;
+                        } else if(i < indexAlcancado) {
+                            htmlVolume += `<div class="raiox-icone icone-falha">!</div><div class="raiox-detalhe"><h4 style="color:#e74c3c;">${etapa.nome}</h4><p style="color:#e74c3c;">(Pulou a etapa)</p></div>`;
+                        } else {
+                            htmlVolume += `<div class="raiox-icone icone-pendente">...</div><div class="raiox-detalhe"><h4 style="color:#95a5a6;">${etapa.nome}</h4><p>Aguardando...</p></div>`;
+                        }
+                        htmlVolume += '</div>';
+                    });
+
+                    if (temEntrega) {
+                        htmlVolume += `<div style="margin-top:20px; padding:10px; background:#e8f6f3; border:1px solid #2ecc71; border-radius:5px; text-align:center;">`;
+                        htmlVolume += `<strong style="color:#27ae60;">🏁 Tempo Total do Ciclo</strong><br><span style="font-size:18px; font-weight:bold; color:#2c3e50;">${formataSLA(ultimaOrdem - primeiraOrdem)}</span>`;
+                        htmlVolume += `</div>`;
+                    }
+
+                    htmlVolume += `</div>`;
+                    tlContainer.innerHTML += htmlVolume;
+                });
+
                 document.getElementById('resultado-raiox').style.display = 'block';
             }).catch(erro => { document.getElementById('load-raiox').style.display = 'none'; alert("Erro ao consultar o banco."); console.error(erro); });
         }
 
         // ==========================================
-        // EXCLUSÕES PAGINADAS E MODAL
+        // EXCLUSÕES PAGINADAS E MODAL (Com Correção de Estado)
         // ==========================================
         var pagLog = 1, curPriLog = null, curUltLog = null;
         function carregarDadosLogistica(dir) {
@@ -741,7 +791,7 @@
                 if(res.empty) { if(dir===0) tb.innerHTML = '<tr><td colspan="6">Nenhum dado.</td></tr>'; if(dir===1) pagLog--; if(dir===-1) pagLog++; } else {
                     tb.innerHTML = ''; curPriLog = res.docs[0]; curUltLog = res.docs[res.docs.length-1];
                     res.forEach(d => { var ev = d.data(), hora = ev.data.split(" ")[1] || ev.data, str = encodeURIComponent(JSON.stringify(ev));
-                        tb.innerHTML += `<tr><td>${hora}</td><td>${ev.nome}</td><td style="color:#2980b9;font-weight:bold;">${ev.requisicao}</td><td>Vol ${ev.volume||1}</td><td>${ev.status}</td><td><button class="btn-excluir" onclick="abrirModalExclusao('${d.id}', '${str}')">Excluir</button></td></tr>`;
+                        tb.innerHTML += `<tr id="row-${d.id}"><td>${hora}</td><td>${ev.nome}</td><td style="color:#2980b9;font-weight:bold;">${ev.requisicao}</td><td>Vol ${ev.volume||1}</td><td>${ev.status}</td><td><button class="btn-excluir" onclick="abrirModalExclusao('${d.id}', '${str}')">Excluir</button></td></tr>`;
                     });
                 }
                 document.getElementById('info-pag-log').innerText = "Pág " + pagLog; document.getElementById('btn-ant-log').disabled = (pagLog <= 1); document.getElementById('btn-prox-log').disabled = (res.docs.length < lim);
@@ -753,8 +803,16 @@
         function fecharModal() { document.getElementById('modal-justificativa').style.display = 'none'; }
         function processarExclusaoFinal() {
             var just = document.getElementById('input-justificativa').value.trim(); if(just.length < 5) return alert("Justificativa obrigatória.");
+            
             bancoDeDados.collection("historico_exclusoes").add({ idRegistroApagado: idDel, requisicao: dadosDel.requisicao, status: dadosDel.status, volume: dadosDel.volume||1, operadorOriginal: dadosDel.nome, excluidoPorNome: gestorLogado.nome, justificativa: just, dataExclusao: new Date().toLocaleString('pt-BR'), ordemExclusao: new Date().getTime() })
-            .then(() => bancoDeDados.collection("checkpoints_logistica").doc(idDel).delete()).then(() => { fecharModal(); carregarDadosLogistica(0); carregarAuditoria(0); });
+            .then(() => bancoDeDados.collection("checkpoints_logistica").doc(idDel).delete())
+            .then(() => { 
+                fecharModal(); 
+                // BUG CORRIGIDO (Custo Zero de Leitura): Apaga a linha da tela sem recarregar a tabela e mantém na mesma página!
+                var linhaApagada = document.getElementById('row-' + idDel);
+                if(linhaApagada) linhaApagada.remove();
+                mostrarToast("✅ Excluído com sucesso!");
+            });
         }
 
         var pagAud = 1, curPriAud = null, curUltAud = null;
