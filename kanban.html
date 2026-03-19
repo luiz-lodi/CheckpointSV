@@ -160,6 +160,7 @@
                     
                     var requisicoesAtuais = {};
 
+                    // Mapeia qual é o ÚLTIMO status de cada caixa
                     resultado.forEach(function(documento) {
                         var evento = documento.data();
                         var volumeCard = evento.volume || 1; 
@@ -172,8 +173,14 @@
 
                     var contagens = { separado: 0, conferido: 0, carregado: 0, recebido: 0, sepCentral: 0, entregue: 0 };
 
-                    for (var chave in requisicoesAtuais) {
-                        var dados = requisicoesAtuais[chave];
+                    // INTELIGÊNCIA: Converte o objeto em uma lista e ordena do mais antigo para o mais novo
+                    var cartoesOrdenados = Object.values(requisicoesAtuais);
+                    cartoesOrdenados.sort(function(a, b) {
+                        return a.ordem - b.ordem;
+                    });
+
+                    // Distribui os cartões já ordenados nas colunas
+                    cartoesOrdenados.forEach(function(dados) {
                         var status = dados.status || "";
                         var cartaoHTML = criarCartao(dados);
 
@@ -196,7 +203,7 @@
                             document.querySelector('#col-entregue .lista-cartoes').innerHTML += cartaoHTML;
                             contagens.entregue++;
                         }
-                    }
+                    });
 
                     document.getElementById('count-separado').innerText = contagens.separado;
                     document.getElementById('count-conferido').innerText = contagens.conferido;
