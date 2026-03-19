@@ -8,7 +8,9 @@
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
 
     <style>
         body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; color: #333; }
@@ -26,6 +28,7 @@
         #painel-gestao { display: none; }
         .layout-app { display: flex; gap: 20px; align-items: flex-start; }
         
+        /* MENU LATERAL ANINHADO */
         .sidebar { width: 280px; background: #34495e; border-radius: 8px; padding: 10px 0; flex-shrink: 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden;}
         .menu-btn { display: flex; justify-content: space-between; align-items: center; width: 100%; text-align: left; padding: 15px 20px; background: none; border: none; color: #ecf0f1; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.2s; border-left: 4px solid transparent; }
         .menu-btn:hover { background: #2c3e50; }
@@ -36,6 +39,7 @@
         .submenu-btn:hover { color: #fff; background: #1a252f; }
         .submenu-btn.ativo { color: #f1c40f; font-weight: bold; background: #1a252f; border-left: 3px solid #f1c40f;}
 
+        /* ÁREA DE CONTEÚDO */
         .conteudo-principal { flex: 1; background: white; border-radius: 8px; padding: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); min-width: 0; min-height: 600px;}
         .secao-app { display: none; }
         .secao-app.ativa { display: block; animation: fadeIn 0.3s; }
@@ -48,6 +52,7 @@
         .btn-acao { background-color: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; }
         .loading { color: #e67e22; font-weight: bold; display: none; margin-left: auto; }
 
+        /* TABELAS E PAGINAÇÃO */
         .tabela-wrapper { overflow-x: auto; margin-bottom: 15px; border-radius: 8px; border: 1px solid #eee; }
         table { width: 100%; border-collapse: collapse; min-width: 700px; }
         th, td { padding: 12px; text-align: center; border-bottom: 1px solid #eee; font-size: 14px; }
@@ -62,9 +67,11 @@
         .paginacao button { background: #34495e; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
         .paginacao button:disabled { background: #bdc3c7; cursor: not-allowed; }
 
+        /* MURAL DE AVISOS */
         textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; margin-bottom: 10px; font-family: inherit;}
         .msg-card { background: #fdfefe; border-left: 4px solid #f1c40f; padding: 12px; margin-bottom: 10px; border-radius: 4px; border: 1px solid #eee;}
 
+        /* RAIO-X TIMELINE */
         .raiox-etapa { display: flex; align-items: center; margin-bottom: 15px; }
         .raiox-icone { width: 35px; height: 35px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; color: white; margin-right: 15px; }
         .icone-ok { background-color: #2ecc71; }
@@ -74,11 +81,13 @@
         .raiox-detalhe h4 { margin: 0; color: #2c3e50; }
         .raiox-detalhe p { margin: 2px 0 0 0; font-size: 13px; color: #7f8c8d; }
 
+        /* MODAL */
         .modal-overlay { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); }
         .modal-content { background: #fff; margin: 10% auto; padding: 25px; border-radius: 8px; width: 90%; max-width: 450px; }
         
+        /* GRÁFICOS BI */
         .dashboard-grid { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 30px;}
-        .chart-box { background: #fff; padding: 15px; border-radius: 8px; flex: 1; min-width: 400px; border: 1px solid #eee; box-shadow: 0 2px 4px rgba(0,0,0,0.02);}
+        .chart-box { background: #fff; padding: 15px; border-radius: 8px; flex: 1; min-width: 400px; border: 1px solid #eee; box-shadow: 0 2px 4px rgba(0,0,0,0.02); padding-top: 25px; /* Espaço para as labels */}
         .chart-full { flex: 100%; min-width: 100%; }
         .em-construcao { text-align: center; padding: 50px; color: #7f8c8d; border: 2px dashed #ccc; border-radius: 8px; background: #f9f9f9;}
         
@@ -114,16 +123,16 @@
                     
                     <button class="menu-btn" onclick="toggleSubmenu('sub-bi', this)">📈 Relatórios BI <span class="seta">▼</span></button>
                     <div id="sub-bi" class="submenu">
-                        <button class="submenu-btn" onclick="mudarAbaFilha('aba-bi-processos', this)">📊 2.1 Processos</button>
-                        <button class="submenu-btn" onclick="mudarAbaFilha('aba-bi-produtividade', this)">🏆 2.2 Produtividade</button>
-                        <button class="submenu-btn" onclick="mudarAbaFilha('aba-bi-tempos', this)">⏱️ 2.3 Tempos (SLAs)</button>
+                        <button class="submenu-btn" onclick="mudarAbaFilha('aba-bi-processos', this)">📊 Processos</button>
+                        <button class="submenu-btn" onclick="mudarAbaFilha('aba-bi-produtividade', this)">🏆 Produtividade</button>
+                        <button class="submenu-btn" onclick="mudarAbaFilha('aba-bi-tempos', this)">⏱️ Tempos (SLAs)</button>
                     </div>
 
                     <button class="menu-btn" onclick="toggleSubmenu('sub-auditoria', this)">🛡️ Auditoria Logística <span class="seta">▼</span></button>
                     <div id="sub-auditoria" class="submenu">
-                        <button class="submenu-btn" onclick="mudarAbaFilha('aba-auditoria-raiox', this)">🔍 3.1 Ciclo de Vida (Raio-X)</button>
-                        <button class="submenu-btn" onclick="mudarAbaFilha('aba-auditoria-exclusao', this)">🗑️ 3.2 Excluir Apontamentos</button>
-                        <button class="submenu-btn" onclick="mudarAbaFilha('aba-auditoria-historico', this)">📜 3.3 Histórico de Exclusões</button>
+                        <button class="submenu-btn" onclick="mudarAbaFilha('aba-auditoria-raiox', this)">🔍 Ciclo de Vida (Raio-X)</button>
+                        <button class="submenu-btn" onclick="mudarAbaFilha('aba-auditoria-exclusao', this)">🗑️ Excluir Apontamentos</button>
+                        <button class="submenu-btn" onclick="mudarAbaFilha('aba-auditoria-historico', this)">📜 Histórico de Exclusões</button>
                     </div>
                 </div>
 
@@ -137,7 +146,7 @@
                     </div>
 
                     <div id="aba-bi-processos" class="secao-app">
-                        <h2 class="secao-titulo">📊 2.1 Processos Logísticos</h2>
+                        <h2 class="secao-titulo">📊 Processos Logísticos</h2>
                         <div class="filtro-container">
                             <label>Mês Base:</label>
                             <input type="month" id="filtroMesProcessos">
@@ -161,7 +170,7 @@
                     </div>
 
                     <div id="aba-bi-produtividade" class="secao-app">
-                        <h2 class="secao-titulo">🏆 2.2 Produtividade Operacional</h2>
+                        <h2 class="secao-titulo">🏆 Produtividade Operacional</h2>
                         <div class="filtro-container">
                             <label>Mês Base:</label>
                             <input type="month" id="filtroMesProdutividade">
@@ -186,7 +195,7 @@
                     </div>
 
                     <div id="aba-bi-tempos" class="secao-app">
-                        <h2 class="secao-titulo">⏱️ 2.3 Tempos de Processamento (SLAs)</h2>
+                        <h2 class="secao-titulo">⏱️ Tempos de Processamento (SLAs)</h2>
                         <div class="em-construcao">
                             <h2>🛠️ Em Construção (Fase 3)</h2>
                             <p>Aqui entrarão os cálculos de Lead Time, Evolução Diária e o Filtro de SLA por Setor Destino. Em breve!</p>
@@ -194,7 +203,7 @@
                     </div>
 
                     <div id="aba-auditoria-raiox" class="secao-app">
-                        <h2 class="secao-titulo">🔍 3.1 Ciclo de Vida da Requisição (Raio-X)</h2>
+                        <h2 class="secao-titulo">🔍 Ciclo de Vida da Requisição (Raio-X)</h2>
                         <div class="filtro-container">
                             <label>Requisição:</label>
                             <input type="number" id="inputRaioX" placeholder="Ex: 1234567">
@@ -208,10 +217,10 @@
                     </div>
 
                     <div id="aba-auditoria-exclusao" class="secao-app">
-                        <h2 class="secao-titulo">🗑️ 3.2 Exclusão de Apontamentos</h2>
+                        <h2 class="secao-titulo">🗑️ Exclusão de Apontamentos</h2>
                         <div class="filtro-container">
                             <label>Data:</label><input type="date" id="filtroDataLogistica">
-                            <label>Por pág:</label><select id="limiteLogistica"><option value="10">10 itens</option><option value="20" selected>20 itens</option><option value="50">50 itens</option></select>
+                            <label>Por pág:</label><select id="limiteLogistica"><option value="10" selected>10 itens</option><option value="20">20 itens</option><option value="50">50 itens</option></select>
                             <button class="btn-acao" onclick="carregarDadosLogistica(0)">Buscar Apontamentos</button>
                             <span class="loading" id="load-logistica">Buscando... ⏳</span>
                         </div>
@@ -229,7 +238,7 @@
                     </div>
 
                     <div id="aba-auditoria-historico" class="secao-app">
-                        <h2 class="secao-titulo">📜 3.3 Histórico de Auditoria de Exclusões</h2>
+                        <h2 class="secao-titulo">📜 Histórico de Auditoria de Exclusões</h2>
                         <div class="filtro-container">
                             <label>Por pág:</label>
                             <select id="limiteAuditoria">
@@ -270,6 +279,9 @@
     </div>
 
     <script>
+        // Registro global do plugin de Legendas/Percentuais
+        Chart.register(ChartDataLabels);
+
         var firebaseConfig = { apiKey: "AIzaSyDHUlqzRw_vSyp9livOvQ0rjBYT9l_yofs", authDomain: "checkpoint-pedidos.firebaseapp.com", projectId: "checkpoint-pedidos", storageBucket: "checkpoint-pedidos.firebasestorage.app", messagingSenderId: "890832634523", appId: "1:890832634523:web:7f8fa0ee6a2a9c60e27c3e" };
         firebase.initializeApp(firebaseConfig);
         var bancoDeDados = firebase.firestore();
@@ -277,9 +289,6 @@
         var gestores = { "151357": { nome: "LUIZ HENRIQUE", senha: "Martin" }, "1249": { nome: "BRUNA QUEVEDO", senha: "Maria" }, "139320": { nome: "RENAN RIBEIRO", senha: "Olivia" } };
         var gestorLogado = null;
 
-        // ==========================================
-        // 1. MENU E NAVEGAÇÃO SPA
-        // ==========================================
         function fazerLogin() {
             var mat = document.getElementById('matriculaGestor').value.trim(), sen = document.getElementById('senhaGestor').value.trim();
             if (gestores[mat] && gestores[mat].senha === sen) {
@@ -317,10 +326,18 @@
             document.querySelectorAll('.menu-btn, .submenu-btn').forEach(b => b.classList.remove('ativo'));
             document.getElementById(idAba).classList.add('ativa'); btn.classList.add('ativo');
             btn.parentElement.previousElementSibling.classList.add('ativo');
+
+            // Automação (Lazy Loading): Carrega automaticamente as abas de auditoria se estiverem vazias
+            if(idAba === 'aba-auditoria-exclusao' && document.getElementById('corpo-logistica').innerHTML === '') {
+                carregarDadosLogistica(0);
+            }
+            if(idAba === 'aba-auditoria-historico' && document.getElementById('corpo-auditoria').innerHTML === '') {
+                carregarAuditoria(0);
+            }
         }
 
         // ==========================================
-        // 2. MURAL DE AVISOS
+        // MURAL DE AVISOS
         // ==========================================
         function salvarMensagem() {
             var txt = document.getElementById('textoMensagem').value.trim(); if(!txt) return;
@@ -339,7 +356,7 @@
         }
 
         // ==========================================
-        // 3. INTELIGÊNCIA BI (CACHE GLOBAL)
+        // INTELIGÊNCIA BI (CACHE GLOBAL)
         // ==========================================
         var cacheBI = { mes: "", documentos: [] };
         var gEtapas = null, gSetores = null, gProd = null;
@@ -394,10 +411,18 @@
             document.getElementById('kpi-req-total').innerText = reqsUnicasApoio.size + reqsUnicasCentral.size;
 
             if(gEtapas) gEtapas.destroy();
-            gEtapas = new Chart(document.getElementById('chartEtapas').getContext('2d'), { type: 'bar', data: { labels: ['Sep. Apoio', 'Conferido', 'Carregado', 'Recebido', 'Sep. Central', 'Entregue'], datasets: [{ label: 'Bipes', data: [tot.sep, tot.conf, tot.carr, tot.rec, tot.sepc, tot.ent], backgroundColor: ['#f39c12', '#8e44ad', '#d35400', '#3498db', '#16a085', '#2ecc71'], borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+            gEtapas = new Chart(document.getElementById('chartEtapas').getContext('2d'), { 
+                type: 'bar', 
+                data: { labels: ['Sep. Apoio', 'Conferido', 'Carregado', 'Recebido', 'Sep. Central', 'Entregue'], datasets: [{ label: 'Bipes', data: [tot.sep, tot.conf, tot.carr, tot.rec, tot.sepc, tot.ent], backgroundColor: ['#f39c12', '#8e44ad', '#d35400', '#3498db', '#16a085', '#2ecc71'], borderRadius: 4 }] }, 
+                options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { color: '#2c3e50', anchor: 'end', align: 'top', font: { weight: 'bold', size: 14 } }, legend: { display: false } } } 
+            });
 
             if(gSetores) gSetores.destroy();
-            gSetores = new Chart(document.getElementById('chartSetores').getContext('2d'), { type: 'doughnut', data: { labels: ['Apoio', 'Central'], datasets: [{ data: [tot.sep+tot.conf+tot.carr, tot.rec+tot.sepc+tot.ent], backgroundColor: ['#e67e22', '#2980b9'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } } });
+            gSetores = new Chart(document.getElementById('chartSetores').getContext('2d'), { 
+                type: 'doughnut', 
+                data: { labels: ['Apoio', 'Central'], datasets: [{ data: [tot.sep+tot.conf+tot.carr, tot.rec+tot.sepc+tot.ent], backgroundColor: ['#e67e22', '#2980b9'] }] }, 
+                options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { color: '#fff', font: { weight: 'bold', size: 16 }, formatter: function(value, ctx) { var t = ctx.chart.data.datasets[0].data.reduce((a,b)=>a+b,0); return t > 0 ? Math.round((value/t)*100)+'%' : ''; } }, legend: { position: 'bottom', labels: { font: { size: 14 } } } } } 
+            });
 
             document.getElementById('conteudo-processos').style.display = 'block';
         }
@@ -427,13 +452,17 @@
 
             dadosGrafico.sort((a,b) => b.valor - a.valor);
             if(gProd) gProd.destroy();
-            gProd = new Chart(document.getElementById('chartProdutividade').getContext('2d'), { type: 'bar', data: { labels: dadosGrafico.map(i=>i.nome), datasets: [{ label: 'Volumes', data: dadosGrafico.map(i=>i.valor), backgroundColor: '#9b59b6', borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+            gProd = new Chart(document.getElementById('chartProdutividade').getContext('2d'), { 
+                type: 'bar', 
+                data: { labels: dadosGrafico.map(i=>i.nome), datasets: [{ label: 'Volumes', data: dadosGrafico.map(i=>i.valor), backgroundColor: '#9b59b6', borderRadius: 4 }] }, 
+                options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { color: '#2c3e50', anchor: 'end', align: 'top', font: { weight: 'bold', size: 12 } }, legend: { display: false } } } 
+            });
 
             document.getElementById('conteudo-produtividade').style.display = 'block';
         }
 
         // ==========================================
-        // 4. RAIO-X (CORRIGIDO: REMOVIDO ORDERBY DO FIREBASE)
+        // RAIO-X 
         // ==========================================
         function buscarCicloVida() {
             var req = document.getElementById('inputRaioX').value.trim();
@@ -442,7 +471,6 @@
 
             var fluxoIdeal = [ { nome: "Separado (Apoio)", filtro: "Separado" }, { nome: "Conferido (Apoio)", filtro: "Conferido" }, { nome: "Carregado (Transporte)", filtro: "Carregado" }, { nome: "Recebido (Central)", filtro: "Recebido" }, { nome: "Separado (Central)", filtro: "Separado (Central)" }, { nome: "Entregue", filtro: "Entregue" } ];
 
-            // A MÁGICA AQUI: Removi o .orderBy() para não dar erro de índice! A ordenação é feita no JavaScript abaixo.
             bancoDeDados.collection("checkpoints_logistica").where("requisicao", "==", req).get().then(res => {
                 document.getElementById('load-raiox').style.display = 'none';
                 if(res.empty) return alert("Nenhum histórico encontrado para esta requisição.");
@@ -452,9 +480,7 @@
                 
                 var bipes = []; 
                 res.forEach(d => bipes.push(d.data()));
-                
-                // Ordenação cronológica garantida na memória
-                bipes.sort((a, b) => a.ordem - b.ordem);
+                bipes.sort((a, b) => a.ordem - b.ordem); // Ordenação cronológica correta na memória
 
                 var isCentral = (bipes.length > 0 && bipes[0].status.includes("Central") && bipes[0].status.includes("Separado"));
                 var indexAlcancado = -1;
@@ -477,7 +503,7 @@
         }
 
         // ==========================================
-        // 5. EXCLUSÕES PAGINADAS E MODAL
+        // EXCLUSÕES PAGINADAS E MODAL
         // ==========================================
         var pagLog = 1, curPriLog = null, curUltLog = null;
         function carregarDadosLogistica(dir) {
