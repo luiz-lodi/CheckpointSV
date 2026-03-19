@@ -26,6 +26,7 @@
         button { width: 100%; padding: 12px; border: none; border-radius: 5px; color: white; font-size: 14px; font-weight: bold; cursor: pointer; margin-bottom: 5px; transition: 0.2s; }
         
         .btn-lote { background-color: #8e44ad; padding: 15px; font-size: 16px; margin-top: 10px; border-bottom: 4px solid #6c3483; }
+        .btn-retirada { background-color: #d35400; padding: 15px; font-size: 16px; margin-top: 5px; border-bottom: 4px solid #a04000; }
         .btn-sync { background-color: #27ae60; padding: 15px; font-size: 16px; margin-top: 15px; border-bottom: 4px solid #1e8449; }
         .btn-voltar { background-color: #e74c3c; margin-top: 15px; }
         .btn-limpar { background-color: #95a5a6; padding: 8px; font-size: 12px; margin-top: 5px; }
@@ -38,8 +39,8 @@
         .nome-destaque { color: #2c3e50; font-weight: bold; font-size: 14px; margin-top: 8px; padding: 8px; background-color: #fadbd8; border: 2px dashed #e74c3c; border-radius: 5px; text-align: center; display: none; }
         .nome-destaque .operador-nome { color: #c0392b; font-size: 1.1em; text-transform: uppercase; margin-left: 4px; }
 
-        .area-lote { background: #fff; padding: 12px; border-radius: 6px; border: 2px solid #8e44ad; margin-bottom: 10px; }
-        .titulo-lote { text-align: center; font-size: 16px; font-weight: bold; margin-bottom: 10px; text-transform: uppercase; color: #8e44ad;}
+        .area-lote { background: #fff; padding: 12px; border-radius: 6px; border: 2px solid #8e44ad; margin-bottom: 10px; transition: border-color 0.3s;}
+        .titulo-lote { text-align: center; font-size: 16px; font-weight: bold; margin-bottom: 10px; text-transform: uppercase; color: #8e44ad; transition: color 0.3s;}
         
         #destaque-local-lote { font-size: 20px; font-weight: bold; color: #2980b9; background: #e8f6f3; padding: 15px; border-radius: 8px; border: 2px dashed #3498db; margin-bottom: 15px; text-align: center;}
 
@@ -73,7 +74,7 @@
         <div id="box-operador">
             <div class="input-group">
                 <label for="idMatricula">Matrícula (Bipe o crachá):</label>
-                <input type="text" id="idMatricula" placeholder="Digite e Enter">
+                <input type="text" id="idMatricula">
                 <div id="displayOperador" class="nome-destaque"></div>
             </div>
             <button id="btn-trocar-operador" class="btn-limpar" style="display:none;" onclick="trocarOperador()">🔄 Trocar Usuário</button>
@@ -84,15 +85,16 @@
                 <div class="instrucao" style="color:#16a085;">MODO UNITÁRIO (TRADICIONAL)</div>
                 <div class="input-group">
                     <label for="idRequisicao">1. Requisição Tasy (7 dígitos):</label>
-                    <input type="text" id="idRequisicao" placeholder="Bipe a requisição">
+                    <input type="text" id="idRequisicao">
                 </div>
                 <div class="input-group">
                     <label for="idLocalQR">2. Etapa / Local de Entrega (QR Code):</label>
-                    <input type="text" id="idLocalQR" placeholder="Bipe a parede ou crachá">
+                    <input type="text" id="idLocalQR">
                 </div>
             </div>
 
-            <button class="btn-lote" onclick="abrirModoLote()">📦 MODO BIPAGEM MÚLTIPLA<br><span style="font-size: 11px; font-weight: normal;">(Conferência, Romaneio, Entregas)</span></button>
+            <button class="btn-lote" onclick="abrirModoLote('NORMAL')">📦 MODO BIPAGEM MÚLTIPLA<br><span style="font-size: 11px; font-weight: normal;">(Conferência, Romaneio, Entregas em Setores)</span></button>
+            <button class="btn-retirada" onclick="abrirModoLote('RETIRADA')">🤝 MODO RETIRADA<br><span style="font-size: 11px; font-weight: normal;">(Entrega direta em mãos via Crachá)</span></button>
 
             <div id="historico" style="margin-top: 20px;">
                 <h3>Últimos Lançamentos</h3>
@@ -102,13 +104,13 @@
 
         <div id="tela-lote">
             <div class="area-lote" id="caixa-lote">
-                <div class="titulo-lote">Bipagem Múltipla</div>
+                <div class="titulo-lote" id="titulo-lote-texto">Bipagem Múltipla</div>
                 
                 <div id="passo1-lote">
-                    <div class="instrucao" style="color:#e74c3c;">PASSO 1: Onde estas caixas estão?</div>
+                    <div id="texto-passo1-lote" class="instrucao" style="color:#e74c3c;">PASSO 1: Onde estas caixas estão?</div>
                     <div class="input-group">
-                        <label for="idLocalQRLote">Bipe a Etapa, Setor Destino ou Crachá de Retirada:</label>
-                        <input type="text" id="idLocalQRLote" placeholder="Bipe aqui...">
+                        <label for="idLocalQRLote" id="label-passo1-lote">Bipe a Etapa ou Setor Destino:</label>
+                        <input type="text" id="idLocalQRLote">
                     </div>
                 </div>
 
@@ -118,7 +120,7 @@
                     <div class="instrucao">PASSO 2: Bipe todas as requisições (Offline)</div>
                     <div class="input-group">
                         <label for="idReqLote">Requisição (7 dígitos):</label>
-                        <input type="text" id="idReqLote" placeholder="Bipe sequencialmente...">
+                        <input type="text" id="idReqLote">
                     </div>
                     
                     <div id="contador-lote" style="text-align:center; font-weight:bold; color:#7f8c8d; margin-top:10px; padding-top:10px; border-top:1px solid #eee;">
@@ -145,7 +147,6 @@
 
         bancoDeDados.enablePersistence({synchronizeTabs: true}).catch(function(err) { console.log("Erro persistência:", err.code); });
 
-        // Toca apenas para erros REAIS ou sucesso no lote offline
         function dispararAlertaErro() { tocarFrequencia(100, 0.4); } 
         function dispararAlertaSucessoLote() { tocarFrequencia(800, 0.1); } 
 
@@ -170,6 +171,7 @@
 
         var nomeOperadorAtual = "";
         var etapaLoteAtual = ""; 
+        var tipoLoteAtual = ""; 
         var filaBipagemLote = [];
         var isModoLoteSyncing = false;
         
@@ -227,16 +229,38 @@
         }
 
         // ==========================================
-        // MODO BIPAGEM MÚLTIPLA UNIFICADO
+        // FLUXO DO MODO MÚLTIPLO (E RETIRADA)
         // ==========================================
-        function abrirModoLote() {
+        function abrirModoLote(tipo) {
             if (!checarOperador()) return;
+            tipoLoteAtual = tipo;
+            
+            var titulo = document.getElementById('titulo-lote-texto');
+            var labelArea = document.getElementById('label-passo1-lote');
+            var instrucaoPasso1 = document.getElementById('texto-passo1-lote');
+            var caixaLote = document.getElementById('caixa-lote');
+            var inputQRLote = document.getElementById('idLocalQRLote');
+
+            if (tipo === 'RETIRADA') {
+                titulo.innerText = "🤝 MODO RETIRADA";
+                titulo.style.color = "#d35400";
+                caixaLote.style.borderColor = "#d35400";
+                instrucaoPasso1.innerText = "PASSO 1: Identifique o colaborador que veio retirar.";
+                labelArea.innerText = "Bipe o Crachá de quem está retirando:";
+            } else {
+                titulo.innerText = "📦 BIPAGEM MÚLTIPLA";
+                titulo.style.color = "#8e44ad";
+                caixaLote.style.borderColor = "#8e44ad";
+                instrucaoPasso1.innerText = "PASSO 1: Onde estas caixas estão?";
+                labelArea.innerText = "Bipe a Etapa ou Setor Destino:";
+            }
+
             document.getElementById('tela-logistica').style.display = 'none';
             document.getElementById('tela-lote').style.display = 'block';
             document.getElementById('passo1-lote').style.display = 'block';
             document.getElementById('passo2-lote').style.display = 'none';
-            document.getElementById('idLocalQRLote').value = ''; 
-            document.getElementById('idLocalQRLote').focus();
+            inputQRLote.value = ''; 
+            inputQRLote.focus();
             filaBipagemLote = [];
         }
 
@@ -253,12 +277,20 @@
                 var qrLido = this.value.trim().toUpperCase();
                 if(qrLido === "") return;
 
-                var apenasNumeros = qrLido.replace(/\D/g, '');
-                if (apenasNumeros !== "" && apenasNumeros.length >= 6) {
+                if (tipoLoteAtual === 'RETIRADA') {
+                    var apenasNumeros = qrLido.replace(/\D/g, '');
+                    if (apenasNumeros === "" || apenasNumeros.length < 4) {
+                        dispararAlertaErro(); mostrarToast("❌ Bipe um Crachá válido!"); this.value = ''; return;
+                    }
                     qrLido = parseInt(apenasNumeros.slice(-6), 10).toString();
-                }
+                    etapaLoteAtual = "Entregue (" + qrLido + ")"; 
 
-                etapaLoteAtual = dicionarioEtapas[qrLido] || "Entregue (" + qrLido + ")"; 
+                } else {
+                    if (/^\d+$/.test(qrLido)) {
+                        dispararAlertaErro(); mostrarToast("❌ Bipe um Local, não número!"); this.value = ''; return;
+                    }
+                    etapaLoteAtual = dicionarioEtapas[qrLido] || "Entregue (" + qrLido + ")"; 
+                }
                 
                 document.getElementById('destaque-local-lote').innerText = "📍 " + etapaLoteAtual;
                 document.getElementById('passo1-lote').style.display = 'none';
@@ -271,7 +303,7 @@
             }
         });
 
-        // Metralhadora Offline do Lote COM HIGIENIZAÇÃO PÓS-LEITURA E CÁLCULO DE VOLUME
+        // Metralhadora Offline do Lote
         document.getElementById('idReqLote').addEventListener('input', function(e) {
             var apenasNumeros = this.value.replace(/\D/g, ''); 
             this.value = apenasNumeros;
@@ -283,7 +315,6 @@
                 this.value = ''; 
                 this.focus();
                 
-                // Inteligência de Volume da Sessão Local
                 var countVolsLote = 0;
                 for (var i = 0; i < filaBipagemLote.length; i++) {
                     if (filaBipagemLote[i] === req) countVolsLote++;
@@ -332,7 +363,7 @@
 
 
         // ==========================================
-        // MODO UNITÁRIO (COM HIGIENIZAÇÃO PÓS-LEITURA)
+        // MODO UNITÁRIO
         // ==========================================
         document.getElementById('idRequisicao').addEventListener('input', function(e) { 
             var apenasNumeros = this.value.replace(/\D/g, ''); 
@@ -352,9 +383,8 @@
                 var qrLido = this.value.trim().toUpperCase();
                 
                 if (req.length === 7 && qrLido !== "") {
-                    var apenasNumeros = qrLido.replace(/\D/g, '');
-                    if (apenasNumeros !== "" && apenasNumeros.length >= 6) {
-                        qrLido = parseInt(apenasNumeros.slice(-6), 10).toString();
+                    if (/^\d+$/.test(qrLido)) {
+                        dispararAlertaErro(); mostrarToast("❌ Bipe um Local válido!"); this.value = ''; return;
                     }
 
                     var status = dicionarioEtapas[qrLido] || "Entregue (" + qrLido + ")";
@@ -478,6 +508,7 @@
     </script>
 </body>
 </html>
+
 
 <!--
 =========================================================================
