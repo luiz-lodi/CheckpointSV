@@ -45,7 +45,6 @@
 
         #tela-lote { display: none; }
 
-        /* Estilização para o Card de Lote com Volume */
         .lista-lote-interna { max-height: 250px; overflow-y: auto; margin-top: 15px; border-top: 2px solid #eee; padding-top: 15px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
         .registro-lote { background: #ecf0f1; padding: 10px; border-radius: 6px; font-size: 16px; border-left: 4px solid #8e44ad; width: 45%; text-align: center; box-sizing: border-box; font-weight: bold; color: #2c3e50;}
         .registro-lote strong { display: block; color: #2c3e50; font-size: 18px; margin-bottom: 3px; }
@@ -74,7 +73,7 @@
         <div id="box-operador">
             <div class="input-group">
                 <label for="idMatricula">Matrícula (Bipe o crachá):</label>
-                <input type="number" id="idMatricula" placeholder="Digite e Enter">
+                <input type="text" id="idMatricula" placeholder="Digite e Enter">
                 <div id="displayOperador" class="nome-destaque"></div>
             </div>
             <button id="btn-trocar-operador" class="btn-limpar" style="display:none;" onclick="trocarOperador()">🔄 Trocar Usuário</button>
@@ -85,7 +84,7 @@
                 <div class="instrucao" style="color:#16a085;">MODO UNITÁRIO (TRADICIONAL)</div>
                 <div class="input-group">
                     <label for="idRequisicao">1. Requisição Tasy (7 dígitos):</label>
-                    <input type="number" id="idRequisicao" placeholder="Bipe a requisição" onkeydown="return impedirLetras(event)">
+                    <input type="text" id="idRequisicao" placeholder="Bipe a requisição">
                 </div>
                 <div class="input-group">
                     <label for="idLocalQR">2. Etapa / Local de Entrega (QR Code):</label>
@@ -119,7 +118,7 @@
                     <div class="instrucao">PASSO 2: Bipe todas as requisições (Offline)</div>
                     <div class="input-group">
                         <label for="idReqLote">Requisição (7 dígitos):</label>
-                        <input type="number" id="idReqLote" placeholder="Bipe sequencialmente..." onkeydown="return impedirLetras(event)">
+                        <input type="text" id="idReqLote" placeholder="Bipe sequencialmente...">
                     </div>
                     
                     <div id="contador-lote" style="text-align:center; font-weight:bold; color:#7f8c8d; margin-top:10px; padding-top:10px; border-top:1px solid #eee;">
@@ -146,12 +145,7 @@
 
         bancoDeDados.enablePersistence({synchronizeTabs: true}).catch(function(err) { console.log("Erro persistência:", err.code); });
 
-        function impedirLetras(e) {
-            var permitidos = [8, 9, 13, 46, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105];
-            if (permitidos.indexOf(e.keyCode) === -1) { return false; }
-            return true;
-        }
-
+        // Toca apenas para erros REAIS ou sucesso no lote offline
         function dispararAlertaErro() { tocarFrequencia(100, 0.4); } 
         function dispararAlertaSucessoLote() { tocarFrequencia(800, 0.1); } 
 
@@ -200,7 +194,11 @@
         function validarAcesso() {
             var matRaw = document.getElementById('idMatricula').value.trim();
             if (matRaw === "") return;
-            var mat = parseInt(matRaw.slice(-6), 10).toString();
+            
+            var apenasNumeros = matRaw.replace(/\D/g, ''); 
+            if (apenasNumeros === "") return;
+            var mat = parseInt(apenasNumeros.slice(-6), 10).toString();
+
             if (listaColaboradores[mat]) {
                 nomeOperadorAtual = listaColaboradores[mat];
                 document.getElementById('idMatricula').value = mat;
@@ -255,8 +253,9 @@
                 var qrLido = this.value.trim().toUpperCase();
                 if(qrLido === "") return;
 
-                if (/^\d+$/.test(qrLido)) {
-                    qrLido = parseInt(qrLido.slice(-6), 10).toString();
+                var apenasNumeros = qrLido.replace(/\D/g, '');
+                if (apenasNumeros !== "" && apenasNumeros.length >= 6) {
+                    qrLido = parseInt(apenasNumeros.slice(-6), 10).toString();
                 }
 
                 etapaLoteAtual = dicionarioEtapas[qrLido] || "Entregue (" + qrLido + ")"; 
@@ -272,30 +271,30 @@
             }
         });
 
-        // Metralhadora Offline do Lote com Cálculo Visual de Volume
+        // Metralhadora Offline do Lote COM HIGIENIZAÇÃO PÓS-LEITURA E CÁLCULO DE VOLUME
         document.getElementById('idReqLote').addEventListener('input', function(e) {
-            if (/[^0-9]/.test(this.value)) { this.value = this.value.replace(/\D/g, ''); return; }
-            if (this.value.length === 7) { 
+            var apenasNumeros = this.value.replace(/\D/g, ''); 
+            this.value = apenasNumeros;
+
+            if (apenasNumeros.length === 7) { 
                 if (!checarOperador()) { this.value = ''; return; }
                 
-                var req = this.value.trim(); 
+                var req = apenasNumeros; 
                 this.value = ''; 
                 this.focus();
-
-                // INTELIGÊNCIA LOCAL: Identifica o volume baseado apenas neste lote
+                
+                // Inteligência de Volume da Sessão Local
                 var countVolsLote = 0;
                 for (var i = 0; i < filaBipagemLote.length; i++) {
                     if (filaBipagemLote[i] === req) countVolsLote++;
                 }
                 var volLocal = countVolsLote + 1;
-                
+
                 filaBipagemLote.push(req); 
                 dispararAlertaSucessoLote(); 
 
                 document.getElementById('qtd-lote').innerText = filaBipagemLote.length;
                 var divLote = document.getElementById('listaRegistrosLote');
-                
-                // Desenha o Card do Lote já com a tag de Volume
                 divLote.innerHTML = '<div class="registro-lote"><strong>' + req + '</strong><span>Vol ' + volLocal + '</span></div>' + divLote.innerHTML;
             }
         });
@@ -333,12 +332,13 @@
 
 
         // ==========================================
-        // MODO UNITÁRIO (MANTIDO)
+        // MODO UNITÁRIO (COM HIGIENIZAÇÃO PÓS-LEITURA)
         // ==========================================
         document.getElementById('idRequisicao').addEventListener('input', function(e) { 
-            var valor = this.value.trim();
-            if (/[^0-9]/.test(valor)) { this.value = valor.replace(/\D/g, ''); return; }
-            if (this.value.length === 7) {
+            var apenasNumeros = this.value.replace(/\D/g, ''); 
+            this.value = apenasNumeros;
+
+            if (apenasNumeros.length === 7) {
                 if (!checarOperador()) { this.value = ''; return; }
                 document.getElementById('idLocalQR').focus(); 
             }
@@ -349,14 +349,15 @@
                 e.preventDefault();
                 if (!checarOperador()) { this.value = ''; return; }
                 var req = document.getElementById('idRequisicao').value.trim();
-                var qr = this.value.trim().toUpperCase();
+                var qrLido = this.value.trim().toUpperCase();
                 
-                if (req.length === 7 && qr !== "") {
-                    if (/^\d+$/.test(qr)) {
-                        qr = parseInt(qr.slice(-6), 10).toString();
+                if (req.length === 7 && qrLido !== "") {
+                    var apenasNumeros = qrLido.replace(/\D/g, '');
+                    if (apenasNumeros !== "" && apenasNumeros.length >= 6) {
+                        qrLido = parseInt(apenasNumeros.slice(-6), 10).toString();
                     }
 
-                    var status = dicionarioEtapas[qr] || "Entregue (" + qr + ")";
+                    var status = dicionarioEtapas[qrLido] || "Entregue (" + qrLido + ")";
                     document.getElementById('idRequisicao').value = ''; this.value = ''; document.getElementById('idRequisicao').focus();
                     
                     processarBipeInteligente(req, status, null);
@@ -464,7 +465,6 @@
             });
         }
 
-        // Apenas para o Modo Unitário e tela principal (O lote já desenha na hora do input)
         function adicionarRegistroNaTela(evento) {
             var divLista = document.getElementById('listaRegistros');
             if (!divLista) return;
