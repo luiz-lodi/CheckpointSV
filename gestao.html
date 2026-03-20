@@ -7,6 +7,7 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚙️</text></svg>">
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -136,10 +137,10 @@
     <div class="container" style="flex: 1;">
         <div id="tela-login">
             <h3 style="color: #2c3e50; margin-top: 0;">Acesso Restrito - Gestores</h3>
-            <div class="input-group"><label>Matrícula:</label><input type="number" id="matriculaGestor"></div>
+            <div class="input-group"><label>E-mail de Acesso:</label><input type="email" id="emailGestor" placeholder="ex: nome@hsvp.com.br"></div>
             <div class="input-group"><label>Senha:</label><input type="password" id="senhaGestor" onkeypress="if(event.key === 'Enter') fazerLogin()"></div>
-            <button class="btn-login" onclick="fazerLogin()">Acessar Sistema</button>
-            <div id="msg-erro" style="color: #e74c3c; margin-top: 15px; font-weight: bold; display: none;">Dados incorretos!</div>
+            <button class="btn-login" id="btn-login-btn" onclick="fazerLogin()">Acessar Sistema</button>
+            <div id="msg-erro" style="color: #e74c3c; margin-top: 15px; font-weight: bold; display: none;">E-mail ou senha incorretos!</div>
         </div>
 
         <div id="painel-gestao">
@@ -459,22 +460,86 @@
 
     <script>
         // CONTROLE OFICIAL DE VERSÃO E ASSINATURA 🚀
-        const APP_VERSION = "1.15.1";
+        const APP_VERSION = "1.16.1";
         const APP_DATE = "20/03/2026";
         
         document.getElementById('display-versao').innerText = `Versão: ${APP_VERSION} (${APP_DATE})`;
-        console.log(`%c🚀 Checkpoint HSVP Gestão | Versão ${APP_VERSION} | UX Auto-Load & Reordenação Diária`, "color: #3498db; font-size: 14px; font-weight: bold;");
 
-        console.log(`%c🚀 Checkpoint HSVP | Criado por Luiz Henrique Link Lodi & Gemini | Versão ${APP_VERSION}`, "color: #3498db; font-size: 14px; font-weight: bold;");
+        console.log(`%c🚀 Checkpoint HSVP Gestão | Criado por Luiz Henrique Link Lodi & Gemini | Versão ${APP_VERSION} | Firebase Auth + Nomes Customizados`, "color: #3498db; font-size: 14px; font-weight: bold;");
 
         Chart.register(ChartDataLabels);
 
+        // CONFIGURAÇÃO FIREBASE
         var firebaseConfig = { apiKey: "AIzaSyDHUlqzRw_vSyp9livOvQ0rjBYT9l_yofs", authDomain: "checkpoint-pedidos.firebaseapp.com", projectId: "checkpoint-pedidos", storageBucket: "checkpoint-pedidos.firebasestorage.app", messagingSenderId: "890832634523", appId: "1:890832634523:web:7f8fa0ee6a2a9c60e27c3e" };
         firebase.initializeApp(firebaseConfig);
         var bancoDeDados = firebase.firestore();
 
-        var gestores = { "151357": { nome: "LUIZ HENRIQUE", senha: "Martin" }, "1249": { nome: "BRUNA QUEVEDO", senha: "Maria" }, "139320": { nome: "RENAN RIBEIRO", senha: "Olivia" } };
         var gestorLogado = null;
+
+        // OUVINTE DE ESTADO DE AUTENTICAÇÃO (Sessão Persistente)
+        firebase.auth().onAuthStateChanged(function(user) {
+            if (user) {
+                // Mapeamento de e-mails para nomes reais (Versão 1.16.1)
+                var mapaGestores = {
+                    "farmluiz@hsvp.com.br": "LUIZ LODI",
+                    "farmquevedo@hsvp.com.br": "BRUNA QUEVEDO",
+                    "supervisao.logistica@hsvp.com.br": "RENAN REIS"
+                };
+                
+                // Se o e-mail não estiver no mapa (ex: usuário novo), usa a regra antiga como salva-vidas
+                var nomeFormatado = mapaGestores[user.email] || user.email.split('@')[0].toUpperCase().replace('.', ' ');
+                
+                gestorLogado = { email: user.email, nome: nomeFormatado };
+                
+                document.getElementById('tela-login').style.display = 'none';
+                document.getElementById('painel-gestao').style.display = 'block';
+                document.getElementById('id-logado').innerHTML = "👤 Gestor: " + gestorLogado.nome + " | <a href='#' onclick='fazerLogout()' style='color:#e74c3c; text-decoration:none; margin-left: 10px;'>[Sair]</a>";
+                
+                // Preenche as datas automaticamente
+                var hoje = new Date(), d = String(hoje.getDate()).padStart(2,'0'), m = String(hoje.getMonth()+1).padStart(2,'0'), y = hoje.getFullYear();
+                document.getElementById('filtroDataLogistica').value = y+'-'+m+'-'+d;
+                document.getElementById('filtroMesProcessos').value = y+'-'+m;
+                document.getElementById('filtroMesProdutividade').value = y+'-'+m;
+                document.getElementById('filtroMesTempos').value = y+'-'+m;
+                document.getElementById('filtroDataDashboard').value = y+'-'+m+'-'+d;
+                
+                carregarMensagens(); 
+            } else {
+                document.getElementById('tela-login').style.display = 'block';
+                document.getElementById('painel-gestao').style.display = 'none';
+                gestorLogado = null;
+            }
+        });
+
+        // FUNÇÃO DE LOGIN COM FIREBASE AUTH
+        function fazerLogin() {
+            var email = document.getElementById('emailGestor').value.trim();
+            var sen = document.getElementById('senhaGestor').value.trim();
+            
+            document.getElementById('msg-erro').style.display = 'none';
+            document.getElementById('btn-login-btn').innerText = "Autenticando...";
+
+            firebase.auth().signInWithEmailAndPassword(email, sen)
+            .then((userCredential) => {
+                document.getElementById('btn-login-btn').innerText = "Acessar Sistema";
+                // O onAuthStateChanged (logo acima) cuidará de liberar a tela automaticamente
+            })
+            .catch((error) => {
+                document.getElementById('btn-login-btn').innerText = "Acessar Sistema";
+                document.getElementById('msg-erro').innerText = "Acesso negado: E-mail ou senha incorretos.";
+                document.getElementById('msg-erro').style.display = 'block';
+            });
+        }
+
+        // FUNÇÃO DE LOGOUT
+        function fazerLogout() {
+            firebase.auth().signOut().then(() => {
+                // A tela será fechada automaticamente pelo onAuthStateChanged
+            }).catch((error) => {
+                alert("Erro ao tentar sair da conta.");
+            });
+        }
+
 
         // Váriaveis Globais de Gráficos e Cache
         var cacheBI = { mes: "", documentos: [] };
@@ -483,24 +548,6 @@
         var gEtapas = null, gSetores = null, gProd = null, gSLA = null, gMicro = null, gCargaMensal = null;
         var gDashSetores = null, gDashCarga = null;
         var gDashBarras = {};
-
-        function fazerLogin() {
-            var mat = document.getElementById('matriculaGestor').value.trim(), sen = document.getElementById('senhaGestor').value.trim();
-            if (gestores[mat] && gestores[mat].senha === sen) {
-                gestorLogado = gestores[mat]; gestorLogado.matricula = mat;
-                document.getElementById('tela-login').style.display = 'none';
-                document.getElementById('painel-gestao').style.display = 'block';
-                document.getElementById('id-logado').innerText = "👤 Gestor: " + gestorLogado.nome;
-                
-                var hoje = new Date(), d = String(hoje.getDate()).padStart(2,'0'), m = String(hoje.getMonth()+1).padStart(2,'0'), y = hoje.getFullYear();
-                document.getElementById('filtroDataLogistica').value = y+'-'+m+'-'+d;
-                document.getElementById('filtroMesProcessos').value = y+'-'+m;
-                document.getElementById('filtroMesProdutividade').value = y+'-'+m;
-                document.getElementById('filtroMesTempos').value = y+'-'+m;
-                document.getElementById('filtroDataDashboard').value = y+'-'+m+'-'+d;
-                carregarMensagens(); 
-            } else { document.getElementById('msg-erro').style.display = 'block'; }
-        }
 
         function mudarAbaPrincipal(idAba, btn) {
             document.querySelectorAll('.secao-app').forEach(el => el.classList.remove('ativa'));
