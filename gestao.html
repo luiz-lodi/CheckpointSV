@@ -9,6 +9,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
@@ -470,8 +471,18 @@
         Chart.register(ChartDataLabels);
 
         // CONFIGURAÇÃO FIREBASE
-        var firebaseConfig = { apiKey: "AIzaSyDHUlqzRw_vSyp9livOvQ0rjBYT9l_yofs", authDomain: "checkpoint-pedidos.firebaseapp.com", projectId: "checkpoint-pedidos", storageBucket: "checkpoint-pedidos.firebasestorage.app", messagingSenderId: "890832634523", appId: "1:890832634523:web:7f8fa0ee6a2a9c60e27c3e" };
+        var firebaseConfig = {
+            apiKey: "AIzaSyDHUlqzRw_vSyp9livOvQ0rjBYT9l_yofs",
+            authDomain: "checkpoint-pedidos.firebaseapp.com",
+            projectId: "checkpoint-pedidos",
+            storageBucket: "checkpoint-pedidos.firebasestorage.app",
+            messagingSenderId: "890832634523",
+            appId: "1:890832634523:web:7f8fa0ee6a2a9c60e27c3e",
+            measurementId: "G-NV3BRV6J2J"
+        };
+        
         firebase.initializeApp(firebaseConfig);
+        firebase.analytics();
         var bancoDeDados = firebase.firestore();
 
         var gestorLogado = null;
