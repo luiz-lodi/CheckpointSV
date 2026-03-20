@@ -11,15 +11,15 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f4f4f9; color: #333; }
-        .container { max-width: 900px; margin: 0 auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f4f4f9; color: #333; display: flex; flex-direction: column; min-height: 100vh;}
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); flex: 1; width: 100%; box-sizing: border-box;}
         h1 { text-align: center; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; }
         
         .box-login { max-width: 400px; margin: 40px auto; text-align: center; }
         .box-login input { width: 100%; padding: 12px; font-size: 16px; margin-bottom: 15px; border: 2px solid #ccc; border-radius: 5px; box-sizing: border-box; }
         .btn-acao { width: 100%; padding: 15px; font-size: 16px; font-weight: bold; border: none; border-radius: 5px; cursor: pointer; color: white; transition: 0.2s; }
         .btn-entrar { background-color: #3498db; }
-        .btn-imprimir { background-color: #8e44ad; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .btn-imprimir { background-color: #8e44ad; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 20px;}
         .btn-atualizar { background-color: #f39c12; margin-bottom: 20px; width: auto; padding: 10px 20px;}
 
         /* Tabela de Revisão na Tela */
@@ -35,11 +35,16 @@
         #tela-romaneio { display: none; }
         .footer-impressao { display: none; }
 
+        /* ESTILO DO RODAPÉ (VERSÃO) */
+        .app-footer { margin-top: 40px; text-align: center; padding: 20px; color: #7f8c8d; font-size: 11px; border-top: 1px solid #eee; }
+        .app-footer strong { color: #34495e; }
+
         /* MAGIA DO CSS: Transforma a tela em papel A4 ao imprimir */
         @media print {
             body { background: white; padding: 0; }
             .container { box-shadow: none; border-radius: 0; padding: 0; max-width: 100%; }
             .no-print { display: none !important; }
+            .app-footer { display: none !important; }
             table { font-size: 13px; border: 1px solid #000; }
             th, td { border: 1px solid #000; padding: 8px; color: #000; }
             th { background-color: #eee; color: #000; }
@@ -68,7 +73,7 @@
         </div>
 
         <div id="tela-romaneio">
-            <div class="no-print">
+            <div class="no-print" style="display: flex; justify-content: flex-end;">
                 <button class="btn-acao btn-atualizar" onclick="buscarCargaAtual()">🔄 Atualizar Dados da Carga</button>
             </div>
 
@@ -95,7 +100,7 @@
                 </tbody>
             </table>
 
-            <div class="no-print" style="margin-top: 30px;">
+            <div class="no-print">
                 <button class="btn-acao btn-imprimir" onclick="window.print()" id="btnImprimir" style="display:none;">
                     🖨️ Imprimir Documento de Romaneio
                 </button>
@@ -109,7 +114,20 @@
         </div>
     </div>
 
+    <div class="app-footer">
+        <strong>SISTEMA WMS - CHECKPOINT LOGÍSTICO HSVP</strong><br>
+        <span id="display-versao"></span>
+    </div>
+
     <script>
+        // CONTROLE OFICIAL DE VERSÃO E ASSINATURA 🚀
+        const APP_VERSION = "1.2.1";
+        const APP_DATE = "20/03/2026";
+        
+        document.getElementById('display-versao').innerText = `Versão: ${APP_VERSION} (${APP_DATE})`;
+
+        console.log(`%c🚀 Checkpoint HSVP | Criado por Luiz Henrique Link Lodi & Gemini | Versão ${APP_VERSION}`, "color: #8e44ad; font-size: 14px; font-weight: bold;");
+
         // Configuração Firebase
         var firebaseConfig = {
             apiKey: "AIzaSyDHUlqzRw_vSyp9livOvQ0rjBYT9l_yofs",
@@ -121,8 +139,6 @@
         };
         firebase.initializeApp(firebaseConfig);
         var bancoDeDados = firebase.firestore();
-
-        console.log("%c🚀 Checkpoint HSVP | Criado por Luiz Henrique Link Lodi & Gemini", "color: #3498db; font-size: 14px; font-weight: bold;");
 
         var nomeOperadorAtual = "";
         var listaColaboradores = {
@@ -226,13 +242,3 @@
     </script>
 </body>
 </html>
-
-<!--
-=========================================================================
-SISTEMA WMS - CHECKPOINT LOGÍSTICO HSVP
-⚙️ Arquitetura de Negócio e Idealização: Luiz Henrique Link Lodi
-🧠 Engenharia de Software e IA: Gemini
-📅 Versão Final (Go-Live): Março de 2026
-
-"Tecnologia à serviço da operação e da eficiência hospitalar."
--->
