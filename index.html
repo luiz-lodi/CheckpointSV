@@ -10,6 +10,7 @@
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
 
     <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 10px; background-color: #f4f4f9; color: #333; }
@@ -166,14 +167,24 @@
 
     <script>
         // CONTROLE OFICIAL DE VERSÃO E ASSINATURA 🚀
-        const APP_VERSION = "3.31.0";
+        const APP_VERSION = "3.32.0";
         const APP_DATE = "20/03/2026";
         
         document.getElementById('display-versao').innerText = `Versão: ${APP_VERSION} (${APP_DATE})`;
         console.log(`%c🚀 Checkpoint HSVP Operador | Versão ${APP_VERSION} | Operação Custo Zero (Dual Write)`, "color: #3498db; font-size: 14px; font-weight: bold;");
 
-        var firebaseConfig = { apiKey: "AIzaSyDHUlqzRw_vSyp9livOvQ0rjBYT9l_yofs", authDomain: "checkpoint-pedidos.firebaseapp.com", projectId: "checkpoint-pedidos", storageBucket: "checkpoint-pedidos.firebasestorage.app", messagingSenderId: "890832634523", appId: "1:890832634523:web:7f8fa0ee6a2a9c60e27c3e" };
+        var firebaseConfig = {
+            apiKey: "AIzaSyDHUlqzRw_vSyp9livOvQ0rjBYT9l_yofs",
+            authDomain: "checkpoint-pedidos.firebaseapp.com",
+            projectId: "checkpoint-pedidos",
+            storageBucket: "checkpoint-pedidos.firebasestorage.app",
+            messagingSenderId: "890832634523",
+            appId: "1:890832634523:web:7f8fa0ee6a2a9c60e27c3e",
+            measurementId: "G-NV3BRV6J2J"
+        };
+         
         firebase.initializeApp(firebaseConfig);
+        firebase.analytics();
         var bancoDeDados = firebase.firestore();
 
         bancoDeDados.enablePersistence({synchronizeTabs: true}).catch(function(err) { console.log("Erro persistência:", err.code); });
