@@ -144,8 +144,6 @@
         </div>
 
         <div id="painel-gestao">
-            <div style="text-align: right; color: #27ae60; font-weight: bold; margin-bottom: 10px;" id="id-logado"></div>
-            
             <div class="layout-app">
                 <div class="sidebar">
                     <button class="menu-btn ativo" onclick="mudarAbaPrincipal('aba-mural', this)">📌 Mural de Avisos</button>
@@ -167,6 +165,7 @@
                 </div>
 
                 <div class="conteudo-principal">
+                    <div style="text-align: right; color: #27ae60; font-weight: bold; margin-bottom: 10px;" id="id-logado"></div>
 
                     <div id="aba-mural" class="secao-app ativa">
                         <h2 class="secao-titulo">Mural de Avisos da Gestão</h2>
@@ -460,12 +459,12 @@
 
     <script>
         // CONTROLE OFICIAL DE VERSÃO E ASSINATURA 🚀
-        const APP_VERSION = "1.16.1";
+        const APP_VERSION = "1.16.2";
         const APP_DATE = "20/03/2026";
         
         document.getElementById('display-versao').innerText = `Versão: ${APP_VERSION} (${APP_DATE})`;
 
-        console.log(`%c🚀 Checkpoint HSVP Gestão | Criado por Luiz Henrique Link Lodi & Gemini | Versão ${APP_VERSION} | Firebase Auth + Nomes Customizados`, "color: #3498db; font-size: 14px; font-weight: bold;");
+        console.log(`%c🚀 Checkpoint HSVP Gestão | Criado por Luiz Henrique Link Lodi & Gemini | Versão ${APP_VERSION} | Ajuste Visual do Painel`, "color: #3498db; font-size: 14px; font-weight: bold;");
 
         Chart.register(ChartDataLabels);
 
@@ -479,7 +478,7 @@
         // OUVINTE DE ESTADO DE AUTENTICAÇÃO (Sessão Persistente)
         firebase.auth().onAuthStateChanged(function(user) {
             if (user) {
-                // Mapeamento de e-mails para nomes reais (Versão 1.16.1)
+                // Mapeamento de e-mails para nomes reais
                 var mapaGestores = {
                     "farmluiz@hsvp.com.br": "LUIZ LODI",
                     "farmquevedo@hsvp.com.br": "BRUNA QUEVEDO",
@@ -1013,3 +1012,4 @@
     </script>
 </body>
 </html>
+
