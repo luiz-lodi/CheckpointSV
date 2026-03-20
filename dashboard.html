@@ -47,13 +47,14 @@
         
         .dashboard-grid { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 20px;}
         .chart-box { background: #fff; padding: 15px; border-radius: 8px; flex: 1; min-width: 300px; border: 1px solid #eee; }
-        .chart-container { position: relative; height: 200px; width: 100%; }
+        .chart-container { position: relative; height: 180px; width: 100%; }
 
         .tabela-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow-x: auto; margin-top: 25px; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
         th { background-color: #f8f9fa; color: #2c3e50; padding: 12px; text-align: center; text-transform: uppercase; font-size: 11px; border-bottom: 2px solid #dee2e6; }
         td { padding: 10px; text-align: center; border-bottom: 1px solid #eee; }
         .col-nome { text-align: left; font-weight: bold; }
+        .col-total { font-weight: bold; background-color: #f8f9fa; color: #2c3e50;}
         .celula-destaque { background-color: #fff9c4 !important; color: #d35400 !important; font-weight: bold; border-radius: 4px; }
 
         .loading { text-align: center; color: #e67e22; font-weight: bold; padding: 20px; width: 100%; }
@@ -68,11 +69,11 @@
 
     <div class="container">
         <h1>📊 Dashboard Real-Time</h1>
-        <div class="subtitulo">Produtividade Operacional Diária</div>
+        <div class="subtitulo">Acompanhamento de Volumes Movimentados por Setor e Colaborador</div>
 
         <div class="status-hoje">
             <div class="live-pulse"></div>
-            <span>Monitorando Hoje: <span id="data-atual-display">--/--/----</span></span>
+            <span>Data: <span id="data-atual-display">--/--/----</span></span>
             <div id="msg-loading" class="loading" style="display:none; padding:0; margin-left:20px;">Atualizando... ⏳</div>
         </div>
 
@@ -91,7 +92,7 @@
             <div class="chart-box"><div class="chart-container"><canvas id="grafico-carregado"></canvas></div></div>
         </div>
 
-        <div class="header-equipe">
+        <div class="header-equipe" style="margin-top: 40px;">
             <div class="secao-titulo">🏥 Teixeira Soares</div>
             <div class="badge-total">Total Processado: <span id="soma-central">0</span></div>
         </div>
@@ -129,11 +130,12 @@
     </div>
 
     <script>
-        const APP_VERSION = "2.8.0";
+        // ASSINATURA E VERSÃO 🚀
+        const APP_VERSION = "2.8.4";
         const APP_DATE = "20/03/2026";
         
         document.getElementById('display-versao').innerText = `Versão: ${APP_VERSION} (${APP_DATE})`;
-        console.log(`%c📊 Dashboard Live | Versão ${APP_VERSION}`, "color: #2ecc71; font-weight: bold;");
+        console.log(`%c📊 Dashboard Live | Versão ${APP_VERSION} | Espaçamento e Troféus Restaurados`, "color: #2ecc71; font-weight: bold;");
 
         var firebaseConfig = {
             apiKey: "AIzaSyDHUlqzRw_vSyp9livOvQ0rjBYT9l_yofs",
@@ -232,19 +234,41 @@
                 if(d.total > max.tot) max.tot = d.total;
             });
 
+            // Função utilitária para imprimir a célula com o Troféu se for o líder
+            function formatarCelula(valor, valorMaximo, isTotal = false) {
+                var cls = isTotal ? "col-total " : "";
+                if (valor > 0 && valor === valorMaximo) {
+                    return `<td class="${cls}celula-destaque">${valor} 🏆</td>`;
+                }
+                return `<td class="${cls}">${valor}</td>`;
+            }
+
             nomes.forEach(function(n) {
                 var d = colaboradores[n];
                 corpoTabela.innerHTML += `<tr>
                     <td class="col-nome">${n}</td>
-                    <td class="${d.separado > 0 && d.separado === max.sep ? 'celula-destaque':''}">${d.separado}</td>
-                    <td class="${d.conferido > 0 && d.conferido === max.conf ? 'celula-destaque':''}">${d.conferido}</td>
-                    <td class="${d.carregado > 0 && d.carregado === max.carr ? 'celula-destaque':''}">${d.carregado}</td>
-                    <td class="${d.recebido > 0 && d.recebido === max.rec ? 'celula-destaque':''}">${d.recebido}</td>
-                    <td class="${d.sepCentral > 0 && d.sepCentral === max.sepc ? 'celula-destaque':''}">${d.sepCentral}</td>
-                    <td class="${d.entregue > 0 && d.entregue === max.ent ? 'celula-destaque':''}">${d.entregue}</td>
-                    <td style="font-weight:bold; background:#f8f9fa" class="${d.total > 0 && d.total === max.tot ? 'celula-destaque':''}">${d.total}</td>
+                    ${formatarCelula(d.separado, max.sep)}
+                    ${formatarCelula(d.conferido, max.conf)}
+                    ${formatarCelula(d.carregado, max.carr)}
+                    ${formatarCelula(d.recebido, max.rec)}
+                    ${formatarCelula(d.sepCentral, max.sepc)}
+                    ${formatarCelula(d.entregue, max.ent)}
+                    ${formatarCelula(d.total, max.tot, true)}
                 </tr>`;
             });
+
+            // Adiciona a linha de TOTAL GERAL
+            var somaTotalGeral = totais.separado + totais.conferido + totais.carregado + totais.recebido + totais.sepCentral + totais.entregue;
+            corpoTabela.innerHTML += `<tr style="background-color: #e8f6f3; border-top: 2px solid #bdc3c7;">
+                <td class="col-nome" style="color: #16a085; font-weight: bold;">TOTAL GERAL</td>
+                <td style="font-weight: bold; color: #2c3e50;">${totais.separado}</td>
+                <td style="font-weight: bold; color: #2c3e50;">${totais.conferido}</td>
+                <td style="font-weight: bold; color: #2c3e50;">${totais.carregado}</td>
+                <td style="font-weight: bold; color: #2c3e50;">${totais.recebido}</td>
+                <td style="font-weight: bold; color: #2c3e50;">${totais.sepCentral}</td>
+                <td style="font-weight: bold; color: #2c3e50;">${totais.entregue}</td>
+                <td style="font-weight: bold; color: #c0392b; font-size: 16px;">${somaTotalGeral}</td>
+            </tr>`;
 
             // Gráficos
             renderizarGrafico('grafico-separado', 'Sep. Apoio', colaboradores, 'separado', '#f39c12');
@@ -268,10 +292,11 @@
                 data: { labels: filt.map(i=>i.n), datasets: [{ data: filt.map(i=>i.v), backgroundColor: cor, borderRadius: 4 }] },
                 options: {
                     responsive: true, maintainAspectRatio: false,
+                    layout: { padding: { top: 30 } }, 
                     plugins: { 
-                        title: { display: true, text: tit, font: {size: 12} }, 
+                        title: { display: false }, 
                         legend: { display: false },
-                        datalabels: { color: '#2c3e50', anchor: 'end', align: 'top', font: {weight:'bold', size:11} }
+                        datalabels: { color: '#2c3e50', anchor: 'end', align: 'top', font: {weight:'bold', size:11}, offset: 2 }
                     },
                     scales: { y: { display: false }, x: { grid: {display:false} } }
                 }
