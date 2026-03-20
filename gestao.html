@@ -13,7 +13,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
 
     <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; color: #333; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; color: #333; display: flex; flex-direction: column; min-height: 100vh;}
         
         .navbar-top { background-color: #2c3e50; padding: 15px; text-align: center; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-radius: 8px;}
         .navbar-top a { color: #ecf0f1; text-decoration: none; margin: 0 15px; font-weight: bold; font-size: 16px; }
@@ -105,6 +105,17 @@
         .ranking-list li:last-child { border-bottom: none; }
         .ranking-list .req { font-weight: bold; color: #2c3e50; }
         .ranking-list .setor { color: #7f8c8d; font-size: 12px; margin-left: 5px;}
+
+        /* ESTILO DO RODAPÉ (VERSÃO) */
+        .app-footer {
+            margin-top: auto;
+            text-align: center;
+            padding: 20px;
+            color: #7f8c8d;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+        .app-footer strong { color: #34495e; }
     </style>
 </head>
 <body>
@@ -117,7 +128,7 @@
         <a href="gestao.html" class="ativo">⚙️ Painel de Gestão e BI</a>
     </div>
 
-    <div class="container">
+    <div class="container" style="flex: 1;">
         <div id="tela-login">
             <h3 style="color: #2c3e50; margin-top: 0;">Acesso Restrito - Gestores</h3>
             <div class="input-group"><label>Matrícula:</label><input type="number" id="matriculaGestor"></div>
@@ -350,6 +361,12 @@
         </div>
     </div>
 
+    <div class="app-footer">
+        <strong>SISTEMA WMS - CHECKPOINT LOGÍSTICO HSVP</strong><br>
+        Arquitetura: Luiz Henrique Link Lodi & IA: Gemini<br>
+        <span id="display-versao"></span>
+    </div>
+
     <div id="modal-justificativa" class="modal-overlay">
         <div class="modal-content">
             <h3 style="color:#e74c3c; margin-top:0;">⚠️ Atenção: Ação Irreversível</h3>
@@ -363,8 +380,12 @@
     </div>
 
     <script>
-        // ASSINATURA OFICIAL DE ENGENHARIA 🚀
-        console.log("%c🚀 Checkpoint HSVP | Criado por Luiz Henrique Link Lodi & Gemini", "color: #3498db; font-size: 14px; font-weight: bold;");
+        // CONTROLE OFICIAL DE VERSÃO E ASSINATURA 🚀
+        const APP_VERSION = "1.12";
+        const APP_DATE = "20/03/2026";
+        
+        document.getElementById('display-versao').innerText = `Versão: ${APP_VERSION} (${APP_DATE})`;
+        console.log(`%c🚀 Checkpoint HSVP | Criado por Luiz Henrique Link Lodi & Gemini | Versão ${APP_VERSION}`, "color: #3498db; font-size: 14px; font-weight: bold;");
 
         Chart.register(ChartDataLabels);
 
@@ -864,16 +885,5 @@
             });
         }
     </script>
-
-<!--
-=========================================================================
-SISTEMA WMS - CHECKPOINT LOGÍSTICO HSVP
-⚙️ Arquitetura de Negócio e Idealização: Luiz Henrique Link Lodi
-🧠 Engenharia de Software e IA: Gemini
-📅 Versão: 1.11 (20/03/2026)
-
-"Tecnologia avançada para maior eficiência hospitalar"
--->
-
 </body>
 </html>
