@@ -15,7 +15,6 @@
     <style>
         body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; color: #333; display: flex; flex-direction: column; min-height: 100vh;}
         
-        /* NAVBAR ESTILOS RESTAURADOS */
         .navbar-top { background-color: #2c3e50; padding: 15px; text-align: center; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-radius: 8px;}
         .navbar-top a { color: #ecf0f1; text-decoration: none; margin: 0 15px; font-weight: bold; font-size: 16px; }
         .navbar-top a.ativo { color: #f1c40f; }
@@ -24,6 +23,10 @@
         
         h1 { color: #2c3e50; text-align: center; margin-bottom: 5px; }
         .subtitulo { text-align: center; color: #7f8c8d; margin-bottom: 20px; }
+
+        /* BANNER DO ESCUDO ANTI-F5 */
+        #alerta-cache { background-color: #fff3cd; color: #856404; padding: 15px; border-radius: 8px; border: 2px solid #ffeeba; margin-bottom: 25px; text-align: center; display: none; line-height: 1.5; box-shadow: 0 2px 4px rgba(0,0,0,0.05);}
+        #alerta-cache strong { color: #d35400; font-size: 16px; }
 
         /* Estilo do Indicador de Data Atual */
         .status-hoje { 
@@ -82,8 +85,14 @@
     </div>
 
     <div class="container">
-        <h1>📊 Dashboard Real-Time</h1>
+        <h1>📊 Dashboard Diário</h1>
         <div class="subtitulo">Acompanhamento de Volumes Movimentados por Setor e Colaborador</div>
+
+        <div id="alerta-cache">
+            <strong>⚠️ MODO DE PROTEÇÃO DE BANCO DE DADOS ATIVADO</strong><br>
+            Para evitar sobrecarga no servidor, as atualizações desta tela foram limitadas.<br>
+            <span id="info-tempo-cache" style="color: #2c3e50; font-weight: bold; font-size: 13px;"></span>
+        </div>
 
         <div class="status-hoje">
             <div class="live-pulse"></div>
@@ -144,11 +153,11 @@
 
     <script>
         // CONTROLE OFICIAL DE VERSÃO E ASSINATURA 🚀
-        const APP_VERSION = "2.10.0";
+        const APP_VERSION = "2.11.0";
         const APP_DATE = "20/03/2026";
         
         document.getElementById('display-versao').innerText = `Versão: ${APP_VERSION} (${APP_DATE})`;
-        console.log(`%c🚀 Checkpoint HSVP Dashboard | Criado por Luiz Henrique Link Lodi & Gemini | Versão ${APP_VERSION}`, "color: #3498db; font-size: 14px; font-weight: bold;");
+        console.log(`%c🚀 Checkpoint HSVP Dashboard | Criado por Luiz Henrique Link Lodi & Gemini | Versão ${APP_VERSION} | Escudo Anti-F5 (30min)`, "color: #3498db; font-size: 14px; font-weight: bold;");
 
         var firebaseConfig = {
             apiKey: "AIzaSyDHUlqzRw_vSyp9livOvQ0rjBYT9l_yofs",
@@ -181,13 +190,52 @@
             var inicioDoDia = hoje.getTime();
             var fimDoDia = inicioDoDia + (24 * 60 * 60 * 1000) - 1;
 
+            // =========================================================
+            // ESCUDO ANTI-SOBRECARGA (Lê do HD do Navegador - LocalStorage)
+            // =========================================================
+            var cacheTempo = localStorage.getItem('dash_hsvp_tempo');
+            var cacheDados = localStorage.getItem('dash_hsvp_dados');
+            var tempoAgora = new Date().getTime();
+            var limiteCacheEmMs = 30 * 60 * 1000; // 30 Minutos em Milissegundos
+
+            // Se o cache existe e tem menos de 30 minutos
+            if (cacheTempo && cacheDados && (tempoAgora - parseInt(cacheTempo) < limiteCacheEmMs)) {
+                var dataDoCache = new Date(parseInt(cacheTempo));
+                
+                // Valida se o cache é de "Hoje" (Evita carregar cache de ontem se o cara abriu as 08h)
+                if (dataDoCache.getTime() >= inicioDoDia) {
+                    // Exibe a mensagem visual do bloqueio
+                    exibirAlertaCache(dataDoCache);
+                    
+                    // Converte os dados do texto do navegador de volta para Array e desenha
+                    var bipesSalvosNoHD = JSON.parse(cacheDados);
+                    processarRelatorioDireto(bipesSalvosNoHD);
+                    
+                    document.getElementById('msg-loading').style.display = 'none';
+                    return; // 🛑 INTERROMPE A FUNÇÃO AQUI. O BANCO DE DADOS FOI POUPADO!
+                }
+            }
+
+            // =========================================================
+            // SE PASSAR PELO ESCUDO (Mais de 30 min), VAI NO FIREBASE
+            // =========================================================
             bancoDeDados.collection("checkpoints_logistica")
                 .where("ordem", ">=", inicioDoDia)
                 .where("ordem", "<=", fimDoDia)
                 .get()
                 .then(function(resultado) {
-                    processarRelatorio(resultado);
+                    var bipesExtraidos = [];
+                    resultado.forEach(function(doc) {
+                        bipesExtraidos.push(doc.data());
+                    });
+
+                    // Grava a foto exata do momento no LocalStorage para blindar as próximas aberturas/F5
+                    localStorage.setItem('dash_hsvp_tempo', new Date().getTime());
+                    localStorage.setItem('dash_hsvp_dados', JSON.stringify(bipesExtraidos));
+
+                    processarRelatorioDireto(bipesExtraidos);
                     document.getElementById('msg-loading').style.display = 'none';
+                    document.getElementById('alerta-cache').style.display = 'none'; // Esconde alerta se buscou direto da nuvem
                 })
                 .catch(function(erro) {
                     console.error(erro);
@@ -195,12 +243,23 @@
                 });
         }
 
-        function processarRelatorio(resultado) {
+        // Exibe o horário legível para o usuário entender o limite de 30 min
+        function exibirAlertaCache(dataUltimaAtualizacao) {
+            var dataProxima = new Date(dataUltimaAtualizacao.getTime() + (30 * 60 * 1000));
+            
+            var strUltima = dataUltimaAtualizacao.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            var strProxima = dataProxima.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+            document.getElementById('info-tempo-cache').innerText = `Exibindo a foto de: ${strUltima} | Próxima atualização disponível às: ${strProxima}`;
+            document.getElementById('alerta-cache').style.display = 'block';
+        }
+
+        // Função modificada para receber uma lista limpa (Array) ao invés da resposta bruta do Firebase
+        function processarRelatorioDireto(bipes) {
             var totais = { separado: 0, conferido: 0, carregado: 0, recebido: 0, sepCentral: 0, entregue: 0 };
             var colaboradores = {};
 
-            resultado.forEach(function(documento) {
-                var evento = documento.data();
+            bipes.forEach(function(evento) {
                 var nome = evento.nome || "DESCONHECIDO";
                 var status = evento.status || "";
 
