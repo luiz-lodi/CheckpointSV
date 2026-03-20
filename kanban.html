@@ -124,12 +124,13 @@
 
     <script>
         // CONTROLE OFICIAL DE VERSÃO E ASSINATURA 🚀
-        const APP_VERSION = "1.15.0";
+        const APP_VERSION = "1.16.0";
         const APP_DATE = "20/03/2026";
         
         document.getElementById('display-versao').innerText = `Versão: ${APP_VERSION} (${APP_DATE})`;
         
-        console.log(`%c🚀 Checkpoint HSVP | Criado por Luiz Henrique Link Lodi & Gemini | Versão ${APP_VERSION}`, "color: #f1c40f; font-size: 14px; font-weight: bold;");
+        // Easter Egg no Console F12
+        console.log(`%c🚀 Checkpoint HSVP Kanban | Versão ${APP_VERSION} | Operação Custo Zero`, "color: #f1c40f; font-size: 14px; font-weight: bold;");
 
         // ==========================================
         // CONFIGURAÇÃO DO FIREBASE
@@ -168,35 +169,19 @@
             var inicioDoDia = dataEscolhida.getTime();
             var fimDoDia = inicioDoDia + (24 * 60 * 60 * 1000) - 1;
 
-            ouvinteNuvem = bancoDeDados.collection("checkpoints_logistica")
+            // MUDANÇA: Lendo direto da nova tabela super leve!
+            ouvinteNuvem = bancoDeDados.collection("caixas_estado_atual")
                 .where("ordem", ">=", inicioDoDia)
                 .where("ordem", "<=", fimDoDia)
                 .orderBy("ordem", "asc")
                 .onSnapshot(function(resultado) {
                     
-                    var requisicoesAtuais = {};
-
-                    // Mapeia qual é o ÚLTIMO status de cada caixa
-                    resultado.forEach(function(documento) {
-                        var evento = documento.data();
-                        var volumeCard = evento.volume || 1; 
-                        var chaveUnicaCartao = evento.requisicao + "-" + volumeCard;
-                        
-                        requisicoesAtuais[chaveUnicaCartao] = evento;
-                    });
-
                     limparColunas();
-
                     var contagens = { separado: 0, conferido: 0, carregado: 0, recebido: 0, sepCentral: 0, entregue: 0 };
 
-                    // INTELIGÊNCIA: Converte o objeto em uma lista e ordena do mais antigo para o mais novo
-                    var cartoesOrdenados = Object.values(requisicoesAtuais);
-                    cartoesOrdenados.sort(function(a, b) {
-                        return a.ordem - b.ordem;
-                    });
-
-                    // Distribui os cartões já ordenados nas colunas
-                    cartoesOrdenados.forEach(function(dados) {
+                    // O Firebase já devolve ordenado pela hora, então só varremos o laço e jogamos nas colunas
+                    resultado.forEach(function(documento) {
+                        var dados = documento.data();
                         var status = dados.status || "";
                         var cartaoHTML = criarCartao(dados);
 
