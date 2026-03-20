@@ -9,6 +9,7 @@
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
 
@@ -153,7 +154,7 @@
 
     <script>
         // CONTROLE OFICIAL DE VERSÃO E ASSINATURA 🚀
-        const APP_VERSION = "2.11.0";
+        const APP_VERSION = "2.12.0";
         const APP_DATE = "20/03/2026";
         
         document.getElementById('display-versao').innerText = `Versão: ${APP_VERSION} (${APP_DATE})`;
@@ -165,9 +166,12 @@
             projectId: "checkpoint-pedidos",
             storageBucket: "checkpoint-pedidos.firebasestorage.app",
             messagingSenderId: "890832634523",
-            appId: "1:890832634523:web:7f8fa0ee6a2a9c60e27c3e"
+            appId: "1:890832634523:web:7f8fa0ee6a2a9c60e27c3e",
+            measurementId: "G-NV3BRV6J2J"
         };
+        
         firebase.initializeApp(firebaseConfig);
+        firebase.analytics();
         var bancoDeDados = firebase.firestore();
 
         Chart.register(ChartDataLabels);
