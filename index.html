@@ -51,6 +51,24 @@
         .registro-lote strong { display: block; color: #2c3e50; font-size: 18px; margin-bottom: 3px; }
         .registro-lote span { color: #8e44ad; font-size: 14px; font-weight: bold; display: block; }
         
+        /* NOVO: ANIMAÇÃO DE DESTAQUE PASSO 1 */
+        @keyframes piscarAviso {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.02); color: #c0392b; border-color: #c0392b;}
+            100% { opacity: 1; transform: scale(1); }
+        }
+        .piscar-urgente {
+            animation: piscarAviso 1.5s infinite;
+            background-color: #fadbd8;
+            padding: 12px;
+            border-radius: 5px;
+            border: 2px dashed #e74c3c;
+            font-size: 14px !important;
+            font-weight: 900 !important;
+            margin-bottom: 15px !important;
+            color: #e74c3c;
+        }
+
         @media (min-width: 600px) {
             .registro-lote { width: auto; min-width: 140px; padding: 15px; font-size: 22px; }
             .registro-lote strong { font-size: 24px; }
@@ -62,6 +80,10 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.2); opacity: 0; transition: opacity 0.2s;
         }
         #toast-sucesso.mostrar { visibility: visible; opacity: 1; }
+
+        /* ESTILO DO RODAPÉ (VERSÃO) */
+        .app-footer { margin-top: 40px; text-align: center; padding: 20px; color: #7f8c8d; font-size: 11px; border-top: 1px solid #eee; }
+        .app-footer strong { color: #34495e; }
     </style>
 </head>
 <body>
@@ -84,12 +106,12 @@
             <div class="area-scan">
                 <div class="instrucao" style="color:#16a085;">MODO UNITÁRIO (TRADICIONAL)</div>
                 <div class="input-group">
-                    <label for="idRequisicao">1. Requisição Tasy (7 dígitos):</label>
-                    <input type="text" id="idRequisicao" inputmode="numeric">
+                    <label for="idLocalQR">1. Etapa / Local de Entrega (QR Code):</label>
+                    <input type="text" id="idLocalQR">
                 </div>
                 <div class="input-group">
-                    <label for="idLocalQR">2. Etapa / Local de Entrega (QR Code):</label>
-                    <input type="text" id="idLocalQR">
+                    <label for="idRequisicao">2. Requisição Tasy (7 dígitos):</label>
+                    <input type="text" id="idRequisicao" inputmode="numeric">
                 </div>
             </div>
 
@@ -107,7 +129,7 @@
                 <div class="titulo-lote" id="titulo-lote-texto">Bipagem Múltipla</div>
                 
                 <div id="passo1-lote">
-                    <div id="texto-passo1-lote" class="instrucao" style="color:#e74c3c;">PASSO 1: Onde estas caixas estão?</div>
+                    <div id="texto-passo1-lote" class="instrucao piscar-urgente">⚠️ PASSO 1: Onde estas caixas estão?</div>
                     <div class="input-group">
                         <label for="idLocalQRLote" id="label-passo1-lote">Bipe a Etapa ou Setor Destino:</label>
                         <input type="text" id="idLocalQRLote">
@@ -135,15 +157,25 @@
 
             <button class="btn-voltar" onclick="fecharModoLote()">🔙 Cancelar / Voltar</button>
         </div>
+    </div>
 
+    <div class="app-footer">
+        <strong>SISTEMA WMS - CHECKPOINT LOGÍSTICO HSVP</strong><br>
+        Arquitetura: Luiz Henrique Link Lodi & IA: Gemini<br>
+        <span id="display-versao"></span>
     </div>
 
     <script>
+        // CONTROLE OFICIAL DE VERSÃO E ASSINATURA 🚀
+        const APP_VERSION = "3.29.0";
+        const APP_DATE = "20/03/2026";
+        
+        document.getElementById('display-versao').innerText = `Versão: ${APP_VERSION} (${APP_DATE})`;
+        console.log(`%c🚀 Checkpoint HSVP Operador | Versão ${APP_VERSION} | Novo Fluxo Unitário`, "color: #3498db; font-size: 14px; font-weight: bold;");
+
         var firebaseConfig = { apiKey: "AIzaSyDHUlqzRw_vSyp9livOvQ0rjBYT9l_yofs", authDomain: "checkpoint-pedidos.firebaseapp.com", projectId: "checkpoint-pedidos", storageBucket: "checkpoint-pedidos.firebasestorage.app", messagingSenderId: "890832634523", appId: "1:890832634523:web:7f8fa0ee6a2a9c60e27c3e" };
         firebase.initializeApp(firebaseConfig);
         var bancoDeDados = firebase.firestore();
-        
-        console.log("%c🚀 Checkpoint HSVP | Criado por Luiz Henrique Link Lodi & Gemini", "color: #3498db; font-size: 14px; font-weight: bold;");
 
         bancoDeDados.enablePersistence({synchronizeTabs: true}).catch(function(err) { console.log("Erro persistência:", err.code); });
 
@@ -209,7 +241,7 @@
                 display.innerHTML = "👤 Usuário:<span class='operador-nome'>" + nomeOperadorAtual + "</span>";
                 display.style.display = "block";
                 document.getElementById('btn-trocar-operador').style.display = "block";
-                document.getElementById('idRequisicao').focus();
+                document.getElementById('idLocalQR').focus(); // Foco no Passo 1 da nova ordem
             } else { dispararAlertaErro(); alert("Matrícula não encontrada!"); document.getElementById('idMatricula').value = ""; }
         }
 
@@ -245,13 +277,13 @@
                 titulo.innerText = "🤝 MODO RETIRADA";
                 titulo.style.color = "#d35400";
                 caixaLote.style.borderColor = "#d35400";
-                instrucaoPasso1.innerText = "PASSO 1: Identifique o colaborador que veio retirar.";
+                instrucaoPasso1.innerHTML = "⚠️ PASSO 1: Identifique o colaborador que veio retirar.";
                 labelArea.innerText = "Bipe o Crachá de quem está retirando:";
             } else {
                 titulo.innerText = "📦 BIPAGEM MÚLTIPLA";
                 titulo.style.color = "#8e44ad";
                 caixaLote.style.borderColor = "#8e44ad";
-                instrucaoPasso1.innerText = "PASSO 1: Onde estas caixas estão?";
+                instrucaoPasso1.innerHTML = "⚠️ PASSO 1: Onde estas caixas estão?";
                 labelArea.innerText = "Bipe a Etapa ou Setor Destino:";
             }
 
@@ -267,7 +299,9 @@
         function fecharModoLote() {
             document.getElementById('tela-lote').style.display = 'none';
             document.getElementById('tela-logistica').style.display = 'block';
-            document.getElementById('idRequisicao').focus();
+            document.getElementById('idLocalQR').value = '';
+            document.getElementById('idRequisicao').value = '';
+            document.getElementById('idLocalQR').focus(); // Volta para o novo Passo 1
             isModoLoteSyncing = false;
         }
 
@@ -309,17 +343,11 @@
         document.getElementById('idReqLote').addEventListener('input', function(e) {
             var apenasNumeros = this.value.replace(/\D/g, ''); 
 
-            // POKA-YOKE: Se o leitor jogar um código maior que 7 dígitos (ex: etiqueta de remédio)
             if (apenasNumeros.length > 7) {
-                dispararAlertaErro();
-                mostrarToast("❌ Código Inválido!");
-                this.value = '';
-                return;
+                dispararAlertaErro(); mostrarToast("❌ Código Inválido!"); this.value = ''; return;
             }
 
             this.value = apenasNumeros;
-
-            // Se for evento de apagar (backspace), não processa para evitar gravação acidental
             var isBackspace = e.inputType && e.inputType.startsWith('delete');
 
             if (apenasNumeros.length === 7 && !isBackspace) { 
@@ -377,47 +405,65 @@
 
 
         // ==========================================
-        // MODO UNITÁRIO: BLINDADO CONTRA CÓDIGOS SUJOS
+        // MODO UNITÁRIO: REVISADO PARA "LOCAL PRIMEIRO"
         // ==========================================
-        document.getElementById('idRequisicao').addEventListener('input', function(e) { 
-            var apenasNumeros = this.value.replace(/\D/g, ''); 
-
-            if (apenasNumeros.length > 7) {
-                dispararAlertaErro();
-                mostrarToast("❌ Código Inválido!");
-                this.value = '';
-                return;
-            }
-
-            this.value = apenasNumeros;
-
-            var isBackspace = e.inputType && e.inputType.startsWith('delete');
-
-            if (apenasNumeros.length === 7 && !isBackspace) {
-                if (!checarOperador()) { this.value = ''; return; }
-                document.getElementById('idLocalQR').focus(); 
-            }
-        });
-
+        
+        // Passo 1: Leitura do QR Code
         document.getElementById('idLocalQR').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 if (!checarOperador()) { this.value = ''; return; }
-                var req = document.getElementById('idRequisicao').value.trim();
-                var qrLido = this.value.trim().toUpperCase();
-                
-                if (req.length === 7 && qrLido !== "") {
-                    var apenasNumeros = qrLido.replace(/\D/g, '');
-                    if (apenasNumeros !== "" && apenasNumeros.length >= 6) {
-                        qrLido = parseInt(apenasNumeros.slice(-6), 10).toString();
-                    }
-
-                    var status = dicionarioEtapas[qrLido] || "Entregue (" + qrLido + ")";
-                    document.getElementById('idRequisicao').value = ''; this.value = ''; document.getElementById('idRequisicao').focus();
-                    
-                    processarBipeInteligente(req, status, null);
+                if (this.value.trim() !== "") {
+                    document.getElementById('idRequisicao').focus();
                 }
             }
+        });
+
+        // Passo 2: Leitura da Requisição
+        document.getElementById('idRequisicao').addEventListener('input', function(e) { 
+            var apenasNumeros = this.value.replace(/\D/g, ''); 
+
+            if (apenasNumeros.length > 7) {
+                dispararAlertaErro(); mostrarToast("❌ Código Inválido!"); this.value = ''; return;
+            }
+
+            this.value = apenasNumeros;
+            var isBackspace = e.inputType && e.inputType.startsWith('delete');
+
+            if (apenasNumeros.length === 7 && !isBackspace) {
+                if (!checarOperador()) { this.value = ''; return; }
+                
+                var qrLido = document.getElementById('idLocalQR').value.trim().toUpperCase();
+                
+                // Valida se o operador lembrou de bipar o local primeiro
+                if (qrLido === "") {
+                    dispararAlertaErro();
+                    mostrarToast("❌ Bipe a etapa primeiro!");
+                    this.value = '';
+                    document.getElementById('idLocalQR').focus();
+                    return;
+                }
+
+                var req = apenasNumeros;
+                var apenasNumerosQR = qrLido.replace(/\D/g, '');
+                
+                if (apenasNumerosQR !== "" && apenasNumerosQR.length >= 6) {
+                    qrLido = parseInt(apenasNumerosQR.slice(-6), 10).toString();
+                }
+
+                var status = dicionarioEtapas[qrLido] || "Entregue (" + qrLido + ")";
+                
+                // Limpa ambos os campos e devolve o foco para a etapa
+                this.value = ''; 
+                document.getElementById('idLocalQR').value = ''; 
+                document.getElementById('idLocalQR').focus();
+                
+                processarBipeInteligente(req, status, null);
+            }
+        });
+
+        document.getElementById('idRequisicao').addEventListener('keypress', function(e) {
+            if(e.key === 'Enter') e.preventDefault(); // Previne envio de form se o leitor enviar Enter
         });
 
         // ==========================================
@@ -533,14 +579,3 @@
     </script>
 </body>
 </html>
-
-
-<!--
-=========================================================================
-SISTEMA WMS - CHECKPOINT LOGÍSTICO HSVP
-⚙️ Arquitetura de Negócio e Idealização: Luiz Henrique Link Lodi
-🧠 Engenharia de Software e IA: Gemini
-📅 Versão Final (Go-Live): Março de 2026
-
-"Tecnologia à serviço da operação e da eficiência hospitalar."
--->
