@@ -9,6 +9,7 @@
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
 
     <style>
         body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #ecf0f1; margin: 0; padding: 20px; color: #333; display: flex; flex-direction: column; min-height: 100vh;}
@@ -141,10 +142,12 @@
   		    projectId: "checkpoint-pedidos",
   		    storageBucket: "checkpoint-pedidos.firebasestorage.app",
   		    messagingSenderId: "890832634523",
-  		    appId: "1:890832634523:web:7f8fa0ee6a2a9c60e27c3e"
+  		    appId: "1:890832634523:web:7f8fa0ee6a2a9c60e27c3e",
+            measurementId: "G-NV3BRV6J2J"
         };
 
         firebase.initializeApp(firebaseConfig);
+        firebase.analytics();
         var bancoDeDados = firebase.firestore();
 
         var ouvinteNuvem = null; 
