@@ -3,183 +3,123 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Gerencial - Checkpoint HSVP</title>
+    <title>Dashboard Real-Time - Checkpoint HSVP</title>
 
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⏱️</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📊</text></svg>">
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
 
     <style>
         body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; color: #333; display: flex; flex-direction: column; min-height: 100vh;}
-        .container { max-width: 1100px; margin: 0 auto; flex: 1;}
+        .container { max-width: 1100px; margin: 0 auto; flex: 1; width: 100%;}
         
         h1 { color: #2c3e50; text-align: center; margin-bottom: 5px; }
-        .subtitulo { text-align: center; color: #7f8c8d; margin-bottom: 30px; }
+        .subtitulo { text-align: center; color: #7f8c8d; margin-bottom: 20px; }
 
-        .filtro-container { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 30px; flex-wrap: wrap;}
-        .filtro-container label { font-weight: bold; color: #2c3e50; }
-        .filtro-container input[type="date"] { padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
-        .btn-filtrar { background-color: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        .btn-filtrar:hover { background-color: #2980b9; }
+        /* Estilo do Indicador de Data Atual */
+        .status-hoje { 
+            background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
+            display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 30px; 
+            border-left: 5px solid #2ecc71;
+        }
+        .status-hoje span { font-weight: bold; color: #2c3e50; font-size: 1.1em; }
+        .live-pulse {
+            width: 10px; height: 10px; background: #2ecc71; border-radius: 50%;
+            box-shadow: 0 0 0 rgba(46, 204, 113, 0.4); animation: pulse 2s infinite;
+        }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(46, 204, 113, 0); } 100% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); } }
 
         .header-equipe { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; margin-bottom: 15px; border-bottom: 2px solid #bdc3c7; padding-bottom: 5px; flex-wrap: wrap; gap: 10px;}
-        .secao-titulo { color: #2c3e50; font-size: 16px; font-weight: bold; margin: 0; text-transform: uppercase; border: none; padding: 0;}
-        .badge-total { background-color: #2c3e50; color: white; padding: 6px 15px; border-radius: 20px; font-size: 13px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1);}
+        .secao-titulo { color: #2c3e50; font-size: 16px; font-weight: bold; margin: 0; text-transform: uppercase; }
+        .badge-total { background-color: #2c3e50; color: white; padding: 6px 15px; border-radius: 20px; font-size: 13px; font-weight: bold; }
         .badge-total span { color: #f1c40f; font-size: 16px; margin-left: 5px; }
 
-        .cards-grid { display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; justify-content: space-between; }
+        .cards-grid { display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; }
         .card { background: white; flex: 1; min-width: 130px; padding: 20px 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-align: center; border-bottom: 4px solid #bdc3c7; }
-        .card h3 { margin: 0; font-size: 13px; color: #7f8c8d; text-transform: uppercase; }
-        .card .numero { font-size: 30px; font-weight: bold; color: #2c3e50; margin-top: 10px; }
+        .card h3 { margin: 0; font-size: 11px; color: #7f8c8d; text-transform: uppercase; }
+        .card .numero { font-size: 28px; font-weight: bold; color: #2c3e50; margin-top: 5px; }
         
-        /* 1ª Linha (Apoio) */
-        #card-separado { border-color: #f39c12; }
-        #card-conferido { border-color: #8e44ad; }
-        #card-carregado { border-color: #d35400; }
+        #card-separado { border-color: #f39c12; } #card-conferido { border-color: #8e44ad; } #card-carregado { border-color: #d35400; }
+        #card-recebido { border-color: #3498db; } #card-sep-central { border-color: #16a085; } #card-entregue { border-color: #2ecc71; }
         
-        /* 2ª Linha (Central) */
-        #card-recebido { border-color: #3498db; }
-        #card-sep-central { border-color: #16a085; }
-        #card-entregue { border-color: #2ecc71; }
-        
-        .tabela-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow-x: auto; margin-top: 25px; margin-bottom: 30px;}
-        .tabela-container h2 { margin-top: 0; color: #2c3e50; font-size: 18px; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; }
-        
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; min-width: 800px;}
-        th, td { padding: 12px 10px; text-align: center; border-bottom: 1px solid #ecf0f1; font-size: 14px; }
-        th { background-color: #f8f9fa; color: #2c3e50; font-weight: bold; text-transform: uppercase; font-size: 12px; }
-        td { color: #34495e; }
-        tr:hover { background-color: #f1f2f6; }
-        .col-nome { text-align: left; font-weight: bold; }
-        .col-total { font-weight: bold; background-color: #f8f9fa; color: #2c3e50;}
-        .celula-destaque { background-color: #fff9c4 !important; color: #d35400 !important; font-weight: bold !important; border-radius: 4px; box-shadow: inset 0 0 5px rgba(211, 84, 0, 0.1);}
-        
-        /* Layout dos Gráficos */
         .dashboard-grid { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 20px;}
-        .chart-box { background: #fff; padding: 15px; border-radius: 8px; flex: 1; min-width: 400px; border: 1px solid #eee; box-shadow: 0 2px 4px rgba(0,0,0,0.02);}
-        .chart-container { position: relative; height: 250px; width: 100%; }
+        .chart-box { background: #fff; padding: 15px; border-radius: 8px; flex: 1; min-width: 300px; border: 1px solid #eee; }
+        .chart-container { position: relative; height: 200px; width: 100%; }
 
-        .loading { text-align: center; color: #e67e22; font-weight: bold; display: none; margin-top: 10px; width: 100%; font-size: 18px;}
+        .tabela-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow-x: auto; margin-top: 25px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { background-color: #f8f9fa; color: #2c3e50; padding: 12px; text-align: center; text-transform: uppercase; font-size: 11px; border-bottom: 2px solid #dee2e6; }
+        td { padding: 10px; text-align: center; border-bottom: 1px solid #eee; }
+        .col-nome { text-align: left; font-weight: bold; }
+        .celula-destaque { background-color: #fff9c4 !important; color: #d35400 !important; font-weight: bold; border-radius: 4px; }
 
-        /* ESTILO DO RODAPÉ (VERSÃO) */
-        .app-footer { margin-top: auto; text-align: center; padding: 20px; color: #7f8c8d; font-size: 12px; line-height: 1.5; }
+        .loading { text-align: center; color: #e67e22; font-weight: bold; padding: 20px; width: 100%; }
+
+        .app-footer { margin-top: 40px; text-align: center; padding: 20px; color: #7f8c8d; font-size: 11px; border-top: 1px solid #eee; }
         .app-footer strong { color: #34495e; }
+
+        @media (max-width: 600px) { .chart-box { min-width: 100%; } .card { min-width: 45%; } }
     </style>
 </head>
 <body>
 
-    <div style="background-color: #2c3e50; padding: 15px; text-align: center; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-radius: 8px;">
-        <a href="index.html" style="color: #ecf0f1; text-decoration: none; margin: 0 15px; font-weight: bold; font-size: 16px;">📱 Tela do Operador</a>
-        <a href="romaneio.html" style="color: #ecf0f1; text-decoration: none; margin: 0 15px; font-weight: bold; font-size: 16px;">🚚 Romaneio</a>
-        <a href="kanban.html" style="color: #ecf0f1; text-decoration: none; margin: 0 15px; font-weight: bold; font-size: 16px;">🚥 Kanban</a>
-        <a href="dashboard.html" style="color: #f1c40f; text-decoration: none; margin: 0 15px; font-weight: bold; font-size: 16px;">📊 Dashboard</a>
-        <a href="gestao.html" style="color: #ecf0f1; text-decoration: none; margin: 0 15px; font-weight: bold; font-size: 16px;">⚙️ Painel de Gestão e BI</a>
-    </div>
-
     <div class="container">
-        <h1>📊 Dashboard de Produtividade</h1>
-        <div class="subtitulo">Acompanhamento de Volumes Movimentados por Setor e Colaborador</div>
+        <h1>📊 Dashboard Real-Time</h1>
+        <div class="subtitulo">Produtividade Operacional Diária</div>
 
-        <div class="filtro-container">
-            <label for="filtroData">Data do Relatório:</label>
-            <input type="date" id="filtroData">
-            <button class="btn-filtrar" onclick="carregarDados()">Buscar Dados</button>
-            <div class="loading" id="msg-loading">Processando dados... ⏳</div>
+        <div class="status-hoje">
+            <div class="live-pulse"></div>
+            <span>Monitorando Hoje: <span id="data-atual-display">--/--/----</span></span>
+            <div id="msg-loading" class="loading" style="display:none; padding:0; margin-left:20px;">Atualizando... ⏳</div>
         </div>
 
         <div class="header-equipe">
-            <div class="secao-titulo">🏭 Equipe Almoxarifados Centro de Apoio</div>
+            <div class="secao-titulo">🏭 Centro de Apoio</div>
             <div class="badge-total">Total Processado: <span id="soma-apoio">0</span></div>
         </div>
         <div class="cards-grid">
-            <div class="card" id="card-separado">
-                <h3>📦 Separado (Apoio)</h3>
-                <div class="numero" id="tot-separado">0</div>
-            </div>
-            <div class="card" id="card-conferido">
-                <h3>🔍 Conferido (Apoio)</h3>
-                <div class="numero" id="tot-conferido">0</div>
-            </div>
-            <div class="card" id="card-carregado">
-                <h3>🚚 Carregado (Transporte)</h3>
-                <div class="numero" id="tot-carregado">0</div>
-            </div>
+            <div class="card" id="card-separado"><h3>📦 Separado</h3><div class="numero" id="tot-separado">0</div></div>
+            <div class="card" id="card-conferido"><h3>🔍 Conferido</h3><div class="numero" id="tot-conferido">0</div></div>
+            <div class="card" id="card-carregado"><h3>🚚 Carregado</h3><div class="numero" id="tot-carregado">0</div></div>
+        </div>
+        <div class="dashboard-grid">
+            <div class="chart-box"><div class="chart-container"><canvas id="grafico-separado"></canvas></div></div>
+            <div class="chart-box"><div class="chart-container"><canvas id="grafico-conferido"></canvas></div></div>
+            <div class="chart-box"><div class="chart-container"><canvas id="grafico-carregado"></canvas></div></div>
         </div>
 
         <div class="header-equipe">
-            <div class="secao-titulo">🏥 Equipe Almoxarifados Teixeira Soares</div>
+            <div class="secao-titulo">🏥 Teixeira Soares</div>
             <div class="badge-total">Total Processado: <span id="soma-central">0</span></div>
         </div>
         <div class="cards-grid">
-            <div class="card" id="card-recebido">
-                <h3>📥 Recebido (Central)</h3>
-                <div class="numero" id="tot-recebido">0</div>
-            </div>
-            <div class="card" id="card-sep-central">
-                <h3>📦 Separado (Central)</h3>
-                <div class="numero" id="tot-sep-central">0</div>
-            </div>
-            <div class="card" id="card-entregue">
-                <h3>✅ Entregue (Total)</h3>
-                <div class="numero" id="tot-entregue">0</div>
-            </div>
+            <div class="card" id="card-recebido"><h3>📥 Recebido</h3><div class="numero" id="tot-recebido">0</div></div>
+            <div class="card" id="card-sep-central"><h3>📦 Separado</h3><div class="numero" id="tot-sep-central">0</div></div>
+            <div class="card" id="card-entregue"><h3>✅ Entregue</h3><div class="numero" id="tot-entregue">0</div></div>
         </div>
-
-        <div class="header-equipe">
-            <div class="secao-titulo">📈 Desempenho Diário por Etapa Operacional</div>
-        </div>
-        
         <div class="dashboard-grid">
-            <div class="chart-box">
-                <div class="chart-container"><canvas id="grafico-separado"></canvas></div>
-            </div>
-            <div class="chart-box">
-                <div class="chart-container"><canvas id="grafico-conferido"></canvas></div>
-            </div>
-        </div>
-
-        <div class="dashboard-grid">
-            <div class="chart-box">
-                <div class="chart-container"><canvas id="grafico-carregado"></canvas></div>
-            </div>
-            <div class="chart-box">
-                <div class="chart-container"><canvas id="grafico-recebido"></canvas></div>
-            </div>
-        </div>
-
-        <div class="dashboard-grid">
-            <div class="chart-box">
-                <div class="chart-container"><canvas id="grafico-sep-central"></canvas></div>
-            </div>
-            <div class="chart-box">
-                <div class="chart-container"><canvas id="grafico-entregue"></canvas></div>
-            </div>
+            <div class="chart-box"><div class="chart-container"><canvas id="grafico-recebido"></canvas></div></div>
+            <div class="chart-box"><div class="chart-container"><canvas id="grafico-sep-central"></canvas></div></div>
+            <div class="chart-box"><div class="chart-container"><canvas id="grafico-entregue"></canvas></div></div>
         </div>
 
         <div class="tabela-container">
-            <h2>🏆 Tabela de Produtividade por Colaborador</h2>
+            <h2 style="font-size: 16px; color: #2c3e50; margin-top:0;">🏆 Ranking de Produtividade do Dia</h2>
             <table>
                 <thead>
                     <tr>
                         <th class="col-nome">Colaborador</th>
-                        <th>Sep. Apoio</th>
-                        <th>Conferido</th>
-                        <th>Carregado</th>
-                        <th>Recebido</th>
-                        <th>Sep. Central</th>
-                        <th>Entregue</th>
-                        <th class="col-total">Total de Volumes</th>
+                        <th>Sep. Apoio</th><th>Conf.</th><th>Carr.</th>
+                        <th>Rec.</th><th>Sep. Cent.</th><th>Entregue</th>
+                        <th style="background:#f1f2f6">Total</th>
                     </tr>
                 </thead>
-                <tbody id="corpo-tabela">
-                </tbody>
+                <tbody id="corpo-tabela"></tbody>
             </table>
         </div>
-
     </div>
 
     <div class="app-footer">
@@ -189,12 +129,11 @@
     </div>
 
     <script>
-        // CONTROLE OFICIAL DE VERSÃO E ASSINATURA 🚀
-        const APP_VERSION = "2.7.1";
+        const APP_VERSION = "2.8.0";
         const APP_DATE = "20/03/2026";
         
         document.getElementById('display-versao').innerText = `Versão: ${APP_VERSION} (${APP_DATE})`;
-        console.log(`%c🚀 Checkpoint HSVP | Criado por Luiz Henrique Link Lodi & Gemini | Versão ${APP_VERSION}`, "color: #3498db; font-size: 14px; font-weight: bold;");
+        console.log(`%c📊 Dashboard Live | Versão ${APP_VERSION}`, "color: #2ecc71; font-weight: bold;");
 
         var firebaseConfig = {
             apiKey: "AIzaSyDHUlqzRw_vSyp9livOvQ0rjBYT9l_yofs",
@@ -210,24 +149,21 @@
         Chart.register(ChartDataLabels);
         var instanciasGraficos = {}; 
 
+        // INICIALIZAÇÃO AUTOMÁTICA PARA O DIA ATUAL
         window.onload = function() {
             var hoje = new Date();
-            var dia = String(hoje.getDate()).padStart(2, '0');
-            var mes = String(hoje.getMonth() + 1).padStart(2, '0');
-            var ano = hoje.getFullYear();
+            var display = hoje.toLocaleDateString('pt-BR');
+            document.getElementById('data-atual-display').innerText = display;
             
-            document.getElementById('filtroData').value = ano + '-' + mes + '-' + dia;
-            carregarDados();
+            carregarDadosHoje();
         };
 
-        function carregarDados() {
-            var dataInput = document.getElementById('filtroData').value;
-            if (!dataInput) { alert("Por favor, selecione uma data!"); return; }
-
-            document.getElementById('msg-loading').style.display = 'block';
-
-            var dataEscolhida = new Date(dataInput + "T00:00:00"); 
-            var inicioDoDia = dataEscolhida.getTime();
+        function carregarDadosHoje() {
+            document.getElementById('msg-loading').style.display = 'inline-block';
+            
+            var hoje = new Date();
+            hoje.setHours(0,0,0,0);
+            var inicioDoDia = hoje.getTime();
             var fimDoDia = inicioDoDia + (24 * 60 * 60 * 1000) - 1;
 
             bancoDeDados.collection("checkpoints_logistica")
@@ -236,11 +172,11 @@
                 .get()
                 .then(function(resultado) {
                     processarRelatorio(resultado);
+                    document.getElementById('msg-loading').style.display = 'none';
                 })
                 .catch(function(erro) {
-                    console.error("Erro ao buscar dados:", erro);
-                    document.getElementById('msg-loading').style.display = 'none';
-                    alert("Erro ao carregar os dados. Verifique a conexão.");
+                    console.error(erro);
+                    document.getElementById('msg-loading').innerText = "Erro ao conectar ❌";
                 });
         }
 
@@ -254,11 +190,7 @@
                 var status = evento.status || "";
 
                 if (!colaboradores[nome]) {
-                    colaboradores[nome] = { 
-                        separado: 0, conferido: 0, carregado: 0, 
-                        recebido: 0, sepCentral: 0, entregue: 0, 
-                        total: 0 
-                    };
+                    colaboradores[nome] = { separado: 0, conferido: 0, carregado: 0, recebido: 0, sepCentral: 0, entregue: 0, total: 0 };
                 }
 
                 if (status.indexOf("Separado (Central)") !== -1) {
@@ -276,150 +208,72 @@
                 }
             });
 
+            // Atualiza Cards
             document.getElementById('tot-separado').innerText = totais.separado;
             document.getElementById('tot-conferido').innerText = totais.conferido;
             document.getElementById('tot-carregado').innerText = totais.carregado;
             document.getElementById('tot-recebido').innerText = totais.recebido;
             document.getElementById('tot-sep-central').innerText = totais.sepCentral;
             document.getElementById('tot-entregue').innerText = totais.entregue;
-
             document.getElementById('soma-apoio').innerText = totais.separado + totais.conferido + totais.carregado;
             document.getElementById('soma-central').innerText = totais.recebido + totais.sepCentral + totais.entregue;
 
+            // Tabela
             var corpoTabela = document.getElementById('corpo-tabela');
-            corpoTabela.innerHTML = ''; 
-            var listaNomes = Object.keys(colaboradores).sort();
-
-            if (listaNomes.length === 0) {
-                corpoTabela.innerHTML = '<tr><td colspan="8" style="color: #e74c3c;">Nenhum registro encontrado para esta data.</td></tr>';
-            } else {
-                var maximos = { separado: 0, conferido: 0, carregado: 0, recebido: 0, sepCentral: 0, entregue: 0, total: 0 };
-                var somaTotalVolumes = 0;
-
-                listaNomes.forEach(function(nome) {
-                    var d = colaboradores[nome];
-                    somaTotalVolumes += d.total;
-                    
-                    if(d.separado > maximos.separado) maximos.separado = d.separado;
-                    if(d.conferido > maximos.conferido) maximos.conferido = d.conferido;
-                    if(d.carregado > maximos.carregado) maximos.carregado = d.carregado;
-                    if(d.recebido > maximos.recebido) maximos.recebido = d.recebido;
-                    if(d.sepCentral > maximos.sepCentral) maximos.sepCentral = d.sepCentral;
-                    if(d.entregue > maximos.entregue) maximos.entregue = d.entregue;
-                    if(d.total > maximos.total) maximos.total = d.total;
-                });
-
-                function formatarCelula(valor, valorMaximo, isTotal = false) {
-                    var classe = isTotal ? "col-total" : "";
-                    if (valor > 0 && valor === valorMaximo) {
-                        return '<td class="' + classe + ' celula-destaque">' + valor + ' 🏆</td>';
-                    }
-                    return '<td class="' + classe + '">' + valor + '</td>';
-                }
-
-                listaNomes.forEach(function(nome) {
-                    var dados = colaboradores[nome];
-                    var linhaHTML = '<tr>' +
-                                        '<td class="col-nome">' + nome + '</td>' +
-                                        formatarCelula(dados.separado, maximos.separado) +
-                                        formatarCelula(dados.conferido, maximos.conferido) +
-                                        formatarCelula(dados.carregado, maximos.carregado) +
-                                        formatarCelula(dados.recebido, maximos.recebido) +
-                                        formatarCelula(dados.sepCentral, maximos.sepCentral) +
-                                        formatarCelula(dados.entregue, maximos.entregue) +
-                                        formatarCelula(dados.total, maximos.total, true) +
-                                    '</tr>';
-                    corpoTabela.innerHTML += linhaHTML;
-                });
-
-                var linhaTotalHTML = '<tr style="background-color: #e8f6f3; border-top: 2px solid #bdc3c7;">' +
-                                        '<td class="col-nome" style="color: #16a085; font-weight: bold;">TOTAL GERAL</td>' +
-                                        '<td style="font-weight: bold; color: #2c3e50;">' + totais.separado + '</td>' +
-                                        '<td style="font-weight: bold; color: #2c3e50;">' + totais.conferido + '</td>' +
-                                        '<td style="font-weight: bold; color: #2c3e50;">' + totais.carregado + '</td>' +
-                                        '<td style="font-weight: bold; color: #2c3e50;">' + totais.recebido + '</td>' +
-                                        '<td style="font-weight: bold; color: #2c3e50;">' + totais.sepCentral + '</td>' +
-                                        '<td style="font-weight: bold; color: #2c3e50;">' + totais.entregue + '</td>' +
-                                        '<td style="font-weight: bold; color: #c0392b; font-size: 16px;">' + somaTotalVolumes + '</td>' +
-                                     '</tr>';
-                corpoTabela.innerHTML += linhaTotalHTML;
-            }
-
-            renderizarGrafico('grafico-separado', '📦 Separado (Apoio)', colaboradores, 'separado', '#f39c12');
-            renderizarGrafico('grafico-conferido', '🔍 Conferido (Apoio)', colaboradores, 'conferido', '#8e44ad');
-            renderizarGrafico('grafico-carregado', '🚚 Carregado (Transporte)', colaboradores, 'carregado', '#d35400');
-            renderizarGrafico('grafico-recebido', '📥 Recebido (Central)', colaboradores, 'recebido', '#3498db');
-            renderizarGrafico('grafico-sep-central', '📦 Separado (Central)', colaboradores, 'sepCentral', '#16a085');
-            renderizarGrafico('grafico-entregue', '✅ Entregue', colaboradores, 'entregue', '#2ecc71');
+            corpoTabela.innerHTML = '';
+            var nomes = Object.keys(colaboradores).sort();
             
-            document.getElementById('msg-loading').style.display = 'none';
+            var max = { sep:0, conf:0, carr:0, rec:0, sepc:0, ent:0, tot:0 };
+            nomes.forEach(n => {
+                let d = colaboradores[n];
+                if(d.separado > max.sep) max.sep = d.separado; if(d.conferido > max.conf) max.conf = d.conferido;
+                if(d.carregado > max.carr) max.carr = d.carregado; if(d.recebido > max.rec) max.rec = d.recebido;
+                if(d.sepCentral > max.sepc) max.sepc = d.sepCentral; if(d.entregue > max.ent) max.ent = d.entregue;
+                if(d.total > max.tot) max.tot = d.total;
+            });
+
+            nomes.forEach(function(n) {
+                var d = colaboradores[n];
+                corpoTabela.innerHTML += `<tr>
+                    <td class="col-nome">${n}</td>
+                    <td class="${d.separado > 0 && d.separado === max.sep ? 'celula-destaque':''}">${d.separado}</td>
+                    <td class="${d.conferido > 0 && d.conferido === max.conf ? 'celula-destaque':''}">${d.conferido}</td>
+                    <td class="${d.carregado > 0 && d.carregado === max.carr ? 'celula-destaque':''}">${d.carregado}</td>
+                    <td class="${d.recebido > 0 && d.recebido === max.rec ? 'celula-destaque':''}">${d.recebido}</td>
+                    <td class="${d.sepCentral > 0 && d.sepCentral === max.sepc ? 'celula-destaque':''}">${d.sepCentral}</td>
+                    <td class="${d.entregue > 0 && d.entregue === max.ent ? 'celula-destaque':''}">${d.entregue}</td>
+                    <td style="font-weight:bold; background:#f8f9fa" class="${d.total > 0 && d.total === max.tot ? 'celula-destaque':''}">${d.total}</td>
+                </tr>`;
+            });
+
+            // Gráficos
+            renderizarGrafico('grafico-separado', 'Sep. Apoio', colaboradores, 'separado', '#f39c12');
+            renderizarGrafico('grafico-conferido', 'Conferido', colaboradores, 'conferido', '#8e44ad');
+            renderizarGrafico('grafico-carregado', 'Carregado', colaboradores, 'carregado', '#d35400');
+            renderizarGrafico('grafico-recebido', 'Recebido', colaboradores, 'recebido', '#3498db');
+            renderizarGrafico('grafico-sep-central', 'Sep. Central', colaboradores, 'sepCentral', '#16a085');
+            renderizarGrafico('grafico-entregue', 'Entregue', colaboradores, 'entregue', '#2ecc71');
         }
 
-        function renderizarGrafico(idCanvas, tituloTexto, dadosColaboradores, chavePropriedade, corPrimaria) {
-            var ctx = document.getElementById(idCanvas).getContext('2d');
-            
-            if (instanciasGraficos[idCanvas]) {
-                instanciasGraficos[idCanvas].destroy();
-            }
+        function renderizarGrafico(id, tit, dados, chave, cor) {
+            var ctx = document.getElementById(id).getContext('2d');
+            if (instanciasGraficos[id]) instanciasGraficos[id].destroy();
 
-            var dadosFiltrados = [];
-            for (var nomeCompleto in dadosColaboradores) {
-                var valor = dadosColaboradores[nomeCompleto][chavePropriedade];
-                if (valor > 0) {
-                    var primeiroNome = nomeCompleto.split(' ')[0];
-                    dadosFiltrados.push({ nome: primeiroNome, valor: valor });
-                }
-            }
+            var filt = [];
+            for (var n in dados) { if (dados[n][chave] > 0) filt.push({ n: n.split(' ')[0], v: dados[n][chave] }); }
+            filt.sort((a,b) => b.v - a.v);
 
-            dadosFiltrados.sort(function(a, b) { return b.valor - a.valor; });
-
-            var nomes = dadosFiltrados.map(function(d) { return d.nome; });
-            var valores = dadosFiltrados.map(function(d) { return d.valor; });
-
-            if (valores.length === 0) {
-                nomes = ['Sem dados'];
-                valores = [0];
-                corPrimaria = '#bdc3c7';
-            }
-
-            instanciasGraficos[idCanvas] = new Chart(ctx, {
+            instanciasGraficos[id] = new Chart(ctx, {
                 type: 'bar',
-                data: {
-                    labels: nomes,
-                    datasets: [{
-                        data: valores,
-                        backgroundColor: corPrimaria,
-                        borderRadius: 4
-                    }]
-                },
+                data: { labels: filt.map(i=>i.n), datasets: [{ data: filt.map(i=>i.v), backgroundColor: cor, borderRadius: 4 }] },
                 options: {
-                    layout: { padding: { top: 30 } },
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: { 
-                            display: true, 
-                            text: tituloTexto, 
-                            font: { size: 15, family: 'Arial', weight: 'bold' }, 
-                            color: '#2c3e50',
-                            padding: { bottom: 15 }
-                        },
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { 
+                        title: { display: true, text: tit, font: {size: 12} }, 
                         legend: { display: false },
-                        datalabels: {
-                            color: '#2c3e50',
-                            anchor: 'end',
-                            align: 'top',
-                            offset: 4,
-                            font: { weight: 'bold', size: 14 },
-                            display: function(context) {
-                                return context.dataset.data[context.dataIndex] > 0;
-                            }
-                        }
+                        datalabels: { color: '#2c3e50', anchor: 'end', align: 'top', font: {weight:'bold', size:11} }
                     },
-                    scales: {
-                        x: { grid: { display: false } },
-                        y: { display: false, beginAtZero: true } 
-                    }
+                    scales: { y: { display: false }, x: { grid: {display:false} } }
                 }
             });
         }
