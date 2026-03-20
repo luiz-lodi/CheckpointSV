@@ -96,7 +96,7 @@
                     </tr>
                 </thead>
                 <tbody id="corpo-tabela">
-                    <tr><td colspan="5" style="text-align:center;">Buscando dados no Kanban...</td></tr>
+                    <tr><td colspan="5" style="text-align:center;">Buscando dados na Expedição...</td></tr>
                 </tbody>
             </table>
 
@@ -121,12 +121,12 @@
 
     <script>
         // CONTROLE OFICIAL DE VERSÃO E ASSINATURA 🚀
-        const APP_VERSION = "1.2.1";
+        const APP_VERSION = "1.3.0";
         const APP_DATE = "20/03/2026";
         
         document.getElementById('display-versao').innerText = `Versão: ${APP_VERSION} (${APP_DATE})`;
 
-        console.log(`%c🚀 Checkpoint HSVP | Criado por Luiz Henrique Link Lodi & Gemini | Versão ${APP_VERSION}`, "color: #8e44ad; font-size: 14px; font-weight: bold;");
+        console.log(`%c🚀 Checkpoint HSVP Romaneio | Criado por Luiz Henrique Link Lodi & Gemini | Versão ${APP_VERSION} | Operação Custo Zero`, "color: #8e44ad; font-size: 14px; font-weight: bold;");
 
         // Configuração Firebase
         var firebaseConfig = {
@@ -166,7 +166,7 @@
                 document.getElementById('tela-romaneio').style.display = 'block';
                 document.getElementById('nomeEmissor').innerText = nomeOperadorAtual;
                 
-                buscarCargaAtual(); // Já busca a carga ao entrar
+                buscarCargaAtual(); 
             } else {
                 alert("Matrícula não encontrada!");
                 document.getElementById('idMatricula').value = "";
@@ -174,32 +174,22 @@
         }
 
         function buscarCargaAtual() {
-            document.getElementById('corpo-tabela').innerHTML = '<tr><td colspan="5" style="text-align:center;">⏳ Consultando Kanban em tempo real...</td></tr>';
+            document.getElementById('corpo-tabela').innerHTML = '<tr><td colspan="5" style="text-align:center;">⏳ Consultando Expedição...</td></tr>';
             document.getElementById('btnImprimir').style.display = 'none';
             document.getElementById('dataEmissao').innerText = new Date().toLocaleString('pt-BR');
 
             var inicioDoDia = new Date().setHours(0,0,0,0);
 
-            // Busca todos os eventos de hoje para entender onde as caixas pararam
-            bancoDeDados.collection("checkpoints_logistica")
+            // MUDANÇA: Busca rápida focada na tabela atual, filtrando apenas o que está "Carregado"
+            bancoDeDados.collection("caixas_estado_atual")
+                .where("status", "==", "Carregado (Transporte)")
                 .where("ordem", ">=", inicioDoDia)
                 .get()
                 .then(function(resultado) {
-                    var ultimaSituacao = {};
+                    var itensNaCarga = [];
 
-                    // Mapeia o Kanban: guarda apenas o ÚLTIMO status de cada Caixa
                     resultado.forEach(function(doc) {
-                        var ev = doc.data();
-                        var reqVol = ev.requisicao + "-" + ev.volume; 
-                        
-                        if (!ultimaSituacao[reqVol] || ultimaSituacao[reqVol].ordem < ev.ordem) {
-                            ultimaSituacao[reqVol] = ev;
-                        }
-                    });
-
-                    // Filtra apenas as caixas que estão paradas na Doca (Carregadas)
-                    var itensNaCarga = Object.values(ultimaSituacao).filter(function(item) {
-                        return item.status === "Carregado (Transporte)";
+                        itensNaCarga.push(doc.data());
                     });
 
                     renderizarTabela(itensNaCarga);
