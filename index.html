@@ -166,13 +166,11 @@
 
     <script>
         // CONTROLE OFICIAL DE VERSÃO E ASSINATURA 🚀
-        const APP_VERSION = "3.30.1";
+        const APP_VERSION = "3.31.0";
         const APP_DATE = "20/03/2026";
         
         document.getElementById('display-versao').innerText = `Versão: ${APP_VERSION} (${APP_DATE})`;
-        console.log(`%c🚀 Checkpoint HSVP Operador | Versão ${APP_VERSION} | Novo Fluxo Unitário`, "color: #3498db; font-size: 14px; font-weight: bold;");
-
-        console.log(`%c🚀 Checkpoint HSVP | Criado por Luiz Henrique Link Lodi & Gemini | Versão ${APP_VERSION}`, "color: #3498db; font-size: 14px; font-weight: bold;");
+        console.log(`%c🚀 Checkpoint HSVP Operador | Versão ${APP_VERSION} | Operação Custo Zero (Dual Write)`, "color: #3498db; font-size: 14px; font-weight: bold;");
 
         var firebaseConfig = { apiKey: "AIzaSyDHUlqzRw_vSyp9livOvQ0rjBYT9l_yofs", authDomain: "checkpoint-pedidos.firebaseapp.com", projectId: "checkpoint-pedidos", storageBucket: "checkpoint-pedidos.firebasestorage.app", messagingSenderId: "890832634523", appId: "1:890832634523:web:7f8fa0ee6a2a9c60e27c3e" };
         firebase.initializeApp(firebaseConfig);
@@ -242,7 +240,7 @@
                 display.innerHTML = "👤 Usuário:<span class='operador-nome'>" + nomeOperadorAtual + "</span>";
                 display.style.display = "block";
                 document.getElementById('btn-trocar-operador').style.display = "block";
-                document.getElementById('idLocalQR').focus(); // Foco no Passo 1 da nova ordem
+                document.getElementById('idLocalQR').focus(); 
             } else { dispararAlertaErro(); alert("Matrícula não encontrada!"); document.getElementById('idMatricula').value = ""; }
         }
 
@@ -302,7 +300,7 @@
             document.getElementById('tela-logistica').style.display = 'block';
             document.getElementById('idLocalQR').value = '';
             document.getElementById('idRequisicao').value = '';
-            document.getElementById('idLocalQR').focus(); // Volta para o novo Passo 1
+            document.getElementById('idLocalQR').focus(); 
             isModoLoteSyncing = false;
         }
 
@@ -409,7 +407,6 @@
         // MODO UNITÁRIO: REVISADO PARA "LOCAL PRIMEIRO"
         // ==========================================
         
-        // Passo 1: Leitura do QR Code
         document.getElementById('idLocalQR').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
@@ -420,7 +417,6 @@
             }
         });
 
-        // Passo 2: Leitura da Requisição
         document.getElementById('idRequisicao').addEventListener('input', function(e) { 
             var apenasNumeros = this.value.replace(/\D/g, ''); 
 
@@ -436,7 +432,6 @@
                 
                 var qrLido = document.getElementById('idLocalQR').value.trim().toUpperCase();
                 
-                // Valida se o operador lembrou de bipar o local primeiro
                 if (qrLido === "") {
                     dispararAlertaErro();
                     mostrarToast("❌ Bipe a etapa primeiro!");
@@ -454,7 +449,6 @@
 
                 var status = dicionarioEtapas[qrLido] || "Entregue (" + qrLido + ")";
                 
-                // Limpa ambos os campos e devolve o foco para a etapa
                 this.value = ''; 
                 document.getElementById('idLocalQR').value = ''; 
                 document.getElementById('idLocalQR').focus();
@@ -464,11 +458,11 @@
         });
 
         document.getElementById('idRequisicao').addEventListener('keypress', function(e) {
-            if(e.key === 'Enter') e.preventDefault(); // Previne envio de form se o leitor enviar Enter
+            if(e.key === 'Enter') e.preventDefault(); 
         });
 
         // ==========================================
-        // LÓGICA DE PESOS E SINCRONIZAÇÃO
+        // LÓGICA DE PESOS E SINCRONIZAÇÃO (DUAL WRITE)
         // ==========================================
         function getPesoDaEtapa(status) {
             if (status.indexOf("Separado") !== -1) return 1;
@@ -494,7 +488,8 @@
                 
                 var limiteMemoria = new Date().getTime() - (90 * 24 * 60 * 60 * 1000); 
                 
-                bancoDeDados.collection("checkpoints_logistica")
+                // MUDANÇA ARQUITETURAL: Lê do Estado Atual, poupando a cota do Firebase!
+                bancoDeDados.collection("caixas_estado_atual")
                     .where("requisicao", "==", requisicao)
                     .get()
                     .then(function(resultado) {
@@ -505,7 +500,8 @@
                             if (ev.ordem >= limiteMemoria) {
                                 var v = parseInt(ev.volume) || 1;
                                 var p = getPesoDaEtapa(ev.status);
-                                if (!dadosReq.pesoMaxVol[v] || p > dadosReq.pesoMaxVol[v]) dadosReq.pesoMaxVol[v] = p;
+                                // Como só lemos o estado atual, este já é o peso máximo
+                                dadosReq.pesoMaxVol[v] = p;
                                 if (!dadosReq.statusVol[ev.status]) dadosReq.statusVol[ev.status] = [];
                                 dadosReq.statusVol[ev.status].push(v);
                             }
@@ -557,7 +553,14 @@
             var dataAtual = new Date();
             var novoEvento = { matricula: matricula, nome: opNome, requisicao: requisicao, status: statusFinal, volume: volCalc, data: dataAtual.toLocaleString('pt-BR'), ordem: dataAtual.getTime() };
             
-            bancoDeDados.collection("checkpoints_logistica").add(novoEvento).then(function() {
+            // GRAVAÇÃO DUPLA (DUAL WRITE)
+            // 1. Grava no Histórico Geral para Auditoria
+            bancoDeDados.collection("checkpoints_logistica").add(novoEvento);
+
+            // 2. Grava (Sobrescreve) na coleção de Estado Atual usando "Req-Vol" como ID
+            var idDocumentoAtual = requisicao + "-" + volCalc;
+            bancoDeDados.collection("caixas_estado_atual").doc(idDocumentoAtual).set(novoEvento)
+            .then(function() {
                 mostrarToast("✅ Salvo! (Vol " + volCalc + ")");
                 adicionarRegistroNaTela(novoEvento);
                 if(callbackAposProcessar) callbackAposProcessar();
