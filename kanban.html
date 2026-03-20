@@ -11,7 +11,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
     <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #ecf0f1; margin: 0; padding: 20px; color: #333; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #ecf0f1; margin: 0; padding: 20px; color: #333; display: flex; flex-direction: column; min-height: 100vh;}
         h1 { text-align: center; color: #2c3e50; margin-bottom: 5px; }
         .subtitulo { text-align: center; color: #7f8c8d; margin-bottom: 20px; }
         
@@ -27,6 +27,7 @@
             overflow-x: auto;
             padding-bottom: 20px;
             align-items: flex-start;
+            flex: 1; /* Empurra o rodapé para baixo */
         }
 
         .coluna {
@@ -64,6 +65,10 @@
         .cartao .volume-badge { display: inline; color: #d35400; font-weight: bold; font-size: 16px; margin-top: 0; }
         
         .contador { font-size: 12px; background: #fff; padding: 2px 8px; border-radius: 10px; margin-left: 5px; color: #333;}
+
+        /* ESTILO DO RODAPÉ (VERSÃO) */
+        .app-footer { margin-top: 40px; text-align: center; padding: 20px; color: #7f8c8d; font-size: 11px; border-top: 1px solid #bdc3c7; }
+        .app-footer strong { color: #34495e; }
     </style>
 </head>
 <body>
@@ -112,7 +117,20 @@
         </div>
     </div>
 
+    <div class="app-footer">
+        <strong>SISTEMA WMS - CHECKPOINT LOGÍSTICO HSVP</strong><br>
+        <span id="display-versao"></span>
+    </div>
+
     <script>
+        // CONTROLE OFICIAL DE VERSÃO E ASSINATURA 🚀
+        const APP_VERSION = "1.15.0";
+        const APP_DATE = "20/03/2026";
+        
+        document.getElementById('display-versao').innerText = `Versão: ${APP_VERSION} (${APP_DATE})`;
+        
+        console.log(`%c🚀 Checkpoint HSVP | Criado por Luiz Henrique Link Lodi & Gemini | Versão ${APP_VERSION}`, "color: #f1c40f; font-size: 14px; font-weight: bold;");
+
         // ==========================================
         // CONFIGURAÇÃO DO FIREBASE
         // ==========================================
@@ -127,8 +145,6 @@
 
         firebase.initializeApp(firebaseConfig);
         var bancoDeDados = firebase.firestore();
-
-        console.log("%c🚀 Checkpoint HSVP | Criado por Luiz Henrique Link Lodi & Gemini", "color: #3498db; font-size: 14px; font-weight: bold;");
 
         var ouvinteNuvem = null; 
 
@@ -238,13 +254,3 @@
     </script>
 </body>
 </html>
-
-<!--
-=========================================================================
-SISTEMA WMS - CHECKPOINT LOGÍSTICO HSVP
-⚙️ Arquitetura de Negócio e Idealização: Luiz Henrique Link Lodi
-🧠 Engenharia de Software e IA: Gemini
-📅 Versão Final (Go-Live): Março de 2026
-
-"Tecnologia à serviço da operação e da eficiência hospitalar."
--->
