@@ -17,7 +17,6 @@
     <style>
         body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; color: #333; display: flex; flex-direction: column; min-height: 100vh;}
         
-        /* AJUSTE AQUI: margin-bottom zerada para colar no layout abaixo */
         .navbar-top { background-color: #2c3e50; padding: 15px; text-align: center; margin-bottom: 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-radius: 8px;}
         .navbar-top a { color: #ecf0f1; text-decoration: none; margin: 0 15px; font-weight: bold; font-size: 16px; }
         .navbar-top a.ativo { color: #f1c40f; }
@@ -28,7 +27,7 @@
         .input-group input { width: 100%; padding: 12px; border: 2px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 16px; }
         .btn-login { background-color: #2c3e50; color: white; border: none; padding: 15px; width: 100%; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px;}
 
-        #painel-gestao { display: none; padding-top: 15px; } /* Adicionado padding para respirar um pouco se precisar */
+        #painel-gestao { display: none; padding-top: 15px; } 
         .layout-app { display: flex; gap: 20px; align-items: flex-start; }
         
         /* MENU LATERAL */
@@ -139,7 +138,7 @@
     <div class="container" style="flex: 1;">
         <div id="tela-login">
             <h3 style="color: #2c3e50; margin-top: 0;">Acesso Restrito - Gestores</h3>
-            <div class="input-group"><label>E-mail:</label><input type="email" id="emailGestor"></div>
+            <div class="input-group"><label>E-mail de Acesso:</label><input type="email" id="emailGestor" placeholder="ex: nome@hsvp.com.br"></div>
             <div class="input-group"><label>Senha:</label><input type="password" id="senhaGestor" onkeypress="if(event.key === 'Enter') fazerLogin()"></div>
             <button class="btn-login" id="btn-login-btn" onclick="fazerLogin()">Acessar Sistema</button>
             <div id="msg-erro" style="color: #e74c3c; margin-top: 15px; font-weight: bold; display: none;">E-mail ou senha incorretos!</div>
@@ -461,12 +460,12 @@
 
     <script>
         // CONTROLE OFICIAL DE VERSÃO E ASSINATURA 🚀
-        const APP_VERSION = "1.17.1";
+        const APP_VERSION = "1.17.2";
         const APP_DATE = "23/03/2026";
         
         document.getElementById('display-versao').innerText = `Versão: ${APP_VERSION} (${APP_DATE})`;
 
-        console.log(`%c🚀 Checkpoint HSVP Gestão | Criado por Luiz Henrique Link Lodi & Gemini | Versão ${APP_VERSION} | Fix Navbar Flush`, "color: #3498db; font-size: 14px; font-weight: bold;");
+        console.log(`%c🚀 Checkpoint HSVP Gestão | Criado por Luiz Henrique Link Lodi & Gemini | Versão ${APP_VERSION} | Fix Exclusão Dual Write`, "color: #3498db; font-size: 14px; font-weight: bold;");
 
         Chart.register(ChartDataLabels);
 
@@ -490,30 +489,24 @@
         // OUVINTE DE ESTADO DE AUTENTICAÇÃO (Sessão Persistente)
         firebase.auth().onAuthStateChanged(function(user) {
             if (user) {
-                // Mapeamento de e-mails para nomes reais
                 var mapaGestores = {
                     "farmluiz@hsvp.com.br": "LUIZ LODI",
                     "farmquevedo@hsvp.com.br": "BRUNA QUEVEDO",
                     "supervisao.logistica@hsvp.com.br": "RENAN REIS"
                 };
-                
-                // Se o e-mail não estiver no mapa (ex: usuário novo), usa a regra antiga como salva-vidas
                 var nomeFormatado = mapaGestores[user.email] || user.email.split('@')[0].toUpperCase().replace('.', ' ');
-                
                 gestorLogado = { email: user.email, nome: nomeFormatado };
                 
                 document.getElementById('tela-login').style.display = 'none';
                 document.getElementById('painel-gestao').style.display = 'block';
                 document.getElementById('id-logado').innerHTML = "👤 Gestor: " + gestorLogado.nome + " | <a href='#' onclick='fazerLogout()' style='color:#e74c3c; text-decoration:none; margin-left: 10px;'>[Sair]</a>";
                 
-                // Preenche as datas automaticamente
                 var hoje = new Date(), d = String(hoje.getDate()).padStart(2,'0'), m = String(hoje.getMonth()+1).padStart(2,'0'), y = hoje.getFullYear();
                 document.getElementById('filtroDataLogistica').value = y+'-'+m+'-'+d;
                 document.getElementById('filtroMesProcessos').value = y+'-'+m;
                 document.getElementById('filtroMesProdutividade').value = y+'-'+m;
                 document.getElementById('filtroMesTempos').value = y+'-'+m;
                 document.getElementById('filtroDataDashboard').value = y+'-'+m+'-'+d;
-                
                 carregarMensagens(); 
             } else {
                 document.getElementById('tela-login').style.display = 'block';
@@ -522,19 +515,13 @@
             }
         });
 
-        // FUNÇÃO DE LOGIN COM FIREBASE AUTH
         function fazerLogin() {
             var email = document.getElementById('emailGestor').value.trim();
             var sen = document.getElementById('senhaGestor').value.trim();
-            
             document.getElementById('msg-erro').style.display = 'none';
             document.getElementById('btn-login-btn').innerText = "Autenticando...";
-
             firebase.auth().signInWithEmailAndPassword(email, sen)
-            .then((userCredential) => {
-                document.getElementById('btn-login-btn').innerText = "Acessar Sistema";
-                // O onAuthStateChanged (logo acima) cuidará de liberar a tela automaticamente
-            })
+            .then((userCredential) => { document.getElementById('btn-login-btn').innerText = "Acessar Sistema"; })
             .catch((error) => {
                 document.getElementById('btn-login-btn').innerText = "Acessar Sistema";
                 document.getElementById('msg-erro').innerText = "Acesso negado: E-mail ou senha incorretos.";
@@ -542,17 +529,8 @@
             });
         }
 
-        // FUNÇÃO DE LOGOUT
-        function fazerLogout() {
-            firebase.auth().signOut().then(() => {
-                // A tela será fechada automaticamente pelo onAuthStateChanged
-            }).catch((error) => {
-                alert("Erro ao tentar sair da conta.");
-            });
-        }
+        function fazerLogout() { firebase.auth().signOut().catch((error) => { alert("Erro ao tentar sair da conta."); }); }
 
-
-        // Váriaveis Globais de Gráficos e Cache
         var cacheBI = { mes: "", documentos: [] };
         var cacheDashData = ""; var cacheDashDocs = [];
         var cacheSLATempos = null; 
@@ -582,10 +560,8 @@
             document.getElementById(idAba).classList.add('ativa'); btn.classList.add('ativo');
             btn.parentElement.previousElementSibling.classList.add('ativo');
 
-            // AUTO-LOAD DAS ABAS COM CACHE
             if(idAba === 'aba-auditoria-exclusao' && document.getElementById('corpo-logistica').innerHTML === '') carregarDadosLogistica(0);
             if(idAba === 'aba-auditoria-historico' && document.getElementById('corpo-auditoria').innerHTML === '') carregarAuditoria(0);
-            
             if(idAba === 'aba-bi-dashboard') carregarDadosBIDashboard();
             if(idAba === 'aba-bi-processos') carregarDadosBI('processos');
             if(idAba === 'aba-bi-produtividade') carregarDadosBI('produtividade');
@@ -608,18 +584,12 @@
             });
         }
 
-        // ==========================================
-        // LÓGICA DE CARGA DE TRABALHO (WORKLOAD AGGREGATOR)
-        // ==========================================
         function processarCargaDeTrabalhoPorHora(bipes) {
-            var horasData = {};
-            var minH = 6, maxH = 19; 
-            
+            var horasData = {}; var minH = 6, maxH = 19; 
             bipes.forEach(b => {
                 var h = new Date(b.ordem).getHours();
                 if(h < minH) minH = h; if(h > maxH) maxH = h;
                 if(!horasData[h]) horasData[h] = {sep:0, conf:0, carr:0, rec:0, sepc:0, ent:0};
-                
                 var s = b.status || "";
                 if (s.includes("Separado (Central)")) horasData[h].sepc++;
                 else if (s.includes("Separado (Apoio)") || s === "Separado") horasData[h].sep++;
@@ -628,7 +598,6 @@
                 else if (s.includes("Recebido")) horasData[h].rec++;
                 else if (s.includes("Entregue")) horasData[h].ent++;
             });
-
             var labels = [], dSep=[], dConf=[], dCarr=[], dRec=[], dSepC=[], dEnt=[];
             for(var i = minH; i <= maxH; i++) {
                 labels.push(i.toString().padStart(2, '0') + ":00");
@@ -636,7 +605,6 @@
                 dSep.push(hd.sep); dConf.push(hd.conf); dCarr.push(hd.carr);
                 dRec.push(hd.rec); dSepC.push(hd.sepc); dEnt.push(hd.ent);
             }
-
             return {
                 labels: labels,
                 datasets: [
@@ -650,29 +618,18 @@
             };
         }
 
-        // ==========================================
-        // DASHBOARD DIÁRIO EMBUTIDO
-        // ==========================================
         function carregarDadosBIDashboard() {
             var dataInput = document.getElementById('filtroDataDashboard').value;
             if (!dataInput) return alert("Selecione uma data.");
-
             if (cacheDashData === dataInput && cacheDashDocs.length > 0) {
-                processarDashboardDiario(cacheDashDocs);
-                document.getElementById('conteudo-dashboard-diario').style.display = 'block';
-                return;
+                processarDashboardDiario(cacheDashDocs); document.getElementById('conteudo-dashboard-diario').style.display = 'block'; return;
             }
-
             document.getElementById('load-dashboard').style.display = 'inline-block';
             var dEscolhida = new Date(dataInput + "T00:00:00"); 
-            var inicioDoDia = dEscolhida.getTime();
-            var fimDoDia = inicioDoDia + (24 * 60 * 60 * 1000) - 1;
-
+            var inicioDoDia = dEscolhida.getTime(); var fimDoDia = inicioDoDia + (24 * 60 * 60 * 1000) - 1;
             bancoDeDados.collection("checkpoints_logistica").where("ordem", ">=", inicioDoDia).where("ordem", "<=", fimDoDia).get().then(res => {
-                var bipesDoDia = [];
-                res.forEach(doc => bipesDoDia.push(doc.data()));
-                cacheDashData = dataInput;
-                cacheDashDocs = bipesDoDia;
+                var bipesDoDia = []; res.forEach(doc => bipesDoDia.push(doc.data()));
+                cacheDashData = dataInput; cacheDashDocs = bipesDoDia;
                 processarDashboardDiario(bipesDoDia);
                 document.getElementById('load-dashboard').style.display = 'none';
                 document.getElementById('conteudo-dashboard-diario').style.display = 'block';
@@ -681,49 +638,36 @@
 
         function processarDashboardDiario(bipes) {
             var tot = { sep: 0, conf: 0, carr: 0, rec: 0, sepc: 0, ent: 0 };
-            var colabs = {};
-            var reqsUnicasApoio = new Set(), reqsUnicasCentral = new Set();
-
+            var colabs = {}; var reqsUnicasApoio = new Set(), reqsUnicasCentral = new Set();
             bipes.forEach(b => {
                 var n = b.nome || "DESCONHECIDO"; var s = b.status || "";
                 if (!colabs[n]) colabs[n] = { sep:0, conf:0, carr:0, rec:0, sepc:0, ent:0, tot:0 };
-
                 if (s.includes("Separado (Central)")) { tot.sepc++; colabs[n].sepc++; colabs[n].tot++; } 
                 else if (s.includes("Separado (Apoio)") || s === "Separado") { tot.sep++; colabs[n].sep++; colabs[n].tot++; } 
                 else if (s.includes("Conferido")) { tot.conf++; colabs[n].conf++; colabs[n].tot++; } 
                 else if (s.includes("Carregado")) { tot.carr++; colabs[n].carr++; colabs[n].tot++; } 
                 else if (s.includes("Recebido")) { tot.rec++; colabs[n].rec++; colabs[n].tot++; } 
                 else if (s.includes("Entregue")) { tot.ent++; colabs[n].ent++; colabs[n].tot++; }
-
                 if (s.includes("Central") && s.includes("Separado")) reqsUnicasCentral.add(b.requisicao);
                 else if (s.includes("Apoio") || s === "Separado" || s.includes("Conferido") || s.includes("Carregado")) reqsUnicasApoio.add(b.requisicao);
             });
-
             document.getElementById('kpi-req-apoio-dia').innerText = reqsUnicasApoio.size;
             document.getElementById('kpi-req-central-dia').innerText = reqsUnicasCentral.size;
             document.getElementById('kpi-req-total-dia').innerText = reqsUnicasApoio.size + reqsUnicasCentral.size;
-
             document.getElementById('tot-separado').innerText = tot.sep; document.getElementById('tot-conferido').innerText = tot.conf; document.getElementById('tot-carregado').innerText = tot.carr;
             document.getElementById('tot-recebido').innerText = tot.rec; document.getElementById('tot-sep-central').innerText = tot.sepc; document.getElementById('tot-entregue').innerText = tot.ent;
             document.getElementById('soma-apoio-dia').innerText = tot.sep + tot.conf + tot.carr; document.getElementById('soma-central-dia').innerText = tot.rec + tot.sepc + tot.ent;
-
             var tb = document.getElementById('corpo-tabela-dia'); tb.innerHTML = '';
-            var nomes = Object.keys(colabs).sort();
-            var mx = { sep:0, conf:0, carr:0, rec:0, sepc:0, ent:0, tot:0 };
+            var nomes = Object.keys(colabs).sort(); var mx = { sep:0, conf:0, carr:0, rec:0, sepc:0, ent:0, tot:0 };
             nomes.forEach(n => { let d = colabs[n]; if(d.sep > mx.sep) mx.sep = d.sep; if(d.conf > mx.conf) mx.conf = d.conf; if(d.carr > mx.carr) mx.carr = d.carr; if(d.rec > mx.rec) mx.rec = d.rec; if(d.sepc > mx.sepc) mx.sepc = d.sepc; if(d.ent > mx.ent) mx.ent = d.ent; if(d.tot > mx.tot) mx.tot = d.tot; });
-
             function fmt(val, mval, tot=false) { var c = tot ? "col-total ":""; if(val>0 && val===mval) return `<td class="${c}celula-destaque">${val} 🏆</td>`; return `<td class="${c}">${val}</td>`; }
-
             nomes.forEach(n => { var d = colabs[n]; tb.innerHTML += `<tr><td class="col-nome">${n}</td>${fmt(d.sep,mx.sep)}${fmt(d.conf,mx.conf)}${fmt(d.carr,mx.carr)}${fmt(d.rec,mx.rec)}${fmt(d.sepc,mx.sepc)}${fmt(d.ent,mx.ent)}${fmt(d.tot,mx.tot,true)}</tr>`; });
             var stg = tot.sep + tot.conf + tot.carr + tot.rec + tot.sepc + tot.ent;
             tb.innerHTML += `<tr style="background:#e8f6f3; border-top:2px solid #bdc3c7;"><td class="col-nome" style="color:#16a085;">TOTAL GERAL</td><td><b>${tot.sep}</b></td><td><b>${tot.conf}</b></td><td><b>${tot.carr}</b></td><td><b>${tot.rec}</b></td><td><b>${tot.sepc}</b></td><td><b>${tot.ent}</b></td><td style="color:#c0392b;font-size:16px;"><b>${stg}</b></td></tr>`;
-
             renderBarraDash('grafico-separado-dia', colabs, 'sep', '#f39c12'); renderBarraDash('grafico-conferido-dia', colabs, 'conf', '#8e44ad'); renderBarraDash('grafico-carregado-dia', colabs, 'carr', '#d35400');
             renderBarraDash('grafico-recebido-dia', colabs, 'rec', '#3498db'); renderBarraDash('grafico-sep-central-dia', colabs, 'sepc', '#16a085'); renderBarraDash('grafico-entregue-dia', colabs, 'ent', '#2ecc71');
-
             if(gDashSetores) gDashSetores.destroy();
             gDashSetores = new Chart(document.getElementById('chartSetores-dia').getContext('2d'), { type: 'doughnut', data: { labels: ['Apoio', 'Central'], datasets: [{ data: [tot.sep+tot.conf+tot.carr, tot.rec+tot.sepc+tot.ent], backgroundColor: ['#e67e22', '#2980b9'] }] }, options: { layout: { padding: { top: 10 } }, responsive: true, maintainAspectRatio: false, plugins: { datalabels: { color: '#fff', font: { weight: 'bold', size: 14 }, formatter: function(v, ctx) { var t = ctx.chart.data.datasets[0].data.reduce((a,b)=>a+b,0); return t > 0 ? Math.round((v/t)*100)+'%' : ''; } }, legend: { position: 'right' } } } });
-
             var dataCargaDia = processarCargaDeTrabalhoPorHora(bipes);
             if(gDashCarga) gDashCarga.destroy();
             gDashCarga = new Chart(document.getElementById('chartCarga-dia').getContext('2d'), { type: 'line', data: dataCargaDia, options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { display: false }, legend: { position: 'bottom', labels: { boxWidth: 12 } } }, scales: { y: { beginAtZero: true } } } });
@@ -735,29 +679,19 @@
             gDashBarras[id] = new Chart(ctx, { type: 'bar', data: { labels: filt.map(i=>i.n), datasets: [{ data: filt.map(i=>i.v), backgroundColor: cor, borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, layout: { padding: { top: 30 } }, plugins: { title: { display: false }, legend: { display: false }, datalabels: { color: '#2c3e50', anchor: 'end', align: 'top', font: {weight:'bold', size:11}, offset: 2 } }, scales: { y: { display: false }, x: { grid: {display:false} } } } });
         }
 
-        // ==========================================
-        // RELATÓRIOS MENSAIS E BI
-        // ==========================================
         function formataSLA(ms) { if(ms<0||!ms||isNaN(ms)) return "N/D"; let mm = Math.floor(ms/60000), h = Math.floor(mm/60), m = mm%60; return (h>0 ? h+"h " : "") + (m<10?"0"+m:m)+"m"; }
 
         function carregarDadosBI(abaDestino) {
             var inputId = abaDestino === 'processos' ? 'filtroMesProcessos' : (abaDestino === 'produtividade' ? 'filtroMesProdutividade' : 'filtroMesTempos');
             var inputMes = document.getElementById(inputId).value;
             if(!inputMes) return alert("Selecione um mês.");
-
-            if (cacheBI.mes === inputMes && cacheBI.documentos.length > 0) { 
-                renderizarBI(abaDestino, cacheBI.documentos); 
-                return; 
-            }
-
+            if (cacheBI.mes === inputMes && cacheBI.documentos.length > 0) { renderizarBI(abaDestino, cacheBI.documentos); return; }
             document.getElementById('load-' + abaDestino).style.display = 'inline-block';
             var y = parseInt(inputMes.split('-')[0]), m = parseInt(inputMes.split('-')[1]) - 1;
             var tInicio = new Date(y, m, 1, 0, 0, 0).getTime(), tFim = new Date(y, m+1, 0, 23, 59, 59).getTime();
-
             bancoDeDados.collection("checkpoints_logistica").where("ordem", ">=", tInicio).where("ordem", "<=", tFim).get().then(res => {
                 cacheBI.mes = inputMes; cacheBI.documentos = []; res.forEach(doc => cacheBI.documentos.push(doc.data()));
-                renderizarBI(abaDestino, cacheBI.documentos);
-                document.getElementById('load-' + abaDestino).style.display = 'none';
+                renderizarBI(abaDestino, cacheBI.documentos); document.getElementById('load-' + abaDestino).style.display = 'none';
             }).catch(erro => { alert("Erro ao buscar dados."); document.getElementById('load-' + abaDestino).style.display = 'none'; });
         }
 
@@ -767,42 +701,29 @@
             if (abaDestino === 'tempos') processarAbaTempos(bipesDoMes);
         }
 
-        // (2.1) Processos Logísticos
         function processarAbaProcessos(bipes) {
             var tot = { sep: 0, conf: 0, carr: 0, rec: 0, sepc: 0, ent: 0 };
             var reqsUnicasApoio = new Set(), reqsUnicasCentral = new Set();
-
             bipes.forEach(ev => {
                 var s = ev.status || "";
-                if (s.includes("Separado (Central)")) tot.sepc++;
-                else if (s.includes("Separado (Apoio)") || s === "Separado") tot.sep++;
-                else if (s.includes("Conferido")) tot.conf++;
-                else if (s.includes("Carregado")) tot.carr++;
-                else if (s.includes("Recebido")) tot.rec++;
-                else if (s.includes("Entregue")) tot.ent++;
-
+                if (s.includes("Separado (Central)")) tot.sepc++; else if (s.includes("Separado (Apoio)") || s === "Separado") tot.sep++;
+                else if (s.includes("Conferido")) tot.conf++; else if (s.includes("Carregado")) tot.carr++;
+                else if (s.includes("Recebido")) tot.rec++; else if (s.includes("Entregue")) tot.ent++;
                 if (s.includes("Central") && s.includes("Separado")) reqsUnicasCentral.add(ev.requisicao);
                 else if (s.includes("Apoio") || s === "Separado" || s.includes("Conferido") || s.includes("Carregado")) reqsUnicasApoio.add(ev.requisicao);
             });
-
-            document.getElementById('kpi-req-apoio').innerText = reqsUnicasApoio.size;
-            document.getElementById('kpi-req-central').innerText = reqsUnicasCentral.size;
+            document.getElementById('kpi-req-apoio').innerText = reqsUnicasApoio.size; document.getElementById('kpi-req-central').innerText = reqsUnicasCentral.size;
             document.getElementById('kpi-req-total').innerText = reqsUnicasApoio.size + reqsUnicasCentral.size;
-
             if(gEtapas) gEtapas.destroy();
             gEtapas = new Chart(document.getElementById('chartEtapas').getContext('2d'), { type: 'bar', data: { labels: ['Sep. Apoio', 'Conferido', 'Carregado', 'Recebido', 'Sep. Central', 'Entregue'], datasets: [{ data: [tot.sep, tot.conf, tot.carr, tot.rec, tot.sepc, tot.ent], backgroundColor: ['#f39c12', '#8e44ad', '#d35400', '#3498db', '#16a085', '#2ecc71'], borderRadius: 4 }] }, options: { layout: { padding: { top: 30 } }, responsive: true, maintainAspectRatio: false, plugins: { datalabels: { color: '#2c3e50', anchor: 'end', align: 'top', font: { weight: 'bold', size: 14 } }, legend: { display: false } } } });
-
             if(gSetores) gSetores.destroy();
             gSetores = new Chart(document.getElementById('chartSetores').getContext('2d'), { type: 'doughnut', data: { labels: ['Apoio', 'Central'], datasets: [{ data: [tot.sep+tot.conf+tot.carr, tot.rec+tot.sepc+tot.ent], backgroundColor: ['#e67e22', '#2980b9'] }] }, options: { layout: { padding: { top: 10 } }, responsive: true, maintainAspectRatio: false, plugins: { datalabels: { color: '#fff', font: { weight: 'bold', size: 16 }, formatter: function(value, ctx) { var t = ctx.chart.data.datasets[0].data.reduce((a,b)=>a+b,0); return t > 0 ? Math.round((value/t)*100)+'%' : ''; } }, legend: { position: 'bottom', labels: { font: { size: 14 } } } } } });
-
             var dataCargaMes = processarCargaDeTrabalhoPorHora(bipes);
             if(gCargaMensal) gCargaMensal.destroy();
             gCargaMensal = new Chart(document.getElementById('chartCargaMensal').getContext('2d'), { type: 'line', data: dataCargaMes, options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { display: false }, legend: { position: 'bottom', labels: { boxWidth: 12 } } }, scales: { y: { beginAtZero: true } } } });
-
             document.getElementById('conteudo-processos').style.display = 'block';
         }
 
-        // (2.2) Produtividade 
         function processarAbaProdutividade(bipes) {
             var colabs = {}, totGer = { sep:0, conf:0, carr:0, rec:0, sepc:0, ent:0, tot:0 };
             bipes.forEach(ev => {
@@ -815,29 +736,22 @@
                 else if(s.includes("Recebido")) { colabs[n].rec++; colabs[n].tot++; totGer.rec++; totGer.tot++;}
                 else if(s.includes("Entregue")) { colabs[n].ent++; colabs[n].tot++; totGer.ent++; totGer.tot++;}
             });
-
             var nomes = Object.keys(colabs).sort(), max = { sep:0, conf:0, carr:0, rec:0, sepc:0, ent:0, tot:0 };
             nomes.forEach(n => { let d = colabs[n]; if(d.sep > max.sep) max.sep = d.sep; if(d.conf > max.conf) max.conf = d.conf; if(d.carr > max.carr) max.carr = d.carr; if(d.rec > max.rec) max.rec = d.rec; if(d.sepc > max.sepc) max.sepc = d.sepc; if(d.ent > max.ent) max.ent = d.ent; if(d.tot > max.tot) max.tot = d.tot; });
-
             function fmt(valor, maxVal, isTotal = false) { var cls = isTotal ? "col-total " : ""; if (valor > 0 && valor === maxVal) return `<td class="${cls}celula-destaque">${valor} 🏆</td>`; return `<td class="${cls}">${valor}</td>`; }
-
             var tb = document.getElementById('corpo-tabela-prod'), dadosGrafico = []; tb.innerHTML = '';
             nomes.forEach(n => { let d = colabs[n]; dadosGrafico.push({ nome: n.split(" ")[0], valor: d.tot }); tb.innerHTML += `<tr><td class="col-nome">${n}</td>` + fmt(d.sep, max.sep) + fmt(d.conf, max.conf) + fmt(d.carr, max.carr) + fmt(d.rec, max.rec) + fmt(d.sepc, max.sepc) + fmt(d.ent, max.ent) + fmt(d.tot, max.tot, true) + `</tr>`; });
             tb.innerHTML += `<tr style="background:#e8f6f3; border-top:2px solid #bdc3c7;"><td class="col-nome" style="color:#16a085;">TOTAL</td><td><b>${totGer.sep}</b></td><td><b>${totGer.conf}</b></td><td><b>${totGer.carr}</b></td><td><b>${totGer.rec}</b></td><td><b>${totGer.sepc}</b></td><td><b>${totGer.ent}</b></td><td style="color:#c0392b;font-size:16px;"><b>${totGer.tot}</b></td></tr>`;
-
             dadosGrafico.sort((a,b) => b.valor - a.valor);
             if(gProd) gProd.destroy();
             gProd = new Chart(document.getElementById('chartProdutividade').getContext('2d'), { type: 'bar', data: { labels: dadosGrafico.map(i=>i.nome), datasets: [{ data: dadosGrafico.map(i=>i.valor), backgroundColor: '#9b59b6', borderRadius: 4 }] }, options: { layout: { padding: { top: 30 } }, responsive: true, maintainAspectRatio: false, plugins: { datalabels: { color: '#2c3e50', anchor: 'end', align: 'top', offset: 4, font: { weight: 'bold', size: 12 }, display: function(ctx) { return ctx.dataset.data[ctx.dataIndex] > 0; } }, legend: { display: false } } } });
-
             document.getElementById('conteudo-produtividade').style.display = 'block';
         }
 
-        // (2.3) TEMPOS E SLAs
         function processarAbaTempos(bipes) {
             var inputMes = document.getElementById('filtroMesTempos').value;
             var diasNoMes = new Date(parseInt(inputMes.split('-')[0]), parseInt(inputMes.split('-')[1]), 0).getDate();
             var mapasDeTempo = {}, reqsEntregues = new Set();
-
             bipes.forEach(ev => {
                 if(ev.status.includes("Entregue")) {
                     reqsEntregues.add(ev.requisicao);
@@ -845,9 +759,7 @@
                     if(ev.ordem > mapasDeTempo[ev.requisicao].fim) mapasDeTempo[ev.requisicao].fim = ev.ordem;
                 }
             });
-
             if (reqsEntregues.size === 0) { alert("Não há requisições entregues neste mês para calcular SLAs."); return; }
-
             var buscas = Array.from(reqsEntregues).map(req => {
                 return bancoDeDados.collection("checkpoints_logistica").where("requisicao", "==", req).get().then(res => {
                     var pri = null;
@@ -867,7 +779,6 @@
                     }
                 });
             });
-
             Promise.all(buscas).then(() => { cacheSLATempos = mapasDeTempo; desenharInterfaceSLA(diasNoMes); document.getElementById('conteudo-tempos').style.display = 'block'; });
         }
 
@@ -875,7 +786,6 @@
             var slaDia = {}; for(let i=1; i<=diasNoMes; i++) slaDia[i] = { laS:0, laQ:0, lcS:0, lcQ:0, g1S:0, g1Q:0, g2S:0, g2Q:0, g3S:0, g3Q:0, g4S:0, g4Q:0, g5S:0, g5Q:0 };
             var totApoio = { s:0, q:0 }, totCentral = { s:0, q:0 }, totG1 = {s:0,q:0}, totG2 = {s:0,q:0}, totG3 = {s:0,q:0}, totG4 = {s:0,q:0}, totG5 = {s:0,q:0}; 
             var rankingSLA = [];
-
             for(let r in cacheSLATempos) {
                 let m = cacheSLATempos[r], f = m.fim, d = m.diaEntrega, t = m.timeline;
                 if(m.inicio && f >= m.inicio && m.origem) {
@@ -892,18 +802,15 @@
                     if(t.sc && f && f >= t.sc) { let dif = f-t.sc; slaDia[d].g5S += dif; slaDia[d].g5Q++; totG5.s += dif; totG5.q++; }
                 }
             }
-
             document.getElementById('sla-tot-apoio').innerText = totApoio.q > 0 ? formataSLA(totApoio.s / totApoio.q) : "N/D"; document.getElementById('sla-tot-central').innerText = totCentral.q > 0 ? formataSLA(totCentral.s / totCentral.q) : "N/D";
             document.getElementById('gap-sep-conf').innerText = totG1.q > 0 ? formataSLA(totG1.s / totG1.q) : "N/D"; document.getElementById('gap-conf-carr').innerText = totG2.q > 0 ? formataSLA(totG2.s / totG2.q) : "N/D";
             document.getElementById('gap-carr-rec').innerText = totG3.q > 0 ? formataSLA(totG3.s / totG3.q) : "N/D"; document.getElementById('gap-rec-ent').innerText = totG4.q > 0 ? formataSLA(totG4.s / totG4.q) : "N/D";
             document.getElementById('gap-sepc-ent').innerText = totG5.q > 0 ? formataSLA(totG5.s / totG5.q) : "N/D";
-
             rankingSLA.sort((a,b) => a.tempo - b.tempo);
             var htmlFast = "", htmlSlow = "";
             for(var i=0; i<5 && i<rankingSLA.length; i++) htmlFast += `<li><span class="req">${rankingSLA[i].req} <span class="setor">${rankingSLA[i].setor}</span></span> <span style="color:#27ae60; font-weight:bold;">${formataSLA(rankingSLA[i].tempo)}</span></li>`;
             for(var i=0; i<5 && i<rankingSLA.length; i++) { var item = rankingSLA[rankingSLA.length - 1 - i]; htmlSlow += `<li><span class="req">${item.req} <span class="setor">${item.setor}</span></span> <span style="color:#c0392b; font-weight:bold;">${formataSLA(item.tempo)}</span></li>`; }
             document.getElementById('lista-top-fast').innerHTML = htmlFast || "<li>Sem dados suficientes.</li>"; document.getElementById('lista-top-slow').innerHTML = htmlSlow || "<li>Sem dados suficientes.</li>";
-
             var lbl = [], dLa=[], dLc=[], dG1=[], dG2=[], dG3=[], dG4=[], dG5=[];
             for(let i=1; i<=diasNoMes; i++) {
                 lbl.push("Dia "+i); let s = slaDia[i];
@@ -912,7 +819,6 @@
                 dG3.push(s.g3Q>0 ? ((s.g3S/s.g3Q)/3600000).toFixed(2) : null); dG4.push(s.g4Q>0 ? ((s.g4S/s.g4Q)/3600000).toFixed(2) : null);
                 dG5.push(s.g5Q>0 ? ((s.g5S/s.g5Q)/3600000).toFixed(2) : null);
             }
-
             var pTt = { callbacks: { label: c => c.dataset.label+': '+Math.floor(c.parsed.y)+'h '+Math.round((c.parsed.y-Math.floor(c.parsed.y))*60)+'m' }};
             if(gSLA) gSLA.destroy(); gSLA = new Chart(document.getElementById('chartSLA').getContext('2d'), { type: 'line', data: { labels: lbl, datasets: [{ label: 'Apoio', data: dLa, borderColor: '#f39c12', backgroundColor: '#f39c12', tension: 0.3 }, { label: 'Central', data: dLc, borderColor: '#1abc9c', backgroundColor: '#1abc9c', tension: 0.3 }] }, options: { responsive: true, maintainAspectRatio: false, spanGaps: true, plugins: { datalabels: { display: false }, tooltip: pTt } } });
             if(gMicro) gMicro.destroy(); gMicro = new Chart(document.getElementById('chartMicroSLA').getContext('2d'), { type: 'line', data: { labels: lbl, datasets: [{ label: 'Sep ➔ Conf', data: dG1, borderColor: '#f1c40f', backgroundColor: '#f1c40f' }, { label: 'Conf ➔ Transp', data: dG2, borderColor: '#e67e22', backgroundColor: '#e67e22' }, { label: 'Transp ➔ Rec', data: dG3, borderColor: '#d35400', backgroundColor: '#d35400', borderDash:[5,5] }, { label: 'Rec ➔ Entrega', data: dG4, borderColor: '#3498db', backgroundColor: '#3498db' }, { label: 'SepC ➔ Entrega', data: dG5, borderColor: '#9b59b6', backgroundColor: '#9b59b6' }] }, options: { responsive: true, maintainAspectRatio: false, spanGaps: true, plugins: { datalabels: { display: false }, tooltip: pTt } } });
@@ -927,9 +833,6 @@
             document.getElementById('sla-setor-resultado').innerText = qtd > 0 ? formataSLA(somaMs/qtd) : "N/D"; document.getElementById('box-sla-setor').style.display = 'flex';
         }
 
-        // ==========================================
-        // RAIO-X E AUDITORIA...
-        // ==========================================
         function buscarCicloVida() {
             var req = document.getElementById('inputRaioX').value.trim();
             if(req.length !== 7) return alert("Digite 7 dígitos.");
@@ -999,26 +902,92 @@
         }
 
         var idDel = null, dadosDel = null;
-        function abrirModalExclusao(id, str) { idDel = id; dadosDel = JSON.parse(decodeURIComponent(str)); document.getElementById('texto-resumo-exclusao').innerHTML = `Excluir a Requisição <b>${dadosDel.requisicao} (Vol ${dadosDel.volume||1})</b> da etapa <b>${dadosDel.status}</b>?`; document.getElementById('input-justificativa').value = ""; document.getElementById('modal-justificativa').style.display = 'block'; }
-        function fecharModal() { document.getElementById('modal-justificativa').style.display = 'none'; }
-        function processarExclusaoFinal() {
-            var just = document.getElementById('input-justificativa').value.trim(); if(just.length < 5) return alert("Justificativa obrigatória.");
-            bancoDeDados.collection("historico_exclusoes").add({ idRegistroApagado: idDel, requisicao: dadosDel.requisicao, status: dadosDel.status, volume: dadosDel.volume||1, operadorOriginal: dadosDel.nome, excluidoPorNome: gestorLogado.nome, justificativa: just, dataExclusao: new Date().toLocaleString('pt-BR'), ordemExclusao: new Date().getTime() })
-            .then(() => bancoDeDados.collection("checkpoints_logistica").doc(idDel).delete()).then(() => { fecharModal(); var linhaApagada = document.getElementById('row-' + idDel); if(linhaApagada) linhaApagada.remove(); });
+        
+        function abrirModalExclusao(id, str) { 
+            idDel = id; 
+            dadosDel = JSON.parse(decodeURIComponent(str)); 
+            document.getElementById('texto-resumo-exclusao').innerHTML = `Excluir a Requisição <b>${dadosDel.requisicao} (Vol ${dadosDel.volume||1})</b> da etapa <b>${dadosDel.status}</b>?`; 
+            document.getElementById('input-justificativa').value = ""; 
+            document.getElementById('modal-justificativa').style.display = 'block'; 
         }
+        
+        function fecharModal() { 
+            document.getElementById('modal-justificativa').style.display = 'none'; 
+        }
+        
+        // =========================================================================
+        // MOTOR DE EXCLUSÃO CORRIGIDO (DUAL WRITE REVERT) - VERSÃO 1.17.2
+        // =========================================================================
+        function processarExclusaoFinal() {
+            var just = document.getElementById('input-justificativa').value.trim(); 
+            if(just.length < 5) return alert("Justificativa obrigatória.");
+            
+            // Trava o botão para não dar duplo clique
+            var btnConfirmar = document.querySelector('#modal-justificativa button:last-child');
+            btnConfirmar.innerText = "Excluindo...";
+            btnConfirmar.disabled = true;
 
-        var pagAud = 1, curPriAud = null, curUltAud = null;
-        function carregarAuditoria(dir) {
-            var lim = parseInt(document.getElementById('limiteAuditoria').value) || 10; document.getElementById('load-auditoria').style.display = 'inline-block';
-            var tb = document.getElementById('corpo-auditoria'); var query = bancoDeDados.collection("historico_exclusoes").orderBy("ordemExclusao", "desc");
-            if (dir === 1 && curUltAud) { query = query.startAfter(curUltAud).limit(lim); pagAud++; } else if (dir === -1 && curPriAud) { query = query.endBefore(curPriAud).limitToLast(lim); pagAud--; } else { query = query.limit(lim); pagAud = 1; }
-            query.get().then(res => {
-                document.getElementById('load-auditoria').style.display = 'none';
-                if(res.empty) { if(dir===0) tb.innerHTML = '<tr><td colspan="6">Vazio.</td></tr>'; if(dir===1) pagAud--; if(dir===-1) pagAud++; } else {
-                    tb.innerHTML = ''; curPriAud = res.docs[0]; curUltAud = res.docs[res.docs.length-1];
-                    res.forEach(d => { var l = d.data(); tb.innerHTML += `<tr><td>${l.dataExclusao}</td><td><b>${l.requisicao}</b> (Vol ${l.volume})</td><td>${l.status}</td><td>${l.operadorOriginal}</td><td style="color:#e74c3c;">${l.excluidoPorNome}</td><td><i>"${l.justificativa}"</i></td></tr>`; });
+            var req = dadosDel.requisicao;
+            var volTarget = dadosDel.volume || 1;
+            var idDocEstadoAtual = req + "-" + volTarget;
+
+            // 1. Grava no Histórico de Exclusões
+            bancoDeDados.collection("historico_exclusoes").add({ 
+                idRegistroApagado: idDel, 
+                requisicao: req, 
+                status: dadosDel.status, 
+                volume: volTarget, 
+                operadorOriginal: dadosDel.nome, 
+                excluidoPorNome: gestorLogado.nome, 
+                justificativa: just, 
+                dataExclusao: new Date().toLocaleString('pt-BR'), 
+                ordemExclusao: new Date().getTime() 
+            })
+            // 2. Apaga o erro da Tabela de Logística Geral
+            .then(() => bancoDeDados.collection("checkpoints_logistica").doc(idDel).delete())
+            .then(() => { 
+                // 3. Busca TODO o histórico dessa requisição para achar a etapa anterior
+                return bancoDeDados.collection("checkpoints_logistica").where("requisicao", "==", req).get();
+            })
+            .then((resultado) => {
+                var eventoAnterior = null;
+                
+                // Filtra em JavaScript para não precisar de novos índices no Firebase
+                resultado.forEach(doc => {
+                    var ev = doc.data();
+                    var evVol = ev.volume || 1;
+                    
+                    if (evVol == volTarget) {
+                        // Encontra o último evento válido (com maior timestamp de ordem)
+                        if (!eventoAnterior || ev.ordem > eventoAnterior.ordem) {
+                            eventoAnterior = ev;
+                        }
+                    }
+                });
+
+                // 4. Reescreve o "Estado Atual" com o bipe anterior (se existir), ou apaga tudo se era o único bipe
+                if (eventoAnterior) {
+                    return bancoDeDados.collection("caixas_estado_atual").doc(idDocEstadoAtual).set(eventoAnterior);
+                } else {
+                    return bancoDeDados.collection("caixas_estado_atual").doc(idDocEstadoAtual).delete();
                 }
-                document.getElementById('info-pag-aud').innerText = "Pág " + pagAud; document.getElementById('btn-ant-aud').disabled = (pagAud <= 1); document.getElementById('btn-prox-aud').disabled = (res.docs.length < lim);
+            })
+            .then(() => { 
+                fecharModal(); 
+                var linhaApagada = document.getElementById('row-' + idDel); 
+                if(linhaApagada) linhaApagada.remove(); 
+                
+                // Restaura o botão
+                btnConfirmar.innerText = "Confirmar Exclusão";
+                btnConfirmar.disabled = false;
+                
+                alert("✅ Excluído! O Kanban e o bloqueio do operador foram corrigidos.");
+            })
+            .catch(erro => { 
+                console.error(erro); 
+                alert("Erro ao excluir o registro."); 
+                btnConfirmar.innerText = "Confirmar Exclusão";
+                btnConfirmar.disabled = false;
             });
         }
     </script>
