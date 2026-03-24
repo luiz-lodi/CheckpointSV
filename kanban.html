@@ -16,22 +16,31 @@
         h1 { text-align: center; color: #2c3e50; margin-bottom: 5px; }
         .subtitulo { text-align: center; color: #7f8c8d; margin-bottom: 20px; }
         
-        /* BARRA DE FERRAMENTAS UNIFICADA - CENTRALIZADA */
+        /* BARRA DE FERRAMENTAS UNIFICADA - CENTRALIZADA E ORDENADA */
         .header-ferramentas { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 30px; margin-bottom: 20px; }
         
         .filtro-data { display: flex; align-items: center; gap: 10px; }
         .filtro-data label { font-weight: bold; color: #2c3e50; }
         .filtro-data input[type="date"] { padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 15px; }
         .btn-filtrar { background-color: #2c3e50; color: white; border: none; padding: 9px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        .btn-filtrar:hover { background-color: #2980b9; }
+        .btn-filtrar:hover { background-color: #1a252f; }
 
         .filtros-fluxo { display: flex; gap: 5px; background: #ecf0f1; padding: 5px 10px; border-radius: 30px; border: 1px solid #bdc3c7;}
         .btn-fluxo { background-color: transparent; color: #7f8c8d; border: none; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-weight: bold; transition: 0.2s; font-size: 13px;}
         .btn-fluxo:hover { color: #2c3e50; }
         .btn-fluxo.ativo { background-color: #2c3e50; color: white; }
 
+        /* GRUPO DE MINI-BADGES */
+        .badges-container { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+        
         .badge-total { background-color: #2c3e50; color: white; padding: 8px 15px; border-radius: 30px; font-size: 13px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1);}
         .badge-total span { color: #f1c40f; font-size: 16px; margin-left: 5px; }
+
+        .badge-pendencia { background-color: #c0392b; color: white; padding: 8px 15px; border-radius: 30px; font-size: 13px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1);}
+        .badge-pendencia span { color: #fadbd8; font-size: 16px; margin-left: 5px; }
+
+        .badge-alerta { background-color: #e67e22; color: white; padding: 8px 15px; border-radius: 30px; font-size: 13px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1);}
+        .badge-alerta span { color: #fdebd0; font-size: 16px; margin-left: 5px; }
 
         .kanban-board {
             display: flex;
@@ -80,7 +89,10 @@
         
         .contador { font-size: 12px; background: #fff; padding: 2px 8px; border-radius: 10px; margin-left: 5px; color: #333;}
 
-        /* ALERTA DE SLA PROATIVO (+3 Horas) */
+        /* ESTILOS ESPECIAIS DE CARTÃO */
+        .cartao-entregue { background-color: #eafaf1 !important; border-left-color: #2ecc71 !important; }
+        .cartao-atrasado-dia { background-color: #fadbd8 !important; border-left-color: #c0392b !important; border-right: 2px solid #c0392b; }
+        
         .alerta-sla { background-color: #ffeaa7 !important; border-left-color: #d35400 !important; }
         .alerta-icone { float: right; font-size: 16px; animation: pulseSla 2s infinite; }
         @keyframes pulseSla { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
@@ -104,7 +116,6 @@
     <div class="subtitulo">Acompanhamento de requisições e volumes em Tempo Real</div>
 
     <div class="header-ferramentas">
-
         <div class="filtro-data">
             <label for="filtroData">Data:</label>
             <input type="date" id="filtroData">
@@ -117,8 +128,11 @@
             <button class="btn-fluxo" onclick="filtrarFluxo('CENTRAL', this)">🏥 Fluxo Central</button>
         </div>
         
-        <div class="badge-total">Volumes Exibidos: <span id="total-volumes-tela">0</span></div>
-
+        <div class="badges-container">
+            <div class="badge-total">Volumes: <span id="total-volumes-tela">0</span></div>
+            <div class="badge-pendencia" title="Requisições de dias anteriores">Pendências: <span id="total-pendencias-tela">0</span></div>
+            <div class="badge-alerta" title="Requisições há mais de 3 horas na mesma etapa">Alertas: <span id="total-alertas-tela">0</span></div>
+        </div>
     </div>
 
     <div class="kanban-board">
@@ -155,17 +169,12 @@
 
     <script>
         // CONTROLE OFICIAL DE VERSÃO E ASSINATURA 🚀
-        const APP_VERSION = "1.18.2";
-        const APP_DATE = "23/03/2026";
+        const APP_VERSION = "1.19.1";
+        const APP_DATE = "24/03/2026";
         
         document.getElementById('display-versao').innerText = `Versão: ${APP_VERSION} (${APP_DATE})`;
-        
-        // Easter Egg no Console F12
-        console.log(`%c🚀 Checkpoint HSVP Kanban | Versão ${APP_VERSION} | UI Centralizada e Ordenada`, "color: #f1c40f; font-size: 14px; font-weight: bold;");
+        console.log(`%c🚀 Checkpoint HSVP Kanban | Versão ${APP_VERSION} | Badges Estendidas, Cores Entregue & Ordenação Fix`, "color: #f1c40f; font-size: 14px; font-weight: bold;");
 
-        // ==========================================
-        // CONFIGURAÇÃO DO FIREBASE
-        // ==========================================
         var firebaseConfig = {
             apiKey: "AIzaSyDHUlqzRw_vSyp9livOvQ0rjBYT9l_yofs",
             authDomain: "checkpoint-pedidos.firebaseapp.com",
@@ -180,7 +189,9 @@
         firebase.analytics();
         var bancoDeDados = firebase.firestore();
 
-        var ouvinteNuvem = null; 
+        var ouvintesNuvem = []; 
+        var estadoGlobalKanban = new Map();
+        var renderTimer;
 
         window.onload = function() {
             var hoje = new Date();
@@ -191,110 +202,142 @@
             document.getElementById('filtroData').value = ano + '-' + mes + '-' + dia;
             carregarKanbanTempoReal();
             
-            // Ativa o radar do SLA para rodar a cada 60 segundos e atualizar a tela vivo
             setInterval(verificarSLAsAoVivo, 60000);
         };
 
         // ==========================================
-        // ATUALIZAÇÃO DINÂMICA DA BADGE (Soma Visual)
+        // ATUALIZAÇÃO DINÂMICA DE TODOS OS BADGES
         // ==========================================
         function atualizarTotalVisivel() {
             var total = 0;
+            var pendencias = 0;
+            var alertas = 0;
             var colunas = document.querySelectorAll('.coluna');
             
             colunas.forEach(function(coluna) {
-                // Soma apenas se a coluna não estiver oculta
                 if (window.getComputedStyle(coluna).display !== 'none') {
+                    // Soma volumes totais
                     var valorColuna = parseInt(coluna.querySelector('.contador').innerText) || 0;
                     total += valorColuna;
+
+                    // Conta os status especiais apenas nas colunas visíveis
+                    var cartoes = coluna.querySelectorAll('.cartao');
+                    cartoes.forEach(function(c) {
+                        if (c.classList.contains('cartao-atrasado-dia')) pendencias++;
+                        if (c.classList.contains('alerta-sla')) alertas++;
+                    });
                 }
             });
             
             document.getElementById('total-volumes-tela').innerText = total;
+            document.getElementById('total-pendencias-tela').innerText = pendencias;
+            document.getElementById('total-alertas-tela').innerText = alertas;
         }
 
-        // ==========================================
-        // FILTROS DE FLUXO (Custo Zero)
-        // ==========================================
         function filtrarFluxo(fluxo, btn) {
-            // Estilização do Botão Ativo
             document.querySelectorAll('.btn-fluxo').forEach(b => b.classList.remove('ativo'));
             btn.classList.add('ativo');
 
-            // Oculta/Mostra Colunas via CSS
             document.getElementById('col-separado').style.display = (fluxo === 'CENTRAL') ? 'none' : 'block';
             document.getElementById('col-conferido').style.display = (fluxo === 'CENTRAL') ? 'none' : 'block';
             document.getElementById('col-sep-central').style.display = (fluxo === 'APOIO') ? 'none' : 'block';
 
-            // Re-calcula o total da tela imediatamente
             atualizarTotalVisivel();
         }
 
         // ==========================================
-        // MOTOR DO KANBAN
+        // MOTOR DE UNIÃO: BUSCA DUPLA NO FIRESTORE
         // ==========================================
         function carregarKanbanTempoReal() {
             var dataInput = document.getElementById('filtroData').value;
             if (!dataInput) { alert("Por favor, selecione uma data!"); return; }
 
-            if (ouvinteNuvem !== null) { ouvinteNuvem(); }
+            ouvintesNuvem.forEach(unsub => unsub());
+            ouvintesNuvem = [];
+            estadoGlobalKanban.clear();
 
             var dataEscolhida = new Date(dataInput + "T00:00:00"); 
             var inicioDoDia = dataEscolhida.getTime();
             var fimDoDia = inicioDoDia + (24 * 60 * 60 * 1000) - 1;
 
-            ouvinteNuvem = bancoDeDados.collection("caixas_estado_atual")
+            var statusPendentes = [
+                "Separado", "Separado (Apoio)", "Separado (Central)", 
+                "Conferido", "Conferido (Apoio)", 
+                "Carregado", "Carregado (Transporte)", 
+                "Recebido", "Recebido (Central)"
+            ];
+
+            function processarMudancas(snapshot) {
+                snapshot.docChanges().forEach(function(change) {
+                    var docId = change.doc.id;
+                    if (change.type === "removed") {
+                        estadoGlobalKanban.delete(docId);
+                    } else {
+                        estadoGlobalKanban.set(docId, change.doc.data());
+                    }
+                });
+
+                clearTimeout(renderTimer);
+                renderTimer = setTimeout(function() {
+                    renderizarKanbanDaMemoria(inicioDoDia);
+                }, 50);
+            }
+
+            var ouvinte1 = bancoDeDados.collection("caixas_estado_atual")
+                .where("status", "in", statusPendentes)
+                .onSnapshot(processarMudancas, function(erro) { console.error("Erro Busca 1: ", erro); });
+
+            var ouvinte2 = bancoDeDados.collection("caixas_estado_atual")
                 .where("ordem", ">=", inicioDoDia)
                 .where("ordem", "<=", fimDoDia)
-                .orderBy("ordem", "asc")
-                .onSnapshot(function(resultado) {
-                    
-                    limparColunas();
-                    var contagens = { separado: 0, conferido: 0, carregado: 0, recebido: 0, sepCentral: 0, entregue: 0 };
+                .onSnapshot(processarMudancas, function(erro) { console.error("Erro Busca 2: ", erro); });
 
-                    resultado.forEach(function(documento) {
-                        var dados = documento.data();
-                        var status = dados.status || "";
-                        var cartaoHTML = criarCartao(dados);
+            ouvintesNuvem.push(ouvinte1, ouvinte2);
+        }
 
-                        if (status.indexOf("Separado (Central)") !== -1) {
-                            document.querySelector('#col-sep-central .lista-cartoes').innerHTML += cartaoHTML;
-                            contagens.sepCentral++;
-                        } else if (status.indexOf("Separado (Apoio)") !== -1 || status === "Separado") {
-                            document.querySelector('#col-separado .lista-cartoes').innerHTML += cartaoHTML;
-                            contagens.separado++;
-                        } else if (status.indexOf("Conferido") !== -1) {
-                            document.querySelector('#col-conferido .lista-cartoes').innerHTML += cartaoHTML;
-                            contagens.conferido++;
-                        } else if (status.indexOf("Carregado") !== -1) {
-                            document.querySelector('#col-carregado .lista-cartoes').innerHTML += cartaoHTML;
-                            contagens.carregado++;
-                        } else if (status.indexOf("Recebido") !== -1) {
-                            document.querySelector('#col-recebido .lista-cartoes').innerHTML += cartaoHTML;
-                            contagens.recebido++;
-                        } else if (status.indexOf("Entregue") !== -1) {
-                            document.querySelector('#col-entregue .lista-cartoes').innerHTML += cartaoHTML;
-                            contagens.entregue++;
-                        }
-                    });
+        function renderizarKanbanDaMemoria(inicioDoDia) {
+            limparColunas();
+            var contagens = { separado: 0, conferido: 0, carregado: 0, recebido: 0, sepCentral: 0, entregue: 0 };
 
-                    // Atualiza contadores das colunas
-                    document.getElementById('count-separado').innerText = contagens.separado;
-                    document.getElementById('count-conferido').innerText = contagens.conferido;
-                    document.getElementById('count-carregado').innerText = contagens.carregado;
-                    document.getElementById('count-recebido').innerText = contagens.recebido;
-                    document.getElementById('count-sep-central').innerText = contagens.sepCentral;
-                    document.getElementById('count-entregue').innerText = contagens.entregue;
+            var bipesOrdenados = Array.from(estadoGlobalKanban.values());
+            bipesOrdenados.sort(function(a, b) { return a.ordem - b.ordem; });
 
-                    // Atualiza a badge totalizadora considerando os filtros ativos
-                    atualizarTotalVisivel();
+            bipesOrdenados.forEach(function(dados) {
+                var status = dados.status || "";
+                var cartaoHTML = criarCartao(dados, inicioDoDia);
 
-                    // Imediatamente pinta as caixas que já estão atrasadas na hora de desenhar a tela
-                    verificarSLAsAoVivo();
+                if (status.indexOf("Separado (Central)") !== -1) {
+                    document.querySelector('#col-sep-central .lista-cartoes').innerHTML += cartaoHTML;
+                    contagens.sepCentral++;
+                } else if (status.indexOf("Separado (Apoio)") !== -1 || status === "Separado") {
+                    document.querySelector('#col-separado .lista-cartoes').innerHTML += cartaoHTML;
+                    contagens.separado++;
+                } else if (status.indexOf("Conferido") !== -1) {
+                    document.querySelector('#col-conferido .lista-cartoes').innerHTML += cartaoHTML;
+                    contagens.conferido++;
+                } else if (status.indexOf("Carregado") !== -1) {
+                    document.querySelector('#col-carregado .lista-cartoes').innerHTML += cartaoHTML;
+                    contagens.carregado++;
+                } else if (status.indexOf("Recebido") !== -1) {
+                    document.querySelector('#col-recebido .lista-cartoes').innerHTML += cartaoHTML;
+                    contagens.recebido++;
+                } else if (status.indexOf("Entregue") !== -1) {
+                    if (dados.ordem >= inicioDoDia) {
+                        document.querySelector('#col-entregue .lista-cartoes').innerHTML += cartaoHTML;
+                        contagens.entregue++;
+                    }
+                }
+            });
 
-                }, function(erro) {
-                    console.error("Erro no Kanban Tempo Real: ", erro);
-                });
+            document.getElementById('count-separado').innerText = contagens.separado;
+            document.getElementById('count-conferido').innerText = contagens.conferido;
+            document.getElementById('count-carregado').innerText = contagens.carregado;
+            document.getElementById('count-recebido').innerText = contagens.recebido;
+            document.getElementById('count-sep-central').innerText = contagens.sepCentral;
+            document.getElementById('count-entregue').innerText = contagens.entregue;
+
+            // Dispara a checagem de SLAs e atualiza os badges logos após pintar a tela
+            verificarSLAsAoVivo();
         }
 
         function limparColunas() {
@@ -302,46 +345,52 @@
             for (var i = 0; i < listas.length; i++) { listas[i].innerHTML = ''; }
         }
 
-        function criarCartao(dados) {
+        function criarCartao(dados, inicioDoDia) {
             var infoExtra = "";
             var status = dados.status || "";
             
-            if(status.indexOf("Entregue") !== -1) {
+            var isEntregue = status.indexOf("Entregue") !== -1;
+            if(isEntregue) {
                 infoExtra = "<br>📍 " + status;
             }
             
             var textoVolume = dados.volume ? ' <span class="volume-badge">(Vol ' + dados.volume + ')</span>' : "";
 
-            return '<div class="cartao" data-ordem="' + dados.ordem + '" data-status="' + status + '">' +
+            // MOTOR DE CORES E AVISOS
+            var isAtrasadoDiasAnteriores = dados.ordem < inicioDoDia && !isEntregue;
+            var classeAdicional = "";
+            
+            if (isAtrasadoDiasAnteriores) {
+                classeAdicional = " cartao-atrasado-dia";
+            } else if (isEntregue) {
+                classeAdicional = " cartao-entregue"; // Fundo verde suave para concluídos
+            }
+            
+            var avisoAtraso = isAtrasadoDiasAnteriores ? "<div style='color:#c0392b; font-size:11px; font-weight:bold; margin-bottom:5px;'>⚠️ Pendência de dia anterior</div>" : "";
+
+            return '<div class="cartao' + classeAdicional + '" data-ordem="' + dados.ordem + '" data-status="' + status + '">' +
+                        avisoAtraso +
                         '<div class="cartao-titulo"><strong>Req:</strong> ' + dados.requisicao + textoVolume + '</div>' +
                         '👤 ' + dados.nome + infoExtra +
                         '<span>🕒 ' + dados.data + '</span>' +
                    '</div>';
         }
 
-        // ==========================================
-        // MOTOR DE SLA PROATIVO (O Radar Laranja)
-        // ==========================================
         function verificarSLAsAoVivo() {
             var cartoesNaTela = document.querySelectorAll('.cartao');
             var horaAtualMs = new Date().getTime();
-            var limiteSlaMs = 3 * 60 * 60 * 1000; // 3 Horas em Milissegundos
+            var limiteSlaMs = 3 * 60 * 60 * 1000; 
 
             cartoesNaTela.forEach(function(cartao) {
                 var status = cartao.getAttribute('data-status');
                 
-                // Ignora o SLA se a caixa já foi entregue
                 if (status.indexOf("Entregue") === -1) {
                     var horaEntrouNaEtapa = parseInt(cartao.getAttribute('data-ordem'));
                     
-                    // Se o tempo que a caixa está na etapa ultrapassou o limite
                     if ((horaAtualMs - horaEntrouNaEtapa) > limiteSlaMs) {
-                        
-                        // Pinta de Laranja
-                        if (!cartao.classList.contains('alerta-sla')) {
+                        if (!cartao.classList.contains('alerta-sla') && !cartao.classList.contains('cartao-atrasado-dia')) {
                             cartao.classList.add('alerta-sla');
                             
-                            // Adiciona o ícone de aviso se ainda não tiver
                             var divTitulo = cartao.querySelector('.cartao-titulo');
                             if (!divTitulo.querySelector('.alerta-icone')) {
                                 divTitulo.innerHTML += "<span class='alerta-icone' title='Mais de 3h aguardando nesta etapa'>⚠️</span>";
@@ -350,6 +399,9 @@
                     }
                 }
             });
+
+            // Atualiza os contadores de badge sempre que o SLA for validado
+            atualizarTotalVisivel();
         }
     </script>
 </body>
