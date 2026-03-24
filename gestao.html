@@ -460,8 +460,8 @@
 
     <script>
         // CONTROLE OFICIAL DE VERSÃO E ASSINATURA 🚀
-        const APP_VERSION = "1.17.2";
-        const APP_DATE = "23/03/2026";
+        const APP_VERSION = "1.18.0";
+        const APP_DATE = "24/03/2026";
         
         document.getElementById('display-versao').innerText = `Versão: ${APP_VERSION} (${APP_DATE})`;
 
@@ -861,8 +861,82 @@
 
                 volumesOrdem.forEach(vol => {
                     var bipes = bipesPorVolume[vol]; bipes.sort((a, b) => a.ordem - b.ordem);
-                    var isApoio = bipes.some(b => b.status.includes("Apoio") || b.status === "Separado" || b.status.includes("Conferido") || b.status.includes("Carregado") || b.status.includes("Recebido"));
-                    var fluxoIdeal = isApoio ? [ { nome: "Separado (Apoio)", filtros: ["Separado (Apoio)", "Separado"] }, { nome: "Conferido (Apoio)", filtros: ["Conferido"] }, { nome: "Carregado (Transporte)", filtros: ["Carregado"] }, { nome: "Recebido (Central)", filtros: ["Recebido"] }, { nome: "Entregue", filtros: ["Entregue"] } ] : [ { nome: "Separado (Central)", filtros: ["Separado (Central)"] }, { nome: "Entregue", filtros: ["Entregue"] } ];
+                    
+                    // INTELIGÊNCIA DE ROTAS (Detecta o DNA da caixa dinamicamente)
+                    var originatedAtCentral = bipes.some(b => b.status.includes("Separado (Central)"));
+                    var originatedAtApoio = bipes.some(b => b.status === "Separado" || b.status.includes("Separado (Apoio)"));
+                    var fluxoIdeal = [];
+
+                    if (bipes.some(b => b.status.includes("CAF"))) {
+                        if (bipes.some(b => b.status.includes("Recebido (CAF)"))) {
+                            // ROTA A: Transferência para a CAF
+                            if (originatedAtCentral) {
+                                fluxoIdeal = [
+                                    { nome: "Separado (Central)", filtros: ["Separado (Central)"] },
+                                    { nome: "Carregado", filtros: ["Carregado", "Carregado (Central)"] },
+                                    { nome: "Recebido (CAF)", filtros: ["Recebido (CAF)"] },
+                                    { nome: "Entregue (CAF)", filtros: ["Entregue (CAF)"] }
+                                ];
+                            } else {
+                                fluxoIdeal = [
+                                    { nome: "Separado (Apoio)", filtros: ["Separado (Apoio)", "Separado"] },
+                                    { nome: "Conferido (Apoio)", filtros: ["Conferido", "Conferido (Apoio)"] },
+                                    { nome: "Carregado (Transporte)", filtros: ["Carregado", "Carregado (Transporte)"] },
+                                    { nome: "Recebido (CAF)", filtros: ["Recebido (CAF)"] },
+                                    { nome: "Entregue (CAF)", filtros: ["Entregue (CAF)"] }
+                                ];
+                            }
+                        } else {
+                            // ROTA B: Fluxo Direto CAF
+                            fluxoIdeal = [
+                                { nome: "Separado (CAF)", filtros: ["Separado (CAF)"] },
+                                { nome: "Conferido (CAF)", filtros: ["Conferido (CAF)"] },
+                                { nome: "Entregue (CAF)", filtros: ["Entregue (CAF)"] }
+                            ];
+                        }
+                    } else if (bipes.some(b => b.status.includes("Uruguai"))) {
+                        if (bipes.some(b => b.status.includes("Recebido (Central Uruguai)"))) {
+                            // ROTA C: Transferência para o Uruguai
+                            if (originatedAtCentral) {
+                                fluxoIdeal = [
+                                    { nome: "Separado (Central)", filtros: ["Separado (Central)"] },
+                                    { nome: "Carregado", filtros: ["Carregado", "Carregado (Central)"] },
+                                    { nome: "Recebido (Uruguai)", filtros: ["Recebido (Central Uruguai)"] },
+                                    { nome: "Entregue (Uruguai)", filtros: ["Entregue (Central Uruguai)"] }
+                                ];
+                            } else {
+                                fluxoIdeal = [
+                                    { nome: "Separado (Apoio)", filtros: ["Separado (Apoio)", "Separado"] },
+                                    { nome: "Conferido (Apoio)", filtros: ["Conferido", "Conferido (Apoio)"] },
+                                    { nome: "Carregado (Transporte)", filtros: ["Carregado", "Carregado (Transporte)"] },
+                                    { nome: "Recebido (Uruguai)", filtros: ["Recebido (Central Uruguai)"] },
+                                    { nome: "Entregue (Uruguai)", filtros: ["Entregue (Central Uruguai)"] }
+                                ];
+                            }
+                        } else {
+                            // ROTA D: Fluxo Direto Uruguai
+                            fluxoIdeal = [
+                                { nome: "Separado (Uruguai)", filtros: ["Separado (Central Uruguai)"] },
+                                { nome: "Entregue (Uruguai)", filtros: ["Entregue (Central Uruguai)"] }
+                            ];
+                        }
+                    } else {
+                        // ROTA E: Fluxo Padrão Antigo (Apoio -> Central ou Central Direto)
+                        if (originatedAtApoio || bipes.some(b => b.status.includes("Carregado") || b.status.includes("Recebido"))) {
+                            fluxoIdeal = [
+                                { nome: "Separado (Apoio)", filtros: ["Separado (Apoio)", "Separado"] },
+                                { nome: "Conferido (Apoio)", filtros: ["Conferido"] },
+                                { nome: "Carregado (Transporte)", filtros: ["Carregado"] },
+                                { nome: "Recebido (Central)", filtros: ["Recebido", "Recebido (Central)"] },
+                                { nome: "Entregue", filtros: ["Entregue"] }
+                            ];
+                        } else {
+                            fluxoIdeal = [
+                                { nome: "Separado (Central)", filtros: ["Separado (Central)"] },
+                                { nome: "Entregue", filtros: ["Entregue"] }
+                            ];
+                        }
+                    }
 
                     var htmlVolume = `<div style="min-width:320px; background:#fff; padding:15px; border:2px solid #bdc3c7; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.05);"><h4 style="text-align:center; color:#d35400; margin-top:0; border-bottom:2px solid #eee; padding-bottom:10px;">Volume ${vol}</h4>`;
                     var ultimaOrdemValida = null; var primeiraOrdem = bipes[0].ordem; var ultimaOrdem = bipes[bipes.length-1].ordem; var temEntrega = bipes.some(b => b.status.includes("Entregue"));
