@@ -48,11 +48,12 @@
         #tela-lote { display: none; }
 
         .lista-lote-interna { max-height: 250px; overflow-y: auto; margin-top: 15px; border-top: 2px solid #eee; padding-top: 15px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
-        .registro-lote { background: #ecf0f1; padding: 10px; border-radius: 6px; font-size: 16px; border-left: 4px solid #8e44ad; width: 45%; text-align: center; box-sizing: border-box; font-weight: bold; color: #2c3e50;}
+        .registro-lote { background: #ecf0f1; padding: 10px; border-radius: 6px; font-size: 16px; border-left: 4px solid #8e44ad; width: 45%; text-align: center; box-sizing: border-box; font-weight: bold; color: #2c3e50; position: relative;}
         .registro-lote strong { display: block; color: #2c3e50; font-size: 18px; margin-bottom: 3px; }
         .registro-lote span { color: #8e44ad; font-size: 14px; font-weight: bold; display: block; }
         
-        /* NOVO: ANIMAÇÃO DE DESTAQUE PASSO 1 */
+        .btn-excluir-lote { position: absolute; top: -8px; right: -8px; background: #e74c3c; color: white; border-radius: 50%; width: 24px; height: 24px; font-size: 12px; line-height: 24px; cursor: pointer; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+
         @keyframes piscarAviso {
             0% { opacity: 1; transform: scale(1); }
             50% { opacity: 0.7; transform: scale(1.02); color: #c0392b; border-color: #c0392b;}
@@ -82,7 +83,6 @@
         }
         #toast-sucesso.mostrar { visibility: visible; opacity: 1; }
 
-        /* ESTILO DO RODAPÉ (VERSÃO) */
         .app-footer { margin-top: 40px; text-align: center; padding: 20px; color: #7f8c8d; font-size: 11px; border-top: 1px solid #eee; }
         .app-footer strong { color: #34495e; }
     </style>
@@ -167,11 +167,11 @@
 
     <script>
         // CONTROLE OFICIAL DE VERSÃO E ASSINATURA 🚀
-        const APP_VERSION = "3.32.0";
-        const APP_DATE = "20/03/2026";
+        const APP_VERSION = "3.33.0";
+        const APP_DATE = "24/03/2026";
         
         document.getElementById('display-versao').innerText = `Versão: ${APP_VERSION} (${APP_DATE})`;
-        console.log(`%c🚀 Checkpoint HSVP Operador | Versão ${APP_VERSION} | Operação Custo Zero (Dual Write)`, "color: #3498db; font-size: 14px; font-weight: bold;");
+        console.log(`%c🚀 Checkpoint HSVP Operador | Versão ${APP_VERSION} | Trava de Volumes & Exclusão Lote`, "color: #3498db; font-size: 14px; font-weight: bold;");
 
         var firebaseConfig = {
             apiKey: "AIzaSyDHUlqzRw_vSyp9livOvQ0rjBYT9l_yofs",
@@ -216,6 +216,7 @@
         var tipoLoteAtual = ""; 
         var filaBipagemLote = [];
         var isModoLoteSyncing = false;
+        var errosNoLote = 0; // NOVA VARIÁVEL PARA RASTREAR ERROS
         
         var memoriaVolumes = {}; 
         
@@ -348,8 +349,37 @@
         });
 
         // ==========================================
-        // MODO LOTE: BLINDADO CONTRA CÓDIGOS SUJOS
+        // MODO LOTE: BLINDADO CONTRA CÓDIGOS SUJOS + EXCLUSÃO
         // ==========================================
+        function renderizarFilaLote() {
+            var divLote = document.getElementById('listaRegistrosLote');
+            divLote.innerHTML = '';
+            document.getElementById('qtd-lote').innerText = filaBipagemLote.length;
+
+            var html = '';
+            // Renderiza de trás para frente para o mais recente ficar no topo
+            for (var i = filaBipagemLote.length - 1; i >= 0; i--) {
+                var req = filaBipagemLote[i];
+                var countVols = 0;
+                
+                // Calcula o número do volume contando as ocorrências até este índice
+                for(var j = 0; j <= i; j++) {
+                    if(filaBipagemLote[j] === req) countVols++;
+                }
+
+                html += '<div class="registro-lote">' +
+                        '<div class="btn-excluir-lote" onclick="removerDoLote(' + i + ')" title="Excluir">✖</div>' +
+                        '<strong>' + req + '</strong><span>Vol ' + countVols + '</span></div>';
+            }
+            divLote.innerHTML = html;
+        }
+
+        window.removerDoLote = function(indexParaRemover) {
+            filaBipagemLote.splice(indexParaRemover, 1);
+            renderizarFilaLote();
+            document.getElementById('idReqLote').focus();
+        };
+
         document.getElementById('idReqLote').addEventListener('input', function(e) {
             var apenasNumeros = this.value.replace(/\D/g, ''); 
 
@@ -367,18 +397,10 @@
                 this.value = ''; 
                 this.focus();
                 
-                var countVolsLote = 0;
-                for (var i = 0; i < filaBipagemLote.length; i++) {
-                    if (filaBipagemLote[i] === req) countVolsLote++;
-                }
-                var volLocal = countVolsLote + 1;
-
                 filaBipagemLote.push(req); 
                 dispararAlertaSucessoLote(); 
-
-                document.getElementById('qtd-lote').innerText = filaBipagemLote.length;
-                var divLote = document.getElementById('listaRegistrosLote');
-                divLote.innerHTML = '<div class="registro-lote"><strong>' + req + '</strong><span>Vol ' + volLocal + '</span></div>' + divLote.innerHTML;
+                
+                renderizarFilaLote();
             }
         });
 
@@ -387,6 +409,7 @@
             if (isModoLoteSyncing) return;
             
             isModoLoteSyncing = true;
+            errosNoLote = 0; // Zera o contador a cada lote novo
             document.getElementById('idReqLote').disabled = true;
             document.getElementById('btn-sync-lote').style.backgroundColor = "#f39c12";
             
@@ -399,7 +422,14 @@
                 document.getElementById('idReqLote').disabled = false;
                 document.getElementById('btn-sync-lote').innerText = "☁️ SINCRONIZAR LOTE";
                 document.getElementById('btn-sync-lote').style.backgroundColor = "#27ae60";
-                mostrarToast("☁️ Lote Sincronizado!");
+                
+                // DECIDE A COR DA MENSAGEM FINAL AQUI
+                if (errosNoLote > 0) {
+                    mostrarToast("⚠️ Lote concluído com " + errosNoLote + " erro(s)!");
+                } else {
+                    mostrarToast("☁️ Lote Sincronizado!");
+                }
+                
                 fecharModoLote();
                 return;
             }
@@ -417,7 +447,6 @@
         // ==========================================
         // MODO UNITÁRIO: REVISADO PARA "LOCAL PRIMEIRO"
         // ==========================================
-        
         document.getElementById('idLocalQR').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
@@ -499,7 +528,7 @@
                 
                 var limiteMemoria = new Date().getTime() - (90 * 24 * 60 * 60 * 1000); 
                 
-                // MUDANÇA ARQUITETURAL: Lê do Estado Atual, poupando a cota do Firebase!
+                // Lê do Estado Atual, poupando a cota do Firebase
                 bancoDeDados.collection("caixas_estado_atual")
                     .where("requisicao", "==", requisicao)
                     .get()
@@ -511,7 +540,6 @@
                             if (ev.ordem >= limiteMemoria) {
                                 var v = parseInt(ev.volume) || 1;
                                 var p = getPesoDaEtapa(ev.status);
-                                // Como só lemos o estado atual, este já é o peso máximo
                                 dadosReq.pesoMaxVol[v] = p;
                                 if (!dadosReq.statusVol[ev.status]) dadosReq.statusVol[ev.status] = [];
                                 dadosReq.statusVol[ev.status].push(v);
@@ -539,16 +567,41 @@
             var proximoVolume = 1; 
             while (volumesOcupados.includes(proximoVolume)) proximoVolume++;
 
+            // Bloqueio de Retrocesso
             if (dadosReq.pesoMaxVol[proximoVolume] && dadosReq.pesoMaxVol[proximoVolume] > pesoNovoStatus) {
                 dispararAlertaErro();
                 mostrarToast("⛔ Retrocesso Bloqueado (" + requisicao + ")");
                 
                 if (!isModoLoteSyncing) {
                     alert("ATENÇÃO!\nO Volume " + proximoVolume + " da requisição " + requisicao + " já passou por uma etapa mais avançada.\nEsta caixa não retornará para o início do Kanban.");
+                } else {
+                    adicionarRegistroFalhaNaTela(requisicao, "Já existe em etapa avançada");
+                    errosNoLote++; // SOMA O ERRO AQUI
                 }
-                
                 if(callbackAposProcessar) callbackAposProcessar();
                 return; 
+            }
+
+            // Bloqueio de Volume Excedente
+            var maxVolExistente = 0;
+            for (var v in dadosReq.pesoMaxVol) {
+                if (parseInt(v) > maxVolExistente) maxVolExistente = parseInt(v);
+            }
+
+            if (pesoNovoStatus >= 3 && proximoVolume > maxVolExistente) {
+                dispararAlertaErro();
+                mostrarToast("⛔ Volume Excedente!");
+                
+                var msgErro = "Limite excedido! Apenas " + maxVolExistente + " volume(s) liberado(s).";
+                
+                if (!isModoLoteSyncing) {
+                    alert("ATENÇÃO!\nEsta requisição possui apenas " + maxVolExistente + " volume(s) registrado(s) nas etapas de Separação/Conferência.\nVocê não pode avançar o volume " + proximoVolume + ".");
+                } else {
+                    adicionarRegistroFalhaNaTela(requisicao, msgErro);
+                    errosNoLote++; // SOMA O ERRO AQUI
+                }
+                if(callbackAposProcessar) callbackAposProcessar();
+                return;
             }
 
             dadosReq.statusVol[statusFinal].push(proximoVolume);
@@ -558,17 +611,48 @@
 
             var matriculaSegura = document.getElementById('idMatricula').value;
             executarSalvamentoNuvem(requisicao, statusFinal, proximoVolume, matriculaSegura, nomeOperadorAtual, callbackAposProcessar);
-        }
+            } 
+        
+
+            // ============================================================
+            // NOVO: TRAVA MÁXIMA DE VOLUMES PARA CARREGAMENTO E ENTREGA
+            // ============================================================
+            var maxVolExistente = 0;
+            for (var v in dadosReq.pesoMaxVol) {
+                if (parseInt(v) > maxVolExistente) maxVolExistente = parseInt(v);
+            }
+
+            // Se o motorista ou recebedor (Peso 3+) tentar criar um volume que não existe
+            if (pesoNovoStatus >= 3 && proximoVolume > maxVolExistente) {
+                dispararAlertaErro();
+                mostrarToast("⛔ Volume Excedente!");
+                
+                var msgErro = "Limite excedido! Apenas " + maxVolExistente + " volume(s) liberado(s).";
+                
+                if (!isModoLoteSyncing) {
+                    alert("ATENÇÃO!\nEsta requisição possui apenas " + maxVolExistente + " volume(s) registrado(s) nas etapas de Separação/Conferência.\nVocê não pode avançar o volume " + proximoVolume + ".");
+                } else {
+                    adicionarRegistroFalhaNaTela(requisicao, msgErro);
+                }
+                if(callbackAposProcessar) callbackAposProcessar();
+                return;
+            }
+
+            dadosReq.statusVol[statusFinal].push(proximoVolume);
+            if (!dadosReq.pesoMaxVol[proximoVolume] || pesoNovoStatus > dadosReq.pesoMaxVol[proximoVolume]) {
+                dadosReq.pesoMaxVol[proximoVolume] = pesoNovoStatus;
+            }
+
+            var matriculaSegura = document.getElementById('idMatricula').value;
+            executarSalvamentoNuvem(requisicao, statusFinal, proximoVolume, matriculaSegura, nomeOperadorAtual, callbackAposProcessar);
 
         function executarSalvamentoNuvem(requisicao, statusFinal, volCalc, matricula, opNome, callbackAposProcessar) {
             var dataAtual = new Date();
             var novoEvento = { matricula: matricula, nome: opNome, requisicao: requisicao, status: statusFinal, volume: volCalc, data: dataAtual.toLocaleString('pt-BR'), ordem: dataAtual.getTime() };
             
             // GRAVAÇÃO DUPLA (DUAL WRITE)
-            // 1. Grava no Histórico Geral para Auditoria
             bancoDeDados.collection("checkpoints_logistica").add(novoEvento);
 
-            // 2. Grava (Sobrescreve) na coleção de Estado Atual usando "Req-Vol" como ID
             var idDocumentoAtual = requisicao + "-" + volCalc;
             bancoDeDados.collection("caixas_estado_atual").doc(idDocumentoAtual).set(novoEvento)
             .then(function() {
@@ -587,6 +671,20 @@
             var novoItem = document.createElement('div');
             novoItem.className = 'registro';
             novoItem.innerHTML = '<strong>Req:</strong> ' + evento.requisicao + ' <span style="color:#d35400; font-weight:bold;">(Vol ' + evento.volume + ')</span><br><strong>Status:</strong> ' + evento.status;
+            
+            if (divLista.firstChild) divLista.insertBefore(novoItem, divLista.firstChild); 
+            else divLista.appendChild(novoItem);
+        }
+
+        // NOVO: Adiciona registro de falha na tela principal se o lote bloquear
+        function adicionarRegistroFalhaNaTela(req, motivo) {
+            var divLista = document.getElementById('listaRegistros');
+            if (!divLista) return;
+            var novoItem = document.createElement('div');
+            novoItem.className = 'registro';
+            novoItem.style.borderLeftColor = '#e74c3c';
+            novoItem.style.backgroundColor = '#fadbd8';
+            novoItem.innerHTML = '<strong>Req:</strong> ' + req + ' <span style="color:#c0392b; font-weight:bold;">(BLOQUEADO)</span><br><strong style="color:#c0392b;">Motivo:</strong> ' + motivo;
             
             if (divLista.firstChild) divLista.insertBefore(novoItem, divLista.firstChild); 
             else divLista.appendChild(novoItem);
