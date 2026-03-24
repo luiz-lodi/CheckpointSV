@@ -39,8 +39,9 @@
         .badge-pendencia { background-color: #c0392b; color: white; padding: 8px 15px; border-radius: 30px; font-size: 13px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1);}
         .badge-pendencia span { color: #fadbd8; font-size: 16px; margin-left: 5px; }
 
-        .badge-alerta { background-color: #e67e22; color: white; padding: 8px 15px; border-radius: 30px; font-size: 13px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1);}
-        .badge-alerta span { color: #fdebd0; font-size: 16px; margin-left: 5px; }
+        /* Badge atualizado para Amarelo */
+        .badge-alerta { background-color: #f1c40f; color: #2c3e50; padding: 8px 15px; border-radius: 30px; font-size: 13px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1);}
+        .badge-alerta span { color: #2c3e50; font-size: 16px; margin-left: 5px; }
 
         .kanban-board {
             display: flex;
@@ -93,7 +94,8 @@
         .cartao-entregue { background-color: #eafaf1 !important; border-left-color: #2ecc71 !important; }
         .cartao-atrasado-dia { background-color: #fadbd8 !important; border-left-color: #c0392b !important; border-right: 2px solid #c0392b; }
         
-        .alerta-sla { background-color: #ffeaa7 !important; border-left-color: #d35400 !important; }
+        /* NOVO ALERTA AMARELO SLA > 3H */
+        .alerta-sla { background-color: #fff9c4 !important; border-left-color: #f1c40f !important; border-right: 2px solid #f1c40f; }
         .alerta-icone { float: right; font-size: 16px; animation: pulseSla 2s infinite; }
         @keyframes pulseSla { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
 
