@@ -167,11 +167,11 @@
 
     <script>
         // CONTROLE OFICIAL DE VERSÃO E ASSINATURA 🚀
-        const APP_VERSION = "3.33.1";
+        const APP_VERSION = "3.34.0";
         const APP_DATE = "24/03/2026";
         
         document.getElementById('display-versao').innerText = `Versão: ${APP_VERSION} (${APP_DATE})`;
-        console.log(`%c🚀 Checkpoint HSVP Operador | Versão ${APP_VERSION} | Trava de Volumes & Exclusão Lote`, "color: #3498db; font-size: 14px; font-weight: bold;");
+        console.log(`%c🚀 Checkpoint HSVP Operador | Versão ${APP_VERSION} | Novos Fluxos e Usuários`, "color: #3498db; font-size: 14px; font-weight: bold;");
 
         var firebaseConfig = {
             apiKey: "AIzaSyDHUlqzRw_vSyp9livOvQ0rjBYT9l_yofs",
@@ -220,18 +220,42 @@
         
         var memoriaVolumes = {}; 
         
+        // ==========================================
+        // DICIONÁRIO DE ETAPAS (QR CODES)
+        // ==========================================
         var dicionarioEtapas = {
-            "QR-SEP-CENTRAL": "Separado (Central)", "QR-SEP-APOIO": "Separado (Apoio)",
-            "QR-CONFERIDO": "Conferido (Apoio)", "QR-CARREGADO": "Carregado (Transporte)",
-            "QR-RECEBIDO": "Recebido (Central)"
+            "QR-SEP-CENTRAL": "Separado (Central)", 
+            "QR-SEP-APOIO": "Separado (Apoio)",
+            "QR-CONFERIDO": "Conferido (Apoio)", 
+            "QR-CARREGADO": "Carregado (Transporte)",
+            "QR-RECEBIDO": "Recebido (Central)",
+            
+            // Fluxo CAF
+            "QR-SEP-CAF": "Separado (CAF)",
+            "QR-CONFERIDO-CAF": "Conferido (CAF)",
+            "QR-RECEBIDO-CAF": "Recebido (CAF)",
+            "QR-ENTREGUE-CAF": "Entregue (CAF)",
+            
+            // Fluxo Almoxarifado Central Uruguai
+            "QR-SEP-CENTRAL-URUGUAI": "Separado (Central Uruguai)",
+            "QR-RECEBIDO-CENTRAL-URUGUAI": "Recebido (Central Uruguai)",
+            "QR-ENTREGUE-CENTRAL-URUGUAI": "Entregue (Central Uruguai)",
+            
+            // Fluxo Almoxarifado Central (Teixeira Soares) - Novo
+            "QR-CARREGADO-CENTRAL": "Carregado (Central)"
         };
 
+        // ==========================================
+        // LISTA DE COLABORADORES
+        // ==========================================
         var listaColaboradores = {
             "144006": "BRUNA LOURENCO", "1249": "BRUNA QUEVEDO", "168314": "CAIO MATHEUS", "167407": "ENI", 
             "1764": "GUILHERME", "163591": "HENZO", "167702": "JOAO GUSTAVO", "151357": "LUIZ HENRIQUE", 
             "54976": "MAURO", "500008": "OTÁVIO", "76988": "ROSELIA", "168297": "STEFANI", "168604": "ALESSANDRO", 
             "162513": "DANIEL", "166732": "ARMANDO", "168313": "ERICK", "104602": "EVANDRO", "164846": "FERNANDA", 
-            "147628": "GABRIEL", "292": "IDERALDO", "166913": "LUIS GUSTAVO", "167733": "RAFAEL", "139320": "RENAN"
+            "147628": "GABRIEL", "292": "IDERALDO", "166913": "LUIS GUSTAVO", "167733": "RAFAEL", "139320": "RENAN",
+            // Novos Colaboradores
+            "294": "GLAUCEMARA", "139100": "FELIPE", "1194": "BRENDA", "2411": "CLAUDIA"
         };
 
         window.onload = function() { document.getElementById('idMatricula').focus(); };
@@ -362,7 +386,6 @@
                 var req = filaBipagemLote[i];
                 var countVols = 0;
                 
-                // Calcula o número do volume contando as ocorrências até este índice
                 for(var j = 0; j <= i; j++) {
                     if(filaBipagemLote[j] === req) countVols++;
                 }
@@ -409,7 +432,7 @@
             if (isModoLoteSyncing) return;
             
             isModoLoteSyncing = true;
-            errosNoLote = 0; // Zera o contador a cada lote novo
+            errosNoLote = 0;
             document.getElementById('idReqLote').disabled = true;
             document.getElementById('btn-sync-lote').style.backgroundColor = "#f39c12";
             
@@ -423,7 +446,6 @@
                 document.getElementById('btn-sync-lote').innerText = "☁️ SINCRONIZAR LOTE";
                 document.getElementById('btn-sync-lote').style.backgroundColor = "#27ae60";
                 
-                // DECIDE A COR DA MENSAGEM FINAL AQUI
                 if (errosNoLote > 0) {
                     mostrarToast("⚠️ Lote concluído com " + errosNoLote + " erro(s)!");
                 } else {
@@ -442,7 +464,6 @@
                 processarProximoDaFilaLote(); 
             });
         }
-
 
         // ==========================================
         // MODO UNITÁRIO: REVISADO PARA "LOCAL PRIMEIRO"
@@ -566,7 +587,6 @@
             var proximoVolume = 1; 
             while (volumesOcupados.includes(proximoVolume)) proximoVolume++;
 
-            // Bloqueio de Retrocesso
             if (dadosReq.pesoMaxVol[proximoVolume] && dadosReq.pesoMaxVol[proximoVolume] > pesoNovoStatus) {
                 dispararAlertaErro();
                 mostrarToast("⛔ Retrocesso Bloqueado (" + requisicao + ")");
@@ -581,15 +601,11 @@
                 return; 
             }
 
-            // ============================================================
-            // NOVO: TRAVA MÁXIMA DE VOLUMES PARA CARREGAMENTO E ENTREGA
-            // ============================================================
             var maxVolExistente = 0;
             for (var v in dadosReq.pesoMaxVol) {
                 if (parseInt(v) > maxVolExistente) maxVolExistente = parseInt(v);
             }
 
-            // Se o motorista ou recebedor (Peso 3+) tentar criar um volume que não existe
             if (pesoNovoStatus >= 3 && proximoVolume > maxVolExistente) {
                 dispararAlertaErro();
                 mostrarToast("⛔ Volume Excedente!");
@@ -619,7 +635,6 @@
             var dataAtual = new Date();
             var novoEvento = { matricula: matricula, nome: opNome, requisicao: requisicao, status: statusFinal, volume: volCalc, data: dataAtual.toLocaleString('pt-BR'), ordem: dataAtual.getTime() };
             
-            // GRAVAÇÃO DUPLA (DUAL WRITE)
             bancoDeDados.collection("checkpoints_logistica").add(novoEvento);
 
             var idDocumentoAtual = requisicao + "-" + volCalc;
@@ -645,7 +660,6 @@
             else divLista.appendChild(novoItem);
         }
 
-        // NOVO: Adiciona registro de falha na tela principal se o lote bloquear
         function adicionarRegistroFalhaNaTela(req, motivo) {
             var divLista = document.getElementById('listaRegistros');
             if (!divLista) return;
