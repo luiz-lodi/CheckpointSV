@@ -463,8 +463,8 @@
 
     <script>
         // CONTROLE OFICIAL DE VERSÃO E ASSINATURA 🚀
-        const APP_VERSION = "1.18.2";
-        const APP_DATE = "24/03/2026";
+        const APP_VERSION = "1.18.3";
+        const APP_DATE = "25/03/2026";
         
         document.getElementById('display-versao').innerText = `Versão: ${APP_VERSION} (${APP_DATE})`;
 
@@ -1113,6 +1113,45 @@
                 btnConfirmar.disabled = false;
             });
         }
+
+        // =========================================================================
+        // MOTOR DE HISTÓRICO DE AUDITORIA
+        // =========================================================================
+        var pagAud = 1, curPriAud = null, curUltAud = null;
+        
+        function carregarAuditoria(dir) {
+            var lim = parseInt(document.getElementById('limiteAuditoria').value) || 10; 
+            document.getElementById('load-auditoria').style.display = 'inline-block';
+            var tb = document.getElementById('corpo-auditoria'); 
+            var query = bancoDeDados.collection("historico_exclusoes").orderBy("ordemExclusao", "desc");
+            
+            if (dir === 1 && curUltAud) { query = query.startAfter(curUltAud).limit(lim); pagAud++; } 
+            else if (dir === -1 && curPriAud) { query = query.endBefore(curPriAud).limitToLast(lim); pagAud--; } 
+            else { query = query.limit(lim); pagAud = 1; }
+            
+            query.get().then(res => {
+                document.getElementById('load-auditoria').style.display = 'none';
+                if(res.empty) { 
+                    if(dir===0) tb.innerHTML = '<tr><td colspan="6">Vazio.</td></tr>'; 
+                    if(dir===1) pagAud--; 
+                    if(dir===-1) pagAud++; 
+                } else {
+                    tb.innerHTML = ''; curPriAud = res.docs[0]; curUltAud = res.docs[res.docs.length-1];
+                    res.forEach(d => { 
+                        var l = d.data(); 
+                        tb.innerHTML += `<tr><td>${l.dataExclusao}</td><td><b>${l.requisicao}</b> (Vol ${l.volume||1})</td><td>${l.status}</td><td>${l.operadorOriginal}</td><td style="color:#e74c3c;">${l.excluidoPorNome}</td><td><i>"${l.justificativa}"</i></td></tr>`; 
+                    });
+                }
+                document.getElementById('info-pag-aud').innerText = "Pág " + pagAud; 
+                document.getElementById('btn-ant-aud').disabled = (pagAud <= 1); 
+                document.getElementById('btn-prox-aud').disabled = (res.docs.length < lim);
+            }).catch(erro => {
+                console.error("Erro ao carregar auditoria:", erro);
+                document.getElementById('load-auditoria').style.display = 'none';
+                alert("Erro ao carregar o histórico de exclusões.");
+            });
+        }
+        
     </script>
 </body>
 </html>
