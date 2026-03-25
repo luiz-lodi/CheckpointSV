@@ -160,7 +160,7 @@
                     <button class="menu-btn" onclick="toggleSubmenu('sub-auditoria', this)">🛡️ Auditoria Logística <span class="seta">▼</span></button>
                     <div id="sub-auditoria" class="submenu">
                         <button class="submenu-btn" onclick="mudarAbaFilha('aba-auditoria-raiox', this)">Ciclo de Vida</button>
-                        <button class="submenu-btn" onclick="mudarAbaFilha('aba-auditoria-exclusao', this)">Excluir Apontamentos</button>
+                        <button class="submenu-btn" onclick="mudarAbaFilha('aba-auditoria-exclusao', this)">Excluir Lançamentos</button>
                         <button class="submenu-btn" onclick="mudarAbaFilha('aba-auditoria-historico', this)">Histórico de Exclusões</button>
                     </div>
                 </div>
@@ -386,16 +386,19 @@
                     </div>
 
                     <div id="aba-auditoria-exclusao" class="secao-app">
-                        <h2 class="secao-titulo">Exclusão de Apontamentos</h2>
+                        <h2 class="secao-titulo">Exclusão de Lançamentos</h2>
                         <div class="filtro-container">
                             <label>Data:</label><input type="date" id="filtroDataLogistica">
+                            <label>Requisição (Opcional):</label>
+                            <input type="number" id="filtroReqLogistica" placeholder="Ex: 1234567" style="width: 120px;" onkeypress="if(event.key === 'Enter') carregarDadosLogistica(0)">
                             <label>Por pág:</label>
                             <select id="limiteLogistica" onchange="carregarDadosLogistica(0)">
                                 <option value="10" selected>10 itens</option>
                                 <option value="20">20 itens</option>
                                 <option value="50">50 itens</option>
+                                <option value="999">Todos</option>
                             </select>
-                            <button class="btn-acao" onclick="carregarDadosLogistica(0)">Buscar Apontamentos</button>
+                            <button class="btn-acao" onclick="carregarDadosLogistica(0)">Buscar Lançamentos</button>
                             <span class="loading" id="load-logistica">Buscando... ⏳</span>
                         </div>
                         <div class="tabela-wrapper">
@@ -404,7 +407,7 @@
                                 <tbody id="corpo-logistica"></tbody>
                             </table>
                         </div>
-                        <div class="paginacao">
+                        <div class="paginacao" id="paginacao-logistica">
                             <button id="btn-ant-log" onclick="carregarDadosLogistica(-1)">⬅️ Anterior</button>
                             <span id="info-pag-log">Página 1</span>
                             <button id="btn-prox-log" onclick="carregarDadosLogistica(1)">Próxima ➡️</button>
@@ -460,12 +463,12 @@
 
     <script>
         // CONTROLE OFICIAL DE VERSÃO E ASSINATURA 🚀
-        const APP_VERSION = "1.18.1";
+        const APP_VERSION = "1.18.2";
         const APP_DATE = "24/03/2026";
         
         document.getElementById('display-versao').innerText = `Versão: ${APP_VERSION} (${APP_DATE})`;
 
-        console.log(`%c🚀 Checkpoint HSVP Gestão | Criado por Luiz Henrique Link Lodi & Gemini | Versão ${APP_VERSION} | Fix Exclusão Dual Write`, "color: #3498db; font-size: 14px; font-weight: bold;");
+        console.log(`%c🚀 Checkpoint HSVP Gestão | Criado por Luiz Henrique Link Lodi & Gemini | Versão ${APP_VERSION} | Filtro de Requisição na Exclusão`, "color: #3498db; font-size: 14px; font-weight: bold;");
 
         Chart.register(ChartDataLabels);
 
@@ -963,18 +966,61 @@
         }
 
         var pagLog = 1, curPriLog = null, curUltLog = null;
+        
         function carregarDadosLogistica(dir) {
-            var lim = parseInt(document.getElementById('limiteLogistica').value) || 10; document.getElementById('load-logistica').style.display = 'inline-block';
-            var tb = document.getElementById('corpo-logistica'); var data = document.getElementById('filtroDataLogistica').value; var dInicio = new Date(data+"T00:00:00").getTime();
-            var query = bancoDeDados.collection("checkpoints_logistica").where("ordem", ">=", dInicio).where("ordem", "<=", dInicio+86399999).orderBy("ordem", "desc");
-            if (dir === 1 && curUltLog) { query = query.startAfter(curUltLog).limit(lim); pagLog++; } else if (dir === -1 && curPriLog) { query = query.endBefore(curPriLog).limitToLast(lim); pagLog--; } else { query = query.limit(lim); pagLog = 1; }
+            var lim = parseInt(document.getElementById('limiteLogistica').value) || 10; 
+            var reqFiltro = document.getElementById('filtroReqLogistica').value.trim();
+            document.getElementById('load-logistica').style.display = 'inline-block';
+            var tb = document.getElementById('corpo-logistica'); 
+            var data = document.getElementById('filtroDataLogistica').value; 
+            var dInicio = new Date(data+"T00:00:00").getTime();
+            
+            var query = bancoDeDados.collection("checkpoints_logistica")
+                .where("ordem", ">=", dInicio)
+                .where("ordem", "<=", dInicio+86399999)
+                .orderBy("ordem", "desc");
+
+            if (reqFiltro !== "") {
+                document.getElementById('paginacao-logistica').style.display = 'none';
+                query.get().then(res => {
+                    document.getElementById('load-logistica').style.display = 'none';
+                    tb.innerHTML = '';
+                    var achouAlgo = false;
+                    res.forEach(d => {
+                        var ev = d.data();
+                        if (ev.requisicao === reqFiltro) {
+                            achouAlgo = true;
+                            var hora = ev.data.split(" ")[1] || ev.data;
+                            var str = encodeURIComponent(JSON.stringify(ev)); 
+                            tb.innerHTML += `<tr id="row-${d.id}"><td>${hora}</td><td>${ev.nome}</td><td style="color:#2980b9;font-weight:bold;">${ev.requisicao}</td><td>Vol ${ev.volume||1}</td><td>${ev.status}</td><td><button class="btn-excluir" onclick="abrirModalExclusao('${d.id}', '${str}')">Excluir</button></td></tr>`;
+                        }
+                    });
+                    if (!achouAlgo) tb.innerHTML = `<tr><td colspan="6">Nenhum lançamento encontrado para a Requisição ${reqFiltro} nesta data.</td></tr>`;
+                }).catch(e => { alert("Erro na busca."); document.getElementById('load-logistica').style.display = 'none'; });
+                return;
+            }
+
+            document.getElementById('paginacao-logistica').style.display = 'flex';
+            if (dir === 1 && curUltLog) { query = query.startAfter(curUltLog).limit(lim); pagLog++; } 
+            else if (dir === -1 && curPriLog) { query = query.endBefore(curPriLog).limitToLast(lim); pagLog--; } 
+            else { query = query.limit(lim); pagLog = 1; }
+            
             query.get().then(res => {
                 document.getElementById('load-logistica').style.display = 'none';
-                if(res.empty) { if(dir===0) tb.innerHTML = '<tr><td colspan="6">Nenhum dado.</td></tr>'; if(dir===1) pagLog--; if(dir===-1) pagLog++; } else {
+                if(res.empty) { 
+                    if(dir===0) tb.innerHTML = '<tr><td colspan="6">Nenhum dado.</td></tr>'; 
+                    if(dir===1) pagLog--; 
+                    if(dir===-1) pagLog++; 
+                } else {
                     tb.innerHTML = ''; curPriLog = res.docs[0]; curUltLog = res.docs[res.docs.length-1];
-                    res.forEach(d => { var ev = d.data(), hora = ev.data.split(" ")[1] || ev.data, str = encodeURIComponent(JSON.stringify(ev)); tb.innerHTML += `<tr id="row-${d.id}"><td>${hora}</td><td>${ev.nome}</td><td style="color:#2980b9;font-weight:bold;">${ev.requisicao}</td><td>Vol ${ev.volume||1}</td><td>${ev.status}</td><td><button class="btn-excluir" onclick="abrirModalExclusao('${d.id}', '${str}')">Excluir</button></td></tr>`; });
+                    res.forEach(d => { 
+                        var ev = d.data(), hora = ev.data.split(" ")[1] || ev.data, str = encodeURIComponent(JSON.stringify(ev)); 
+                        tb.innerHTML += `<tr id="row-${d.id}"><td>${hora}</td><td>${ev.nome}</td><td style="color:#2980b9;font-weight:bold;">${ev.requisicao}</td><td>Vol ${ev.volume||1}</td><td>${ev.status}</td><td><button class="btn-excluir" onclick="abrirModalExclusao('${d.id}', '${str}')">Excluir</button></td></tr>`; 
+                    });
                 }
-                document.getElementById('info-pag-log').innerText = "Pág " + pagLog; document.getElementById('btn-ant-log').disabled = (pagLog <= 1); document.getElementById('btn-prox-log').disabled = (res.docs.length < lim);
+                document.getElementById('info-pag-log').innerText = "Pág " + pagLog; 
+                document.getElementById('btn-ant-log').disabled = (pagLog <= 1); 
+                document.getElementById('btn-prox-log').disabled = (res.docs.length < lim);
             });
         }
 
@@ -993,7 +1039,7 @@
         }
         
         // =========================================================================
-        // MOTOR DE EXCLUSÃO CORRIGIDO (DUAL WRITE REVERT) - VERSÃO 1.17.2
+        // MOTOR DE EXCLUSÃO CORRIGIDO (DUAL WRITE REVERT) - VERSÃO 1.18.2
         // =========================================================================
         function processarExclusaoFinal() {
             var just = document.getElementById('input-justificativa').value.trim(); 
@@ -1058,7 +1104,7 @@
                 btnConfirmar.innerText = "Confirmar Exclusão";
                 btnConfirmar.disabled = false;
                 
-                alert("✅ Excluído! O Kanban e o bloqueio do operador foram corrigidos.");
+                alert("✅ Registro excluído com sucesso!");
             })
             .catch(erro => { 
                 console.error(erro); 
