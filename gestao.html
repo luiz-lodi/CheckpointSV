@@ -343,6 +343,18 @@
                                 </div>
                             </div>
 
+                            <h3 style="color:#2c3e50; border-bottom:1px solid #eee; padding-bottom:5px; margin-top:30px;">🏆 Top 5: SLAs dos Setores com Mais Entregas</h3>
+                            <div class="dashboard-grid" style="margin-bottom: 30px;">
+                                <div class="chart-box" style="border-top: 4px solid #f39c12;">
+                                    <h3 style="margin-top:0; color:#d35400;">🏭 Fluxo Apoio</h3>
+                                    <ul id="lista-top-setores-apoio" class="ranking-list"></ul>
+                                </div>
+                                <div class="chart-box" style="border-top: 4px solid #1abc9c;">
+                                    <h3 style="margin-top:0; color:#16a085;">🏥 Fluxo Central</h3>
+                                    <ul id="lista-top-setores-central" class="ranking-list"></ul>
+                                </div>
+                            </div>
+
                             <h3 style="color:#2c3e50; border-bottom:1px solid #eee; padding-bottom:5px;">🏆 Top 5: Extremos de Lead Time (Entregas do Mês)</h3>
                             <div class="dashboard-grid" style="margin-bottom: 30px;">
                                 <div class="chart-box" style="border-top: 4px solid #2ecc71;">
@@ -361,11 +373,16 @@
                                 <input type="text" id="filtroSetorSLA" placeholder="Ex: UTI">
                                 <button class="btn-acao" style="background:#8e44ad;" onclick="calcularSLASetor()">Filtrar Setor</button>
                             </div>
-                            <div class="dashboard-grid" id="box-sla-setor" style="display:none;">
-                                <div class="card-kpi" style="border-left-color: #8e44ad;">
-                                    <h3 id="nome-setor-destaque">SLA - Setor</h3>
-                                    <div class="valor" id="sla-setor-resultado" style="color:#8e44ad;">--h --m</div>
-                                    <div style="font-size:12px; color:#7f8c8d; margin-top:5px;">Amostragem: <span id="amostra-setor">0</span> caixas entregues</div>
+                            <div class="dashboard-grid" id="box-sla-setor" style="display:none; margin-bottom: 25px;">
+                                <div class="card-kpi" style="border-left-color: #f39c12;">
+                                    <h3 id="nome-setor-apoio">Apoio ➔ Setor</h3>
+                                    <div class="valor" id="sla-setor-apoio" style="color:#d35400;">--h --m</div>
+                                    <div style="font-size:12px; color:#7f8c8d; margin-top:5px;">Amostragem: <span id="amostra-setor-apoio">0</span> caixas</div>
+                                </div>
+                                <div class="card-kpi" style="border-left-color: #1abc9c;">
+                                    <h3 id="nome-setor-central">Central ➔ Setor</h3>
+                                    <div class="valor" id="sla-setor-central" style="color:#16a085;">--h --m</div>
+                                    <div style="font-size:12px; color:#7f8c8d; margin-top:5px;">Amostragem: <span id="amostra-setor-central">0</span> caixas</div>
                                 </div>
                             </div>
                         </div>
@@ -462,8 +479,8 @@
 
     <script>
         // CONTROLE OFICIAL DE VERSÃO E ASSINATURA 🚀
-        const APP_VERSION = "1.18.4";
-        const APP_DATE = "25/03/2026";
+        const APP_VERSION = "1.20.1";
+        const APP_DATE = "29/03/2026";
         
         document.getElementById('display-versao').innerText = `Versão: ${APP_VERSION} (${APP_DATE})`;
 
@@ -788,12 +805,27 @@
             var slaDia = {}; for(let i=1; i<=diasNoMes; i++) slaDia[i] = { laS:0, laQ:0, lcS:0, lcQ:0, g1S:0, g1Q:0, g2S:0, g2Q:0, g3S:0, g3Q:0, g4S:0, g4Q:0, g5S:0, g5Q:0 };
             var totApoio = { s:0, q:0 }, totCentral = { s:0, q:0 }, totG1 = {s:0,q:0}, totG2 = {s:0,q:0}, totG3 = {s:0,q:0}, totG4 = {s:0,q:0}, totG5 = {s:0,q:0}; 
             var rankingSLA = [];
+
+            // NOVO: Criando os contadores de setores
+            var contagemSetoresApoio = {};
+            var contagemSetoresCentral = {};
+
             for(let r in cacheSLATempos) {
                 let m = cacheSLATempos[r], f = m.fim, d = m.diaEntrega, t = m.timeline;
                 if(m.inicio && f >= m.inicio && m.origem) {
                     let dif = f - m.inicio;
-                    if(m.origem === "A") { slaDia[d].laS += dif; slaDia[d].laQ++; totApoio.s += dif; totApoio.q++; } 
-                    else { slaDia[d].lcS += dif; slaDia[d].lcQ++; totCentral.s += dif; totCentral.q++; }
+                    if(m.origem === "A") { 
+                        slaDia[d].laS += dif; slaDia[d].laQ++; totApoio.s += dif; totApoio.q++; 
+                        if(!contagemSetoresApoio[m.setor]) contagemSetoresApoio[m.setor] = { qtd: 0, somaMs: 0 };
+                        contagemSetoresApoio[m.setor].qtd++;
+                        contagemSetoresApoio[m.setor].somaMs += dif;
+                    } 
+                    else { 
+                        slaDia[d].lcS += dif; slaDia[d].lcQ++; totCentral.s += dif; totCentral.q++; 
+                        if(!contagemSetoresCentral[m.setor]) contagemSetoresCentral[m.setor] = { qtd: 0, somaMs: 0 };
+                        contagemSetoresCentral[m.setor].qtd++;
+                        contagemSetoresCentral[m.setor].somaMs += dif;
+                    }
                     rankingSLA.push({ req: r, tempo: dif, setor: m.setor });
                 }
                 if(t) {
@@ -812,7 +844,27 @@
             var htmlFast = "", htmlSlow = "";
             for(var i=0; i<5 && i<rankingSLA.length; i++) htmlFast += `<li><span class="req">${rankingSLA[i].req} <span class="setor">${rankingSLA[i].setor}</span></span> <span style="color:#27ae60; font-weight:bold;">${formataSLA(rankingSLA[i].tempo)}</span></li>`;
             for(var i=0; i<5 && i<rankingSLA.length; i++) { var item = rankingSLA[rankingSLA.length - 1 - i]; htmlSlow += `<li><span class="req">${item.req} <span class="setor">${item.setor}</span></span> <span style="color:#c0392b; font-weight:bold;">${formataSLA(item.tempo)}</span></li>`; }
-            document.getElementById('lista-top-fast').innerHTML = htmlFast || "<li>Sem dados suficientes.</li>"; document.getElementById('lista-top-slow').innerHTML = htmlSlow || "<li>Sem dados suficientes.</li>";
+            document.getElementById('lista-top-fast').innerHTML = htmlFast || "<li>Sem dados suficientes.</li>";
+            document.getElementById('lista-top-slow').innerHTML = htmlSlow || "<li>Sem dados suficientes.</li>";
+
+            // NOVO: Processamento e Renderização dos Top 5 Setores Mais Movimentados com SLA
+            var arraySetoresApoio = Object.keys(contagemSetoresApoio).map(s => ({ setor: s, qtd: contagemSetoresApoio[s].qtd, somaMs: contagemSetoresApoio[s].somaMs })).sort((a,b) => b.qtd - a.qtd);
+            var arraySetoresCentral = Object.keys(contagemSetoresCentral).map(s => ({ setor: s, qtd: contagemSetoresCentral[s].qtd, somaMs: contagemSetoresCentral[s].somaMs })).sort((a,b) => b.qtd - a.qtd);
+
+            var htmlSetoresApoio = "", htmlSetoresCentral = "";
+            for(var i=0; i<5 && i<arraySetoresApoio.length; i++) {
+                var mediaApoio = formataSLA(arraySetoresApoio[i].somaMs / arraySetoresApoio[i].qtd);
+                htmlSetoresApoio += `<li><span class="req">${arraySetoresApoio[i].setor}</span> <span><b style="color:#d35400; font-size:15px;">⏱️ ${mediaApoio}</b> <span style="color:#7f8c8d; font-size:12px; margin-left:8px;">(${arraySetoresApoio[i].qtd} entregas)</span></span></li>`;
+            }
+            for(var i=0; i<5 && i<arraySetoresCentral.length; i++) {
+                var mediaCentral = formataSLA(arraySetoresCentral[i].somaMs / arraySetoresCentral[i].qtd);
+                htmlSetoresCentral += `<li><span class="req">${arraySetoresCentral[i].setor}</span> <span><b style="color:#16a085; font-size:15px;">⏱️ ${mediaCentral}</b> <span style="color:#7f8c8d; font-size:12px; margin-left:8px;">(${arraySetoresCentral[i].qtd} entregas)</span></span></li>`;
+            }
+
+            document.getElementById('lista-top-setores-apoio').innerHTML = htmlSetoresApoio || "<li>Sem dados suficientes.</li>";
+            document.getElementById('lista-top-setores-central').innerHTML = htmlSetoresCentral || "<li>Sem dados suficientes.</li>";
+            // FIM DO NOVO BLOCO
+
             var lbl = [], dLa=[], dLc=[], dG1=[], dG2=[], dG3=[], dG4=[], dG5=[];
             for(let i=1; i<=diasNoMes; i++) {
                 lbl.push("Dia "+i); let s = slaDia[i];
@@ -828,11 +880,34 @@
 
         function calcularSLASetor() {
             if(!cacheSLATempos) return alert("Gere o relatório mensal primeiro.");
-            var setorBuscado = document.getElementById('filtroSetorSLA').value.trim().toUpperCase(); if(!setorBuscado) return alert("Digite o nome do setor.");
-            var somaMs = 0, qtd = 0;
-            for(var req in cacheSLATempos) { var m = cacheSLATempos[req]; if(m.setor.toUpperCase().includes(setorBuscado) && m.inicio && m.fim && m.fim >= m.inicio) { somaMs += (m.fim - m.inicio); qtd++; } }
-            document.getElementById('nome-setor-destaque').innerText = "SLA Médio - " + setorBuscado; document.getElementById('amostra-setor').innerText = qtd;
-            document.getElementById('sla-setor-resultado').innerText = qtd > 0 ? formataSLA(somaMs/qtd) : "N/D"; document.getElementById('box-sla-setor').style.display = 'flex';
+            var setorBuscado = document.getElementById('filtroSetorSLA').value.trim().toUpperCase(); 
+            if(!setorBuscado) return alert("Digite o nome do setor.");
+            
+            var somaMsApoio = 0, qtdApoio = 0;
+            var somaMsCentral = 0, qtdCentral = 0;
+            
+            for(var req in cacheSLATempos) { 
+                var m = cacheSLATempos[req]; 
+                if(m.setor.toUpperCase().includes(setorBuscado) && m.inicio && m.fim && m.fim >= m.inicio) { 
+                    if(m.origem === "A") {
+                        somaMsApoio += (m.fim - m.inicio); qtdApoio++; 
+                    } else {
+                        somaMsCentral += (m.fim - m.inicio); qtdCentral++; 
+                    }
+                } 
+            }
+            
+            // Atualiza os dados do Card Apoio
+            document.getElementById('nome-setor-apoio').innerText = "Apoio ➔ " + setorBuscado; 
+            document.getElementById('amostra-setor-apoio').innerText = qtdApoio;
+            document.getElementById('sla-setor-apoio').innerText = qtdApoio > 0 ? formataSLA(somaMsApoio/qtdApoio) : "N/D"; 
+
+            // Atualiza os dados do Card Central
+            document.getElementById('nome-setor-central').innerText = "Central ➔ " + setorBuscado; 
+            document.getElementById('amostra-setor-central').innerText = qtdCentral;
+            document.getElementById('sla-setor-central').innerText = qtdCentral > 0 ? formataSLA(somaMsCentral/qtdCentral) : "N/D"; 
+
+            document.getElementById('box-sla-setor').style.display = 'flex';
         }
 
         function buscarCicloVida() {
