@@ -4,12 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel de Gestão e BI - Checkpoint HSVP</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚙️</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📈</text></svg>">
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
@@ -30,7 +29,6 @@
         #painel-gestao { display: none; padding-top: 15px; } 
         .layout-app { display: flex; gap: 20px; align-items: flex-start; }
         
-        /* MENU LATERAL */
         .sidebar { width: 280px; background: #34495e; border-radius: 8px; padding: 10px 0; flex-shrink: 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden;}
         .menu-btn { display: flex; justify-content: space-between; align-items: center; width: 100%; text-align: left; padding: 15px 20px; background: none; border: none; color: #ecf0f1; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.2s; border-left: 4px solid transparent; }
         .menu-btn:hover { background: #2c3e50; }
@@ -53,7 +51,6 @@
         .btn-acao { background-color: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; }
         .loading { color: #e67e22; font-weight: bold; display: none; margin-left: auto; }
 
-        /* TABELAS */
         .tabela-wrapper { overflow-x: auto; margin-bottom: 15px; border-radius: 8px; border: 1px solid #eee; }
         table { width: 100%; border-collapse: collapse; min-width: 700px; }
         th, td { padding: 12px; text-align: center; border-bottom: 1px solid #eee; font-size: 14px; }
@@ -62,30 +59,10 @@
         .col-nome { text-align: left; font-weight: bold; }
         .col-total { font-weight: bold; background-color: #f8f9fa; color: #2c3e50;}
         .celula-destaque { background-color: #fff9c4 !important; color: #d35400 !important; font-weight: bold !important; border-radius: 4px; box-shadow: inset 0 0 5px rgba(211, 84, 0, 0.1);}
-        
-        .btn-excluir { background: #e74c3c; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;}
-        .paginacao { display: flex; justify-content: space-between; align-items: center; background: #ecf0f1; padding: 10px; border-radius: 5px; }
-        .paginacao button { background: #34495e; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        .paginacao button:disabled { background: #bdc3c7; cursor: not-allowed; }
 
         textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; margin-bottom: 10px; font-family: inherit;}
         .msg-card { background: #fdfefe; border-left: 4px solid #f1c40f; padding: 12px; margin-bottom: 10px; border-radius: 4px; border: 1px solid #eee;}
 
-        /* ESTILOS DA TIMELINE (RAIO-X) */
-        .raiox-etapa { display: flex; align-items: center; margin-bottom: 0; }
-        .raiox-icone { width: 35px; height: 35px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; color: white; margin-right: 15px; z-index: 2; position: relative;}
-        .icone-ok { background-color: #2ecc71; }
-        .icone-falha { background-color: #e74c3c; }
-        .icone-pendente { background-color: #bdc3c7; }
-        .raiox-detalhe { flex: 1; border-bottom: 1px dashed #eee; padding-bottom: 8px; margin-top: 15px;}
-        .raiox-detalhe h4 { margin: 0; color: #2c3e50; }
-        .raiox-detalhe p { margin: 2px 0 0 0; font-size: 13px; color: #7f8c8d; }
-        .raiox-intervalo { margin-left: 16px; border-left: 3px dashed #bdc3c7; padding: 10px 0 10px 35px; color: #d35400; font-size: 13px; font-weight: bold; }
-
-        .modal-overlay { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); }
-        .modal-content { background: #fff; margin: 10% auto; padding: 25px; border-radius: 8px; width: 90%; max-width: 450px; }
-        
-        /* GRÁFICOS BI E CARDS */
         .dashboard-grid { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 30px;}
         .chart-box { background: #fff; padding: 15px; border-radius: 8px; flex: 1; min-width: 400px; border: 1px solid #eee; box-shadow: 0 2px 4px rgba(0,0,0,0.02);}
         .chart-full { flex: 100%; min-width: 100%; }
@@ -93,7 +70,6 @@
         .card-kpi { background: #ecf0f1; border-left: 5px solid #3498db; padding: 15px; border-radius: 6px; flex: 1; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .card-kpi h3 { margin: 0; font-size: 13px; color: #7f8c8d; text-transform: uppercase; }
         .card-kpi .valor { font-size: 32px; font-weight: bold; color: #2c3e50; margin-top: 10px; }
-
         .card-destaque { background-color: #2c3e50; color: white; border-left-color: #f1c40f;}
         .card-destaque h3 { color: #bdc3c7; }
         .card-destaque .valor { color: #f1c40f; }
@@ -106,9 +82,7 @@
         .ranking-list li { padding: 10px 0; border-bottom: 1px solid #ecf0f1; display: flex; justify-content: space-between; align-items: center; font-size: 14px;}
         .ranking-list li:last-child { border-bottom: none; }
         .ranking-list .req { font-weight: bold; color: #2c3e50; }
-        .ranking-list .setor { color: #7f8c8d; font-size: 12px; margin-left: 5px;}
 
-        /* ESTILOS EMBUTIDOS DO DASHBOARD DIÁRIO */
         .header-equipe { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; margin-bottom: 15px; border-bottom: 2px solid #bdc3c7; padding-bottom: 5px; flex-wrap: wrap; gap: 10px;}
         .secao-titulo-dash { color: #2c3e50; font-size: 16px; font-weight: bold; margin: 0; text-transform: uppercase; }
         .badge-total { background-color: #2c3e50; color: white; padding: 6px 15px; border-radius: 20px; font-size: 13px; font-weight: bold; }
@@ -120,7 +94,6 @@
         #card-separado { border-color: #f39c12; } #card-conferido { border-color: #8e44ad; } #card-carregado { border-color: #d35400; }
         #card-recebido { border-color: #3498db; } #card-sep-central { border-color: #16a085; } #card-entregue { border-color: #2ecc71; }
 
-        /* ESTILO DO RODAPÉ (VERSÃO) */
         .app-footer { margin-top: auto; text-align: center; padding: 20px; color: #7f8c8d; font-size: 12px; line-height: 1.5; }
         .app-footer strong { color: #34495e; }
     </style>
@@ -132,7 +105,8 @@
         <a href="romaneio.html">🚚 Romaneio</a>
         <a href="kanban.html">🚥 Kanban</a>
         <a href="dashboard.html">📊 Dashboard</a>
-        <a href="gestao.html" class="ativo">⚙️ Painel de Gestão e BI</a>
+        <a href="gestao.html" class="ativo">📈 BI Gestão</a>
+        <a href="auditoria.html">🛡️ Auditoria</a>
     </div>
 
     <div class="container" style="flex: 1;">
@@ -148,20 +122,12 @@
             <div class="layout-app">
                 <div class="sidebar">
                     <button class="menu-btn ativo" onclick="mudarAbaPrincipal('aba-mural', this)">📌 Mural de Avisos</button>
-                    
                     <button class="menu-btn" onclick="toggleSubmenu('sub-bi', this)">📈 Relatórios BI <span class="seta">▼</span></button>
                     <div id="sub-bi" class="submenu">
                         <button class="submenu-btn" onclick="mudarAbaFilha('aba-bi-dashboard', this)">Dashboard Diário</button>
                         <button class="submenu-btn" onclick="mudarAbaFilha('aba-bi-processos', this)">Processos</button>
                         <button class="submenu-btn" onclick="mudarAbaFilha('aba-bi-produtividade', this)">Produtividade</button>
                         <button class="submenu-btn" onclick="mudarAbaFilha('aba-bi-tempos', this)">Tempos (SLAs)</button>
-                    </div>
-
-                    <button class="menu-btn" onclick="toggleSubmenu('sub-auditoria', this)">🛡️ Auditoria Logística <span class="seta">▼</span></button>
-                    <div id="sub-auditoria" class="submenu">
-                        <button class="submenu-btn" onclick="mudarAbaFilha('aba-auditoria-raiox', this)">Ciclo de Vida</button>
-                        <button class="submenu-btn" onclick="mudarAbaFilha('aba-auditoria-exclusao', this)">Excluir Lançamentos</button>
-                        <button class="submenu-btn" onclick="mudarAbaFilha('aba-auditoria-historico', this)">Histórico de Exclusões</button>
                     </div>
                 </div>
 
@@ -185,18 +151,15 @@
                         </div>
 
                         <div id="conteudo-dashboard-diario" style="display:none;">
-                            
                             <h3 style="color:#2c3e50; border-bottom:1px solid #eee; padding-bottom:5px; margin-top:0;">Requisições Individuais Processadas (Desconsidera Volumes)</h3>
                             <div class="dashboard-grid" style="margin-bottom: 25px;">
                                 <div class="card-kpi" style="border-left-color: #f39c12;"><h3>Requisições Apoio</h3><div class="valor" id="kpi-req-apoio-dia">0</div></div>
                                 <div class="card-kpi" style="border-left-color: #1abc9c;"><h3>Requisições Central</h3><div class="valor" id="kpi-req-central-dia">0</div></div>
                                 <div class="card-kpi" style="border-left-color: #8e44ad; background:#f4f0f8;"><h3>Requisições no Dia</h3><div class="valor" id="kpi-req-total-dia" style="color:#8e44ad;">0</div></div>
                             </div>
-
                             <div class="dashboard-grid">
                                 <div class="chart-box chart-full"><h3 style="text-align:center; margin-top:0;">Carga de Trabalho (Workload) por Horário</h3><div style="position: relative; height:200px;"><canvas id="chartCarga-dia"></canvas></div></div>
                             </div>
-
                             <div class="header-equipe">
                                 <div class="secao-titulo-dash">🏭 Centro de Apoio</div>
                                 <div class="badge-total">Total Processado: <span id="soma-apoio-dia">0</span></div>
@@ -211,7 +174,6 @@
                                 <div class="chart-box" style="min-width:30%"><div style="position: relative; height:150px; width: 100%;"><canvas id="grafico-conferido-dia"></canvas></div></div>
                                 <div class="chart-box" style="min-width:30%"><div style="position: relative; height:150px; width: 100%;"><canvas id="grafico-carregado-dia"></canvas></div></div>
                             </div>
-
                             <div class="header-equipe" style="margin-top: 40px;">
                                 <div class="secao-titulo-dash">🏥 Teixeira Soares</div>
                                 <div class="badge-total">Total Processado: <span id="soma-central-dia">0</span></div>
@@ -226,11 +188,9 @@
                                 <div class="chart-box" style="min-width:30%"><div style="position: relative; height:150px; width: 100%;"><canvas id="grafico-sep-central-dia"></canvas></div></div>
                                 <div class="chart-box" style="min-width:30%"><div style="position: relative; height:150px; width: 100%;"><canvas id="grafico-entregue-dia"></canvas></div></div>
                             </div>
-
                             <div class="dashboard-grid" style="margin-top: 30px;">
                                 <div class="chart-box chart-full"><h3 style="text-align:center; margin-top:0;">Esforço do Dia: Apoio vs Central</h3><div style="position: relative; height:200px; display:flex; justify-content:center;"><canvas id="chartSetores-dia"></canvas></div></div>
                             </div>
-
                             <div class="tabela-wrapper" style="margin-top: 10px;">
                                 <h2 style="font-size: 16px; color: #2c3e50; padding: 15px; margin:0; border-bottom: 1px solid #eee;">🏆 Ranking de Produtividade do Dia</h2>
                                 <table>
@@ -249,7 +209,6 @@
                             <button class="btn-acao" onclick="carregarDadosBI('processos')">Gerar Gráficos</button>
                             <span class="loading" id="load-processos">Processando... ⏳</span>
                         </div>
-                        
                         <div id="conteudo-processos" style="display:none;">
                             <h3 style="color:#2c3e50; border-bottom:1px solid #eee; padding-bottom:5px;">Requisições Individuais Processadas (Desconsidera Volumes)</h3>
                             <div class="dashboard-grid" style="margin-bottom: 25px;">
@@ -257,12 +216,10 @@
                                 <div class="card-kpi" style="border-left-color: #1abc9c;"><h3>Requisições Central</h3><div class="valor" id="kpi-req-central">0</div></div>
                                 <div class="card-kpi" style="border-left-color: #8e44ad; background:#f4f0f8;"><h3>Requisições no Mês</h3><div class="valor" id="kpi-req-total" style="color:#8e44ad;">0</div></div>
                             </div>
-
                             <div class="dashboard-grid">
                                 <div class="chart-box"><h3 style="text-align:center; margin-top:0;">Distribuição de Volumes (Bipes) por Etapa</h3><div style="position: relative; height:300px;"><canvas id="chartEtapas"></canvas></div></div>
                                 <div class="chart-box"><h3 style="text-align:center; margin-top:0;">Comparativo de Esforço: Apoio vs Central</h3><div style="position: relative; height:300px; display:flex; justify-content:center;"><canvas id="chartSetores"></canvas></div></div>
                             </div>
-
                             <div class="dashboard-grid">
                                 <div class="chart-box chart-full">
                                     <h3 style="text-align:center; margin-top:0;">Carga de Trabalho Histórica por Horário (Mês Completo)</h3>
@@ -280,13 +237,11 @@
                             <button class="btn-acao" onclick="carregarDadosBI('produtividade')">Gerar Relatório</button>
                             <span class="loading" id="load-produtividade">Processando... ⏳</span>
                         </div>
-
                         <div id="conteudo-produtividade" style="display:none;">
                             <div class="chart-box chart-full" style="margin-bottom: 25px;">
                                 <h3 style="text-align:center; margin-top:0;">Produtividade Total por Colaborador</h3>
                                 <div style="position: relative; height:300px;"><canvas id="chartProdutividade"></canvas></div>
                             </div>
-                            
                             <h3 style="color:#2c3e50;">Tabela de Produtividade Mensal (Volumes Consolidados)</h3>
                             <div class="tabela-wrapper">
                                 <table>
@@ -305,9 +260,7 @@
                             <button class="btn-acao" onclick="carregarDadosBI('tempos')">Calcular SLAs da Base</button>
                             <span class="loading" id="load-tempos">Processando Histórico Cronológico... ⏳</span>
                         </div>
-
                         <div id="conteudo-tempos" style="display:none;">
-                            
                             <h3 style="color:#2c3e50; border-bottom:1px solid #eee; padding-bottom:5px;">Tempos Totais de Processamento (Lead Time Mensal)</h3>
                             <div class="dashboard-grid" style="margin-bottom: 20px;">
                                 <div class="card-kpi card-destaque" style="border-left-color: #f39c12;">
@@ -319,14 +272,12 @@
                                     <div class="valor" id="sla-tot-central">--h --m</div>
                                 </div>
                             </div>
-
                             <div class="dashboard-grid" style="margin-bottom: 30px;">
                                 <div class="chart-box chart-full">
                                     <h3 style="text-align:center; margin-top:0;">Evolução Diária do Lead Time (Horas)</h3>
                                     <div style="position: relative; height:300px;"><canvas id="chartSLA"></canvas></div>
                                 </div>
                             </div>
-
                             <h3 style="color:#2c3e50; border-bottom:1px solid #eee; padding-bottom:5px;">Micro-SLAs: Tempos Médios por Trecho</h3>
                             <div class="dashboard-grid" style="margin-bottom: 20px; gap: 15px;">
                                 <div class="card-micro" style="border-color:#f39c12;"><h3>Sep ➔ Conf</h3><div class="numero" id="gap-sep-conf">--h --m</div></div>
@@ -335,14 +286,12 @@
                                 <div class="card-micro" style="border-color:#f39c12;"><h3>Rec ➔ Entrega</h3><div class="numero" id="gap-rec-ent">--h --m</div></div>
                                 <div class="card-micro" style="border-color:#1abc9c;"><h3>SepC ➔ Entrega</h3><div class="numero" id="gap-sepc-ent">--h --m</div></div>
                             </div>
-
                             <div class="dashboard-grid" style="margin-bottom: 30px;">
                                 <div class="chart-box chart-full">
                                     <h3 style="text-align:center; margin-top:0;">Evolução Diária: Tempo Médio Interno (Horas)</h3>
                                     <div style="position: relative; height:300px;"><canvas id="chartMicroSLA"></canvas></div>
                                 </div>
                             </div>
-
                             <h3 style="color:#2c3e50; border-bottom:1px solid #eee; padding-bottom:5px; margin-top:30px;">🏆 Top 5: SLAs dos Setores com Mais Entregas</h3>
                             <div class="dashboard-grid" style="margin-bottom: 30px;">
                                 <div class="chart-box" style="border-top: 4px solid #f39c12;">
@@ -354,7 +303,6 @@
                                     <ul id="lista-top-setores-central" class="ranking-list"></ul>
                                 </div>
                             </div>
-
                             <h3 style="color:#2c3e50; border-bottom:1px solid #eee; padding-bottom:5px;">🏆 Top 5: Extremos de Lead Time (Entregas do Mês)</h3>
                             <div class="dashboard-grid" style="margin-bottom: 30px;">
                                 <div class="chart-box" style="border-top: 4px solid #2ecc71;">
@@ -366,7 +314,6 @@
                                     <ul id="lista-top-slow" class="ranking-list"></ul>
                                 </div>
                             </div>
-
                             <h3 style="color:#2c3e50; border-bottom:1px solid #eee; padding-bottom:5px; margin-top:30px;">Consulta de SLA por Setor de Destino</h3>
                             <div class="filtro-container">
                                 <label>Setor Destino (QR):</label>
@@ -388,73 +335,6 @@
                         </div>
                     </div>
 
-                    <div id="aba-auditoria-raiox" class="secao-app">
-                        <h2 class="secao-titulo">Ciclo de Vida da Requisição (Raio-X)</h2>
-                        <div class="filtro-container">
-                            <label>Número da Requisição:</label>
-                            <input type="number" id="inputRaioX">
-                            <button class="btn-acao" onclick="buscarCicloVida()">Consultar Rastreabilidade</button>
-                            <span class="loading" id="load-raiox">Mapeando... ⏳</span>
-                        </div>
-                        <div id="resultado-raiox" style="display:none; padding: 15px; background: #fdfefe; border: 1px solid #eee; border-radius: 8px;">
-                            <h3 style="margin-top:0; text-align:center;">Registros Requisição <span id="raiox-titulo-req" style="color:#8e44ad;"></span></h3>
-                            <div id="raiox-timeline" style="display: flex; gap: 20px; overflow-x: auto; padding-bottom: 15px; align-items: flex-start;"></div>
-                        </div>
-                    </div>
-
-                    <div id="aba-auditoria-exclusao" class="secao-app">
-                        <h2 class="secao-titulo">Exclusão de Lançamentos</h2>
-                        <div class="filtro-container">
-                            <label>Data:</label><input type="date" id="filtroDataLogistica">
-                            <label>Consulta por Requisição:</label>
-                            <input type="number" id="filtroReqLogistica" style="width: 120px;" onkeypress="if(event.key === 'Enter') carregarDadosLogistica(0)">
-                            <button class="btn-acao" onclick="carregarDadosLogistica(0)">Buscar</button>
-                            <label>Itens por pág:</label>
-                            <select id="limiteLogistica" onchange="carregarDadosLogistica(0)">
-                                <option value="10" selected>10 itens</option>
-                                <option value="20">20 itens</option>
-                                <option value="50">50 itens</option>
-                            </select>
-                            
-                            <span class="loading" id="load-logistica">Buscando... ⏳</span>
-                        </div>
-                        <div class="tabela-wrapper">
-                            <table>
-                                <thead><tr><th>Hora</th><th>Operador</th><th>Requisição</th><th>Vol</th><th>Etapa</th><th>Ação</th></tr></thead>
-                                <tbody id="corpo-logistica"></tbody>
-                            </table>
-                        </div>
-                        <div class="paginacao" id="paginacao-logistica">
-                            <button id="btn-ant-log" onclick="carregarDadosLogistica(-1)">⬅️ Anterior</button>
-                            <span id="info-pag-log">Página 1</span>
-                            <button id="btn-prox-log" onclick="carregarDadosLogistica(1)">Próxima ➡️</button>
-                        </div>
-                    </div>
-
-                    <div id="aba-auditoria-historico" class="secao-app">
-                        <h2 class="secao-titulo">Histórico de Exclusões</h2>
-                        <div class="filtro-container">
-                            <label>Itens por pág:</label>
-                            <select id="limiteAuditoria" onchange="carregarAuditoria(0)">
-                                <option value="10" selected>10 itens</option>
-                                <option value="20">20 itens</option>
-                                <option value="50">50 itens</option>
-                            </select>
-                            <span class="loading" id="load-auditoria">Buscando... ⏳</span>
-                        </div>
-                        <div class="tabela-wrapper">
-                            <table>
-                                <thead><tr><th>Data Exclusão</th><th>Requisição (Vol)</th><th>Etapa Apagada</th><th>Autor Original</th><th>Excluído Por</th><th>Motivo</th></tr></thead>
-                                <tbody id="corpo-auditoria"></tbody>
-                            </table>
-                        </div>
-                        <div class="paginacao">
-                            <button id="btn-ant-aud" onclick="carregarAuditoria(-1)">⬅️ Anterior</button>
-                            <span id="info-pag-aud">Página 1</span>
-                            <button id="btn-prox-aud" onclick="carregarAuditoria(1)">Próxima ➡️</button>
-                        </div>
-                    </div>
-
                 </div>
             </div>
         </div>
@@ -465,63 +345,35 @@
         <span id="display-versao"></span>
     </div>
 
-    <div id="modal-justificativa" class="modal-overlay">
-        <div class="modal-content">
-            <h3 style="color:#e74c3c; margin-top:0;">⚠️ Atenção: Ação Irreversível</h3>
-            <p id="texto-resumo-exclusao"></p>
-            <input type="text" id="input-justificativa" placeholder="Justifique o motivo da exclusão" style="width:100%; padding:10px; margin-bottom:15px; border: 1px solid #e74c3c;">
-            <div style="text-align: right;">
-                <button onclick="fecharModal()" style="padding:10px; cursor:pointer;">Cancelar</button>
-                <button onclick="processarExclusaoFinal()" style="padding:10px; background:#e74c3c; color:white; border:none; cursor:pointer; font-weight:bold;">Confirmar Exclusão</button>
-            </div>
-        </div>
-    </div>
-
     <script>
-        // CONTROLE OFICIAL DE VERSÃO E ASSINATURA 🚀
-        const APP_VERSION = "1.20.1";
-        const APP_DATE = "29/03/2026";
-        
-        document.getElementById('display-versao').innerText = `Versão: ${APP_VERSION} (${APP_DATE})`;
-
-        console.log(`%c🚀 Checkpoint HSVP Gestão | Criado por Luiz Henrique Link Lodi & Gemini | Versão ${APP_VERSION} | Filtro de Requisição na Exclusão`, "color: #3498db; font-size: 14px; font-weight: bold;");
+        const APP_VERSION = "2.0.0";
+        const APP_DATE = "31/03/2026";
+        document.getElementById('display-versao').innerText = `Módulo BI | Versão: ${APP_VERSION} (${APP_DATE})`;
 
         Chart.register(ChartDataLabels);
 
-        // CONFIGURAÇÃO FIREBASE
         var firebaseConfig = {
             apiKey: "AIzaSyDHUlqzRw_vSyp9livOvQ0rjBYT9l_yofs",
             authDomain: "checkpoint-pedidos.firebaseapp.com",
             projectId: "checkpoint-pedidos",
             storageBucket: "checkpoint-pedidos.firebasestorage.app",
             messagingSenderId: "890832634523",
-            appId: "1:890832634523:web:7f8fa0ee6a2a9c60e27c3e",
-            measurementId: "G-NV3BRV6J2J"
+            appId: "1:890832634523:web:7f8fa0ee6a2a9c60e27c3e"
         };
-        
         firebase.initializeApp(firebaseConfig);
-        firebase.analytics();
         var bancoDeDados = firebase.firestore();
-
         var gestorLogado = null;
 
-        // OUVINTE DE ESTADO DE AUTENTICAÇÃO (Sessão Persistente)
         firebase.auth().onAuthStateChanged(function(user) {
             if (user) {
-                var mapaGestores = {
-                    "farmluiz@hsvp.com.br": "LUIZ LODI",
-                    "farmquevedo@hsvp.com.br": "BRUNA QUEVEDO",
-                    "supervisao.logistica@hsvp.com.br": "RENAN REIS"
-                };
-                var nomeFormatado = mapaGestores[user.email] || user.email.split('@')[0].toUpperCase().replace('.', ' ');
-                gestorLogado = { email: user.email, nome: nomeFormatado };
+                var mapaGestores = { "farmluiz@hsvp.com.br": "LUIZ LODI", "farmquevedo@hsvp.com.br": "BRUNA QUEVEDO", "supervisao.logistica@hsvp.com.br": "RENAN REIS" };
+                gestorLogado = { email: user.email, nome: mapaGestores[user.email] || user.email.split('@')[0].toUpperCase().replace('.', ' ') };
                 
                 document.getElementById('tela-login').style.display = 'none';
                 document.getElementById('painel-gestao').style.display = 'block';
                 document.getElementById('id-logado').innerHTML = "👤 Gestor: " + gestorLogado.nome + " | <a href='#' onclick='fazerLogout()' style='color:#e74c3c; text-decoration:none; margin-left: 10px;'>[Sair]</a>";
                 
                 var hoje = new Date(), d = String(hoje.getDate()).padStart(2,'0'), m = String(hoje.getMonth()+1).padStart(2,'0'), y = hoje.getFullYear();
-                document.getElementById('filtroDataLogistica').value = y+'-'+m+'-'+d;
                 document.getElementById('filtroMesProcessos').value = y+'-'+m;
                 document.getElementById('filtroMesProdutividade').value = y+'-'+m;
                 document.getElementById('filtroMesTempos').value = y+'-'+m;
@@ -535,27 +387,15 @@
         });
 
         function fazerLogin() {
-            var email = document.getElementById('emailGestor').value.trim();
-            var sen = document.getElementById('senhaGestor').value.trim();
-            document.getElementById('msg-erro').style.display = 'none';
+            var email = document.getElementById('emailGestor').value.trim(), sen = document.getElementById('senhaGestor').value.trim();
             document.getElementById('btn-login-btn').innerText = "Autenticando...";
-            firebase.auth().signInWithEmailAndPassword(email, sen)
-            .then((userCredential) => { document.getElementById('btn-login-btn').innerText = "Acessar Sistema"; })
-            .catch((error) => {
-                document.getElementById('btn-login-btn').innerText = "Acessar Sistema";
-                document.getElementById('msg-erro').innerText = "Acesso negado: E-mail ou senha incorretos.";
-                document.getElementById('msg-erro').style.display = 'block';
-            });
+            firebase.auth().signInWithEmailAndPassword(email, sen).then(() => document.getElementById('btn-login-btn').innerText = "Acessar Sistema")
+            .catch(() => { document.getElementById('btn-login-btn').innerText = "Acessar Sistema"; document.getElementById('msg-erro').style.display = 'block'; });
         }
+        function fazerLogout() { firebase.auth().signOut(); }
 
-        function fazerLogout() { firebase.auth().signOut().catch((error) => { alert("Erro ao tentar sair da conta."); }); }
-
-        var cacheBI = { mes: "", documentos: [] };
-        var cacheDashData = ""; var cacheDashDocs = [];
-        var cacheSLATempos = null; 
-        var gEtapas = null, gSetores = null, gProd = null, gSLA = null, gMicro = null, gCargaMensal = null;
-        var gDashSetores = null, gDashCarga = null;
-        var gDashBarras = {};
+        var cacheBI = { mes: "", documentos: [] }, cacheDashData = "", cacheDashDocs = [], cacheSLATempos = null; 
+        var gEtapas = null, gSetores = null, gProd = null, gSLA = null, gMicro = null, gCargaMensal = null, gDashSetores = null, gDashCarga = null, gDashBarras = {};
 
         function mudarAbaPrincipal(idAba, btn) {
             document.querySelectorAll('.secao-app').forEach(el => el.classList.remove('ativa'));
@@ -567,10 +407,9 @@
         }
 
         function toggleSubmenu(idSubmenu, btn) {
-            var submenu = document.getElementById(idSubmenu), seta = btn.querySelector('.seta');
-            document.querySelectorAll('.submenu').forEach(sub => { if(sub.id !== idSubmenu) { sub.classList.remove('aberto'); sub.previousElementSibling.querySelector('.seta').innerText = "▼"; } });
-            if (submenu.classList.contains('aberto')) { submenu.classList.remove('aberto'); seta.innerText = "▼"; } 
-            else { submenu.classList.add('aberto'); seta.innerText = "▲"; }
+            var sub = document.getElementById(idSubmenu), seta = btn.querySelector('.seta');
+            document.querySelectorAll('.submenu').forEach(s => { if(s.id !== idSubmenu) { s.classList.remove('aberto'); s.previousElementSibling.querySelector('.seta').innerText = "▼"; } });
+            sub.classList.toggle('aberto'); seta.innerText = sub.classList.contains('aberto') ? "▲" : "▼";
         }
 
         function mudarAbaFilha(idAba, btn) {
@@ -578,9 +417,6 @@
             document.querySelectorAll('.menu-btn, .submenu-btn').forEach(b => b.classList.remove('ativo'));
             document.getElementById(idAba).classList.add('ativa'); btn.classList.add('ativo');
             btn.parentElement.previousElementSibling.classList.add('ativo');
-
-            if(idAba === 'aba-auditoria-exclusao' && document.getElementById('corpo-logistica').innerHTML === '') carregarDadosLogistica(0);
-            if(idAba === 'aba-auditoria-historico' && document.getElementById('corpo-auditoria').innerHTML === '') carregarAuditoria(0);
             if(idAba === 'aba-bi-dashboard') carregarDadosBIDashboard();
             if(idAba === 'aba-bi-processos') carregarDadosBI('processos');
             if(idAba === 'aba-bi-produtividade') carregarDadosBI('produtividade');
@@ -596,100 +432,66 @@
             var div = document.getElementById('lista-mensagens');
             bancoDeDados.collection("mensagens_gestao").orderBy("ordem", "desc").limit(10).get().then(res => {
                 div.innerHTML = '';
-                res.forEach(doc => {
-                    var m = doc.data();
-                    div.innerHTML += '<div class="msg-card"><div style="font-size:12px; color:#7f8c8d; margin-bottom:5px;">🗣️ ' + m.autor + ' em ' + m.data + ' <button style="float:right; border:none; background:none; color:#e74c3c; cursor:pointer;" onclick="bancoDeDados.collection(\'mensagens_gestao\').doc(\''+doc.id+'\').delete().then(carregarMensagens)">❌</button></div><div>' + m.texto + '</div></div>';
-                });
+                res.forEach(doc => { var m = doc.data(); div.innerHTML += `<div class="msg-card"><div style="font-size:12px; color:#7f8c8d; margin-bottom:5px;">🗣️ ${m.autor} em ${m.data} <button style="float:right; border:none; background:none; color:#e74c3c; cursor:pointer;" onclick="bancoDeDados.collection('mensagens_gestao').doc('${doc.id}').delete().then(carregarMensagens)">❌</button></div><div>${m.texto}</div></div>`; });
             });
         }
 
         function processarCargaDeTrabalhoPorHora(bipes) {
             var horasData = {}; var minH = 6, maxH = 19; 
             bipes.forEach(b => {
-                var h = new Date(b.ordem).getHours();
-                if(h < minH) minH = h; if(h > maxH) maxH = h;
+                var h = new Date(b.ordem).getHours(); if(h < minH) minH = h; if(h > maxH) maxH = h;
                 if(!horasData[h]) horasData[h] = {sep:0, conf:0, carr:0, rec:0, sepc:0, ent:0};
                 var s = b.status || "";
-                if (s.includes("Separado (Central)")) horasData[h].sepc++;
-                else if (s.includes("Separado (Apoio)") || s === "Separado") horasData[h].sep++;
-                else if (s.includes("Conferido")) horasData[h].conf++;
-                else if (s.includes("Carregado")) horasData[h].carr++;
-                else if (s.includes("Recebido")) horasData[h].rec++;
-                else if (s.includes("Entregue")) horasData[h].ent++;
+                if (s.includes("Separado (Central)")) horasData[h].sepc++; else if (s.includes("Separado (Apoio)") || s === "Separado") horasData[h].sep++;
+                else if (s.includes("Conferido")) horasData[h].conf++; else if (s.includes("Carregado")) horasData[h].carr++;
+                else if (s.includes("Recebido")) horasData[h].rec++; else if (s.includes("Entregue")) horasData[h].ent++;
             });
             var labels = [], dSep=[], dConf=[], dCarr=[], dRec=[], dSepC=[], dEnt=[];
             for(var i = minH; i <= maxH; i++) {
-                labels.push(i.toString().padStart(2, '0') + ":00");
-                var hd = horasData[i] || {sep:0, conf:0, carr:0, rec:0, sepc:0, ent:0};
-                dSep.push(hd.sep); dConf.push(hd.conf); dCarr.push(hd.carr);
-                dRec.push(hd.rec); dSepC.push(hd.sepc); dEnt.push(hd.ent);
+                labels.push(i.toString().padStart(2, '0') + ":00"); var hd = horasData[i] || {sep:0, conf:0, carr:0, rec:0, sepc:0, ent:0};
+                dSep.push(hd.sep); dConf.push(hd.conf); dCarr.push(hd.carr); dRec.push(hd.rec); dSepC.push(hd.sepc); dEnt.push(hd.ent);
             }
-            return {
-                labels: labels,
-                datasets: [
-                    { label: 'Sep. Apoio', data: dSep, borderColor: '#f39c12', backgroundColor: '#f39c12', tension: 0.4 },
-                    { label: 'Conferido', data: dConf, borderColor: '#8e44ad', backgroundColor: '#8e44ad', tension: 0.4 },
-                    { label: 'Carregado', data: dCarr, borderColor: '#d35400', backgroundColor: '#d35400', tension: 0.4 },
-                    { label: 'Recebido', data: dRec, borderColor: '#3498db', backgroundColor: '#3498db', tension: 0.4 },
-                    { label: 'Sep. Central', data: dSepC, borderColor: '#16a085', backgroundColor: '#16a085', tension: 0.4 },
-                    { label: 'Entregue', data: dEnt, borderColor: '#2ecc71', backgroundColor: '#2ecc71', tension: 0.4 }
-                ]
-            };
+            return { labels: labels, datasets: [ { label: 'Sep. Apoio', data: dSep, borderColor: '#f39c12', backgroundColor: '#f39c12', tension: 0.4 }, { label: 'Conferido', data: dConf, borderColor: '#8e44ad', backgroundColor: '#8e44ad', tension: 0.4 }, { label: 'Carregado', data: dCarr, borderColor: '#d35400', backgroundColor: '#d35400', tension: 0.4 }, { label: 'Recebido', data: dRec, borderColor: '#3498db', backgroundColor: '#3498db', tension: 0.4 }, { label: 'Sep. Central', data: dSepC, borderColor: '#16a085', backgroundColor: '#16a085', tension: 0.4 }, { label: 'Entregue', data: dEnt, borderColor: '#2ecc71', backgroundColor: '#2ecc71', tension: 0.4 } ] };
         }
 
         function carregarDadosBIDashboard() {
-            var dataInput = document.getElementById('filtroDataDashboard').value;
-            if (!dataInput) return alert("Selecione uma data.");
-            if (cacheDashData === dataInput && cacheDashDocs.length > 0) {
-                processarDashboardDiario(cacheDashDocs); document.getElementById('conteudo-dashboard-diario').style.display = 'block'; return;
-            }
+            var dataInput = document.getElementById('filtroDataDashboard').value; if (!dataInput) return alert("Selecione uma data.");
+            if (cacheDashData === dataInput && cacheDashDocs.length > 0) { processarDashboardDiario(cacheDashDocs); document.getElementById('conteudo-dashboard-diario').style.display = 'block'; return; }
             document.getElementById('load-dashboard').style.display = 'inline-block';
-            var dEscolhida = new Date(dataInput + "T00:00:00"); 
-            var inicioDoDia = dEscolhida.getTime(); var fimDoDia = inicioDoDia + (24 * 60 * 60 * 1000) - 1;
-            bancoDeDados.collection("checkpoints_logistica").where("ordem", ">=", inicioDoDia).where("ordem", "<=", fimDoDia).get().then(res => {
-                var bipesDoDia = []; res.forEach(doc => bipesDoDia.push(doc.data()));
-                cacheDashData = dataInput; cacheDashDocs = bipesDoDia;
-                processarDashboardDiario(bipesDoDia);
-                document.getElementById('load-dashboard').style.display = 'none';
-                document.getElementById('conteudo-dashboard-diario').style.display = 'block';
+            var dInicio = new Date(dataInput + "T00:00:00").getTime();
+            bancoDeDados.collection("checkpoints_logistica").where("ordem", ">=", dInicio).where("ordem", "<=", dInicio+86399999).get().then(res => {
+                var bipes = []; res.forEach(doc => bipes.push(doc.data())); cacheDashData = dataInput; cacheDashDocs = bipes;
+                processarDashboardDiario(bipes); document.getElementById('load-dashboard').style.display = 'none'; document.getElementById('conteudo-dashboard-diario').style.display = 'block';
             }).catch(e => { alert("Erro de conexão."); document.getElementById('load-dashboard').style.display = 'none'; });
         }
 
         function processarDashboardDiario(bipes) {
-            var tot = { sep: 0, conf: 0, carr: 0, rec: 0, sepc: 0, ent: 0 };
-            var colabs = {}; var reqsUnicasApoio = new Set(), reqsUnicasCentral = new Set();
+            var tot = { sep: 0, conf: 0, carr: 0, rec: 0, sepc: 0, ent: 0 }, colabs = {}, reqsApoio = new Set(), reqsCentral = new Set();
             bipes.forEach(b => {
-                var n = b.nome || "DESCONHECIDO"; var s = b.status || "";
-                if (!colabs[n]) colabs[n] = { sep:0, conf:0, carr:0, rec:0, sepc:0, ent:0, tot:0 };
-                if (s.includes("Separado (Central)")) { tot.sepc++; colabs[n].sepc++; colabs[n].tot++; } 
-                else if (s.includes("Separado (Apoio)") || s === "Separado") { tot.sep++; colabs[n].sep++; colabs[n].tot++; } 
-                else if (s.includes("Conferido")) { tot.conf++; colabs[n].conf++; colabs[n].tot++; } 
-                else if (s.includes("Carregado")) { tot.carr++; colabs[n].carr++; colabs[n].tot++; } 
-                else if (s.includes("Recebido")) { tot.rec++; colabs[n].rec++; colabs[n].tot++; } 
-                else if (s.includes("Entregue")) { tot.ent++; colabs[n].ent++; colabs[n].tot++; }
-                if (s.includes("Central") && s.includes("Separado")) reqsUnicasCentral.add(b.requisicao);
-                else if (s.includes("Apoio") || s === "Separado" || s.includes("Conferido") || s.includes("Carregado")) reqsUnicasApoio.add(b.requisicao);
+                var n = b.nome || "DESCONHECIDO", s = b.status || ""; if (!colabs[n]) colabs[n] = { sep:0, conf:0, carr:0, rec:0, sepc:0, ent:0, tot:0 };
+                if (s.includes("Separado (Central)")) { tot.sepc++; colabs[n].sepc++; colabs[n].tot++; } else if (s.includes("Separado (Apoio)") || s === "Separado") { tot.sep++; colabs[n].sep++; colabs[n].tot++; } 
+                else if (s.includes("Conferido")) { tot.conf++; colabs[n].conf++; colabs[n].tot++; } else if (s.includes("Carregado")) { tot.carr++; colabs[n].carr++; colabs[n].tot++; } 
+                else if (s.includes("Recebido")) { tot.rec++; colabs[n].rec++; colabs[n].tot++; } else if (s.includes("Entregue")) { tot.ent++; colabs[n].ent++; colabs[n].tot++; }
+                if (s.includes("Central") && s.includes("Separado")) reqsCentral.add(b.requisicao); else if (s.includes("Apoio") || s === "Separado" || s.includes("Conferido") || s.includes("Carregado")) reqsApoio.add(b.requisicao);
             });
-            document.getElementById('kpi-req-apoio-dia').innerText = reqsUnicasApoio.size;
-            document.getElementById('kpi-req-central-dia').innerText = reqsUnicasCentral.size;
-            document.getElementById('kpi-req-total-dia').innerText = reqsUnicasApoio.size + reqsUnicasCentral.size;
+            document.getElementById('kpi-req-apoio-dia').innerText = reqsApoio.size; document.getElementById('kpi-req-central-dia').innerText = reqsCentral.size; document.getElementById('kpi-req-total-dia').innerText = reqsApoio.size + reqsCentral.size;
             document.getElementById('tot-separado').innerText = tot.sep; document.getElementById('tot-conferido').innerText = tot.conf; document.getElementById('tot-carregado').innerText = tot.carr;
             document.getElementById('tot-recebido').innerText = tot.rec; document.getElementById('tot-sep-central').innerText = tot.sepc; document.getElementById('tot-entregue').innerText = tot.ent;
             document.getElementById('soma-apoio-dia').innerText = tot.sep + tot.conf + tot.carr; document.getElementById('soma-central-dia').innerText = tot.rec + tot.sepc + tot.ent;
-            var tb = document.getElementById('corpo-tabela-dia'); tb.innerHTML = '';
-            var nomes = Object.keys(colabs).sort(); var mx = { sep:0, conf:0, carr:0, rec:0, sepc:0, ent:0, tot:0 };
-            nomes.forEach(n => { let d = colabs[n]; if(d.sep > mx.sep) mx.sep = d.sep; if(d.conf > mx.conf) mx.conf = d.conf; if(d.carr > mx.carr) mx.carr = d.carr; if(d.rec > mx.rec) mx.rec = d.rec; if(d.sepc > mx.sepc) mx.sepc = d.sepc; if(d.ent > mx.ent) mx.ent = d.ent; if(d.tot > mx.tot) mx.tot = d.tot; });
-            function fmt(val, mval, tot=false) { var c = tot ? "col-total ":""; if(val>0 && val===mval) return `<td class="${c}celula-destaque">${val} 🏆</td>`; return `<td class="${c}">${val}</td>`; }
-            nomes.forEach(n => { var d = colabs[n]; tb.innerHTML += `<tr><td class="col-nome">${n}</td>${fmt(d.sep,mx.sep)}${fmt(d.conf,mx.conf)}${fmt(d.carr,mx.carr)}${fmt(d.rec,mx.rec)}${fmt(d.sepc,mx.sepc)}${fmt(d.ent,mx.ent)}${fmt(d.tot,mx.tot,true)}</tr>`; });
-            var stg = tot.sep + tot.conf + tot.carr + tot.rec + tot.sepc + tot.ent;
-            tb.innerHTML += `<tr style="background:#e8f6f3; border-top:2px solid #bdc3c7;"><td class="col-nome" style="color:#16a085;">TOTAL GERAL</td><td><b>${tot.sep}</b></td><td><b>${tot.conf}</b></td><td><b>${tot.carr}</b></td><td><b>${tot.rec}</b></td><td><b>${tot.sepc}</b></td><td><b>${tot.ent}</b></td><td style="color:#c0392b;font-size:16px;"><b>${stg}</b></td></tr>`;
+            
+            var tb = document.getElementById('corpo-tabela-dia'); tb.innerHTML = ''; var mx = { sep:0, conf:0, carr:0, rec:0, sepc:0, ent:0, tot:0 };
+            Object.keys(colabs).forEach(n => { let d = colabs[n]; if(d.sep > mx.sep) mx.sep = d.sep; if(d.conf > mx.conf) mx.conf = d.conf; if(d.carr > mx.carr) mx.carr = d.carr; if(d.rec > mx.rec) mx.rec = d.rec; if(d.sepc > mx.sepc) mx.sepc = d.sepc; if(d.ent > mx.ent) mx.ent = d.ent; if(d.tot > mx.tot) mx.tot = d.tot; });
+            function fmt(v, mv, t=false) { var c = t ? "col-total ":""; return (v>0 && v===mv) ? `<td class="${c}celula-destaque">${v} 🏆</td>` : `<td class="${c}">${v}</td>`; }
+            Object.keys(colabs).sort().forEach(n => { var d = colabs[n]; tb.innerHTML += `<tr><td class="col-nome">${n}</td>${fmt(d.sep,mx.sep)}${fmt(d.conf,mx.conf)}${fmt(d.carr,mx.carr)}${fmt(d.rec,mx.rec)}${fmt(d.sepc,mx.sepc)}${fmt(d.ent,mx.ent)}${fmt(d.tot,mx.tot,true)}</tr>`; });
+            tb.innerHTML += `<tr style="background:#e8f6f3; border-top:2px solid #bdc3c7;"><td class="col-nome" style="color:#16a085;">TOTAL GERAL</td><td><b>${tot.sep}</b></td><td><b>${tot.conf}</b></td><td><b>${tot.carr}</b></td><td><b>${tot.rec}</b></td><td><b>${tot.sepc}</b></td><td><b>${tot.ent}</b></td><td style="color:#c0392b;font-size:16px;"><b>${tot.sep+tot.conf+tot.carr+tot.rec+tot.sepc+tot.ent}</b></td></tr>`;
+            
             renderBarraDash('grafico-separado-dia', colabs, 'sep', '#f39c12'); renderBarraDash('grafico-conferido-dia', colabs, 'conf', '#8e44ad'); renderBarraDash('grafico-carregado-dia', colabs, 'carr', '#d35400');
             renderBarraDash('grafico-recebido-dia', colabs, 'rec', '#3498db'); renderBarraDash('grafico-sep-central-dia', colabs, 'sepc', '#16a085'); renderBarraDash('grafico-entregue-dia', colabs, 'ent', '#2ecc71');
+            
             if(gDashSetores) gDashSetores.destroy();
             gDashSetores = new Chart(document.getElementById('chartSetores-dia').getContext('2d'), { type: 'doughnut', data: { labels: ['Apoio', 'Central'], datasets: [{ data: [tot.sep+tot.conf+tot.carr, tot.rec+tot.sepc+tot.ent], backgroundColor: ['#e67e22', '#2980b9'] }] }, options: { layout: { padding: { top: 10 } }, responsive: true, maintainAspectRatio: false, plugins: { datalabels: { color: '#fff', font: { weight: 'bold', size: 14 }, formatter: function(v, ctx) { var t = ctx.chart.data.datasets[0].data.reduce((a,b)=>a+b,0); return t > 0 ? Math.round((v/t)*100)+'%' : ''; } }, legend: { position: 'right' } } } });
-            var dataCargaDia = processarCargaDeTrabalhoPorHora(bipes);
             if(gDashCarga) gDashCarga.destroy();
-            gDashCarga = new Chart(document.getElementById('chartCarga-dia').getContext('2d'), { type: 'line', data: dataCargaDia, options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { display: false }, legend: { position: 'bottom', labels: { boxWidth: 12 } } }, scales: { y: { beginAtZero: true } } } });
+            gDashCarga = new Chart(document.getElementById('chartCarga-dia').getContext('2d'), { type: 'line', data: processarCargaDeTrabalhoPorHora(bipes), options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { display: false }, legend: { position: 'bottom', labels: { boxWidth: 12 } } }, scales: { y: { beginAtZero: true } } } });
         }
 
         function renderBarraDash(id, dados, chave, cor) {
@@ -702,176 +504,129 @@
 
         function carregarDadosBI(abaDestino) {
             var inputId = abaDestino === 'processos' ? 'filtroMesProcessos' : (abaDestino === 'produtividade' ? 'filtroMesProdutividade' : 'filtroMesTempos');
-            var inputMes = document.getElementById(inputId).value;
-            if(!inputMes) return alert("Selecione um mês.");
+            var inputMes = document.getElementById(inputId).value; if(!inputMes) return alert("Selecione um mês.");
             if (cacheBI.mes === inputMes && cacheBI.documentos.length > 0) { renderizarBI(abaDestino, cacheBI.documentos); return; }
             document.getElementById('load-' + abaDestino).style.display = 'inline-block';
             var y = parseInt(inputMes.split('-')[0]), m = parseInt(inputMes.split('-')[1]) - 1;
-            var tInicio = new Date(y, m, 1, 0, 0, 0).getTime(), tFim = new Date(y, m+1, 0, 23, 59, 59).getTime();
-            bancoDeDados.collection("checkpoints_logistica").where("ordem", ">=", tInicio).where("ordem", "<=", tFim).get().then(res => {
+            bancoDeDados.collection("checkpoints_logistica").where("ordem", ">=", new Date(y, m, 1, 0, 0, 0).getTime()).where("ordem", "<=", new Date(y, m+1, 0, 23, 59, 59).getTime()).get().then(res => {
                 cacheBI.mes = inputMes; cacheBI.documentos = []; res.forEach(doc => cacheBI.documentos.push(doc.data()));
                 renderizarBI(abaDestino, cacheBI.documentos); document.getElementById('load-' + abaDestino).style.display = 'none';
             }).catch(erro => { alert("Erro ao buscar dados."); document.getElementById('load-' + abaDestino).style.display = 'none'; });
         }
 
-        function renderizarBI(abaDestino, bipesDoMes) {
-            if (abaDestino === 'processos') processarAbaProcessos(bipesDoMes);
-            if (abaDestino === 'produtividade') processarAbaProdutividade(bipesDoMes);
-            if (abaDestino === 'tempos') processarAbaTempos(bipesDoMes);
+        function renderizarBI(abaDestino, bipes) {
+            if (abaDestino === 'processos') processarAbaProcessos(bipes);
+            if (abaDestino === 'produtividade') processarAbaProdutividade(bipes);
+            if (abaDestino === 'tempos') processarAbaTempos(bipes);
         }
 
         function processarAbaProcessos(bipes) {
-            var tot = { sep: 0, conf: 0, carr: 0, rec: 0, sepc: 0, ent: 0 };
-            var reqsUnicasApoio = new Set(), reqsUnicasCentral = new Set();
+            var tot = { sep: 0, conf: 0, carr: 0, rec: 0, sepc: 0, ent: 0 }, reqsApoio = new Set(), reqsCentral = new Set();
             bipes.forEach(ev => {
                 var s = ev.status || "";
                 if (s.includes("Separado (Central)")) tot.sepc++; else if (s.includes("Separado (Apoio)") || s === "Separado") tot.sep++;
                 else if (s.includes("Conferido")) tot.conf++; else if (s.includes("Carregado")) tot.carr++;
                 else if (s.includes("Recebido")) tot.rec++; else if (s.includes("Entregue")) tot.ent++;
-                if (s.includes("Central") && s.includes("Separado")) reqsUnicasCentral.add(ev.requisicao);
-                else if (s.includes("Apoio") || s === "Separado" || s.includes("Conferido") || s.includes("Carregado")) reqsUnicasApoio.add(ev.requisicao);
+                if (s.includes("Central") && s.includes("Separado")) reqsCentral.add(ev.requisicao); else if (s.includes("Apoio") || s === "Separado" || s.includes("Conferido") || s.includes("Carregado")) reqsApoio.add(ev.requisicao);
             });
-            document.getElementById('kpi-req-apoio').innerText = reqsUnicasApoio.size; document.getElementById('kpi-req-central').innerText = reqsUnicasCentral.size;
-            document.getElementById('kpi-req-total').innerText = reqsUnicasApoio.size + reqsUnicasCentral.size;
+            document.getElementById('kpi-req-apoio').innerText = reqsApoio.size; document.getElementById('kpi-req-central').innerText = reqsCentral.size; document.getElementById('kpi-req-total').innerText = reqsApoio.size + reqsCentral.size;
             if(gEtapas) gEtapas.destroy();
             gEtapas = new Chart(document.getElementById('chartEtapas').getContext('2d'), { type: 'bar', data: { labels: ['Sep. Apoio', 'Conferido', 'Carregado', 'Recebido', 'Sep. Central', 'Entregue'], datasets: [{ data: [tot.sep, tot.conf, tot.carr, tot.rec, tot.sepc, tot.ent], backgroundColor: ['#f39c12', '#8e44ad', '#d35400', '#3498db', '#16a085', '#2ecc71'], borderRadius: 4 }] }, options: { layout: { padding: { top: 30 } }, responsive: true, maintainAspectRatio: false, plugins: { datalabels: { color: '#2c3e50', anchor: 'end', align: 'top', font: { weight: 'bold', size: 14 } }, legend: { display: false } } } });
             if(gSetores) gSetores.destroy();
-            gSetores = new Chart(document.getElementById('chartSetores').getContext('2d'), { type: 'doughnut', data: { labels: ['Apoio', 'Central'], datasets: [{ data: [tot.sep+tot.conf+tot.carr, tot.rec+tot.sepc+tot.ent], backgroundColor: ['#e67e22', '#2980b9'] }] }, options: { layout: { padding: { top: 10 } }, responsive: true, maintainAspectRatio: false, plugins: { datalabels: { color: '#fff', font: { weight: 'bold', size: 16 }, formatter: function(value, ctx) { var t = ctx.chart.data.datasets[0].data.reduce((a,b)=>a+b,0); return t > 0 ? Math.round((value/t)*100)+'%' : ''; } }, legend: { position: 'bottom', labels: { font: { size: 14 } } } } } });
-            var dataCargaMes = processarCargaDeTrabalhoPorHora(bipes);
+            gSetores = new Chart(document.getElementById('chartSetores').getContext('2d'), { type: 'doughnut', data: { labels: ['Apoio', 'Central'], datasets: [{ data: [tot.sep+tot.conf+tot.carr, tot.rec+tot.sepc+tot.ent], backgroundColor: ['#e67e22', '#2980b9'] }] }, options: { layout: { padding: { top: 10 } }, responsive: true, maintainAspectRatio: false, plugins: { datalabels: { color: '#fff', font: { weight: 'bold', size: 16 }, formatter: function(v, ctx) { var t = ctx.chart.data.datasets[0].data.reduce((a,b)=>a+b,0); return t > 0 ? Math.round((v/t)*100)+'%' : ''; } }, legend: { position: 'bottom', labels: { font: { size: 14 } } } } } });
             if(gCargaMensal) gCargaMensal.destroy();
-            gCargaMensal = new Chart(document.getElementById('chartCargaMensal').getContext('2d'), { type: 'line', data: dataCargaMes, options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { display: false }, legend: { position: 'bottom', labels: { boxWidth: 12 } } }, scales: { y: { beginAtZero: true } } } });
+            gCargaMensal = new Chart(document.getElementById('chartCargaMensal').getContext('2d'), { type: 'line', data: processarCargaDeTrabalhoPorHora(bipes), options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { display: false }, legend: { position: 'bottom', labels: { boxWidth: 12 } } }, scales: { y: { beginAtZero: true } } } });
             document.getElementById('conteudo-processos').style.display = 'block';
         }
 
         function processarAbaProdutividade(bipes) {
             var colabs = {}, totGer = { sep:0, conf:0, carr:0, rec:0, sepc:0, ent:0, tot:0 };
             bipes.forEach(ev => {
-                var n = ev.nome || "DESCONHECIDO", s = ev.status || "";
-                if(!colabs[n]) colabs[n] = { sep:0, conf:0, carr:0, rec:0, sepc:0, ent:0, tot:0 };
-                if(s.includes("Separado (Central)")) { colabs[n].sepc++; colabs[n].tot++; totGer.sepc++; totGer.tot++;}
-                else if(s.includes("Separado (Apoio)") || s === "Separado") { colabs[n].sep++; colabs[n].tot++; totGer.sep++; totGer.tot++;}
-                else if(s.includes("Conferido")) { colabs[n].conf++; colabs[n].tot++; totGer.conf++; totGer.tot++;}
-                else if(s.includes("Carregado")) { colabs[n].carr++; colabs[n].tot++; totGer.carr++; totGer.tot++;}
-                else if(s.includes("Recebido")) { colabs[n].rec++; colabs[n].tot++; totGer.rec++; totGer.tot++;}
-                else if(s.includes("Entregue")) { colabs[n].ent++; colabs[n].tot++; totGer.ent++; totGer.tot++;}
+                var n = ev.nome || "DESCONHECIDO", s = ev.status || ""; if(!colabs[n]) colabs[n] = { sep:0, conf:0, carr:0, rec:0, sepc:0, ent:0, tot:0 };
+                if(s.includes("Separado (Central)")) { colabs[n].sepc++; colabs[n].tot++; totGer.sepc++; totGer.tot++;} else if(s.includes("Separado (Apoio)") || s === "Separado") { colabs[n].sep++; colabs[n].tot++; totGer.sep++; totGer.tot++;}
+                else if(s.includes("Conferido")) { colabs[n].conf++; colabs[n].tot++; totGer.conf++; totGer.tot++;} else if(s.includes("Carregado")) { colabs[n].carr++; colabs[n].tot++; totGer.carr++; totGer.tot++;}
+                else if(s.includes("Recebido")) { colabs[n].rec++; colabs[n].tot++; totGer.rec++; totGer.tot++;} else if(s.includes("Entregue")) { colabs[n].ent++; colabs[n].tot++; totGer.ent++; totGer.tot++;}
             });
-            var nomes = Object.keys(colabs).sort(), max = { sep:0, conf:0, carr:0, rec:0, sepc:0, ent:0, tot:0 };
-            nomes.forEach(n => { let d = colabs[n]; if(d.sep > max.sep) max.sep = d.sep; if(d.conf > max.conf) max.conf = d.conf; if(d.carr > max.carr) max.carr = d.carr; if(d.rec > max.rec) max.rec = d.rec; if(d.sepc > max.sepc) max.sepc = d.sepc; if(d.ent > max.ent) max.ent = d.ent; if(d.tot > max.tot) max.tot = d.tot; });
-            function fmt(valor, maxVal, isTotal = false) { var cls = isTotal ? "col-total " : ""; if (valor > 0 && valor === maxVal) return `<td class="${cls}celula-destaque">${valor} 🏆</td>`; return `<td class="${cls}">${valor}</td>`; }
-            var tb = document.getElementById('corpo-tabela-prod'), dadosGrafico = []; tb.innerHTML = '';
-            nomes.forEach(n => { let d = colabs[n]; dadosGrafico.push({ nome: n.split(" ")[0], valor: d.tot }); tb.innerHTML += `<tr><td class="col-nome">${n}</td>` + fmt(d.sep, max.sep) + fmt(d.conf, max.conf) + fmt(d.carr, max.carr) + fmt(d.rec, max.rec) + fmt(d.sepc, max.sepc) + fmt(d.ent, max.ent) + fmt(d.tot, max.tot, true) + `</tr>`; });
+            var mx = { sep:0, conf:0, carr:0, rec:0, sepc:0, ent:0, tot:0 }, tb = document.getElementById('corpo-tabela-prod'), dg = []; tb.innerHTML = '';
+            Object.keys(colabs).forEach(n => { let d = colabs[n]; if(d.sep > mx.sep) mx.sep = d.sep; if(d.conf > mx.conf) mx.conf = d.conf; if(d.carr > mx.carr) mx.carr = d.carr; if(d.rec > mx.rec) mx.rec = d.rec; if(d.sepc > mx.sepc) mx.sepc = d.sepc; if(d.ent > mx.ent) mx.ent = d.ent; if(d.tot > mx.tot) mx.tot = d.tot; });
+            function fmt(v, mv, t=false) { var c = t ? "col-total " : ""; return (v > 0 && v === mv) ? `<td class="${c}celula-destaque">${v} 🏆</td>` : `<td class="${c}">${v}</td>`; }
+            Object.keys(colabs).sort().forEach(n => { let d = colabs[n]; dg.push({ nome: n.split(" ")[0], v: d.tot }); tb.innerHTML += `<tr><td class="col-nome">${n}</td>${fmt(d.sep,mx.sep)}${fmt(d.conf,mx.conf)}${fmt(d.carr,mx.carr)}${fmt(d.rec,mx.rec)}${fmt(d.sepc,mx.sepc)}${fmt(d.ent,mx.ent)}${fmt(d.tot,mx.tot,true)}</tr>`; });
             tb.innerHTML += `<tr style="background:#e8f6f3; border-top:2px solid #bdc3c7;"><td class="col-nome" style="color:#16a085;">TOTAL</td><td><b>${totGer.sep}</b></td><td><b>${totGer.conf}</b></td><td><b>${totGer.carr}</b></td><td><b>${totGer.rec}</b></td><td><b>${totGer.sepc}</b></td><td><b>${totGer.ent}</b></td><td style="color:#c0392b;font-size:16px;"><b>${totGer.tot}</b></td></tr>`;
-            dadosGrafico.sort((a,b) => b.valor - a.valor);
             if(gProd) gProd.destroy();
-            gProd = new Chart(document.getElementById('chartProdutividade').getContext('2d'), { type: 'bar', data: { labels: dadosGrafico.map(i=>i.nome), datasets: [{ data: dadosGrafico.map(i=>i.valor), backgroundColor: '#9b59b6', borderRadius: 4 }] }, options: { layout: { padding: { top: 30 } }, responsive: true, maintainAspectRatio: false, plugins: { datalabels: { color: '#2c3e50', anchor: 'end', align: 'top', offset: 4, font: { weight: 'bold', size: 12 }, display: function(ctx) { return ctx.dataset.data[ctx.dataIndex] > 0; } }, legend: { display: false } } } });
+            gProd = new Chart(document.getElementById('chartProdutividade').getContext('2d'), { type: 'bar', data: { labels: dg.sort((a,b)=>b.v-a.v).map(i=>i.nome), datasets: [{ data: dg.map(i=>i.v), backgroundColor: '#9b59b6', borderRadius: 4 }] }, options: { layout: { padding: { top: 30 } }, responsive: true, maintainAspectRatio: false, plugins: { datalabels: { color: '#2c3e50', anchor: 'end', align: 'top', offset: 4, font: { weight: 'bold', size: 12 }, display: c => c.dataset.data[c.dataIndex] > 0 }, legend: { display: false } } } });
             document.getElementById('conteudo-produtividade').style.display = 'block';
         }
 
         function processarAbaTempos(bipes) {
-            var inputMes = document.getElementById('filtroMesTempos').value;
-            var diasNoMes = new Date(parseInt(inputMes.split('-')[0]), parseInt(inputMes.split('-')[1]), 0).getDate();
-            var mapasDeTempo = {}, reqsEntregues = new Set();
+            var dMes = new Date(parseInt(document.getElementById('filtroMesTempos').value.split('-')[0]), parseInt(document.getElementById('filtroMesTempos').value.split('-')[1]), 0).getDate();
+            var mT = {}, reqE = new Set();
             bipes.forEach(ev => {
                 if(ev.status.includes("Entregue")) {
-                    reqsEntregues.add(ev.requisicao);
-                    if(!mapasDeTempo[ev.requisicao]) mapasDeTempo[ev.requisicao] = { fim: ev.ordem, diaEntrega: new Date(ev.ordem).getDate(), timeline: {}, setor: ev.status.replace("Entregue (", "").replace(")", "").trim() };
-                    if(ev.ordem > mapasDeTempo[ev.requisicao].fim) mapasDeTempo[ev.requisicao].fim = ev.ordem;
+                    reqE.add(ev.requisicao);
+                    if(!mT[ev.requisicao]) mT[ev.requisicao] = { fim: ev.ordem, dE: new Date(ev.ordem).getDate(), tl: {}, st: ev.status.replace("Entregue (", "").replace(")", "").trim() };
+                    if(ev.ordem > mT[ev.requisicao].fim) mT[ev.requisicao].fim = ev.ordem;
                 }
             });
-            if (reqsEntregues.size === 0) { alert("Não há requisições entregues neste mês para calcular SLAs."); return; }
-            var buscas = Array.from(reqsEntregues).map(req => {
+            if (reqE.size === 0) return alert("Não há requisições entregues neste mês para calcular SLAs.");
+            var buscas = Array.from(reqE).map(req => {
                 return bancoDeDados.collection("checkpoints_logistica").where("requisicao", "==", req).get().then(res => {
                     var pri = null;
                     res.forEach(d => {
-                        var e = d.data(), s = e.status, t = e.ordem;
-                        if(!pri || t < pri.ordem) pri = e;
-                        if(s.includes("Separado (Central)")) { if(!mapasDeTempo[req].timeline.sc || t < mapasDeTempo[req].timeline.sc) mapasDeTempo[req].timeline.sc = t; }
-                        else if(s.includes("Separado")) { if(!mapasDeTempo[req].timeline.sa || t < mapasDeTempo[req].timeline.sa) mapasDeTempo[req].timeline.sa = t; }
-                        else if(s.includes("Conferido")) { if(!mapasDeTempo[req].timeline.co || t < mapasDeTempo[req].timeline.co) mapasDeTempo[req].timeline.co = t; }
-                        else if(s.includes("Carregado")) { if(!mapasDeTempo[req].timeline.ca || t < mapasDeTempo[req].timeline.ca) mapasDeTempo[req].timeline.ca = t; }
-                        else if(s.includes("Recebido")) { if(!mapasDeTempo[req].timeline.re || t < mapasDeTempo[req].timeline.re) mapasDeTempo[req].timeline.re = t; }
+                        var e = d.data(), s = e.status, t = e.ordem; if(!pri || t < pri.ordem) pri = e;
+                        if(s.includes("Separado (Central)")) { if(!mT[req].tl.sc || t < mT[req].tl.sc) mT[req].tl.sc = t; }
+                        else if(s.includes("Separado")) { if(!mT[req].tl.sa || t < mT[req].tl.sa) mT[req].tl.sa = t; }
+                        else if(s.includes("Conferido")) { if(!mT[req].tl.co || t < mT[req].tl.co) mT[req].tl.co = t; }
+                        else if(s.includes("Carregado")) { if(!mT[req].tl.ca || t < mT[req].tl.ca) mT[req].tl.ca = t; }
+                        else if(s.includes("Recebido")) { if(!mT[req].tl.re || t < mT[req].tl.re) mT[req].tl.re = t; }
                     });
-                    if(pri) {
-                        if(pri.status.includes("Apoio") || pri.status === "Separado" || pri.status.includes("Conferido") || pri.status.includes("Carregado")) mapasDeTempo[req].origem = "A";
-                        else if(pri.status.includes("Central")) mapasDeTempo[req].origem = "C";
-                        mapasDeTempo[req].inicio = pri.ordem;
-                    }
+                    if(pri) { mT[req].origem = (pri.status.includes("Central")) ? "C" : "A"; mT[req].inicio = pri.ordem; }
                 });
             });
-            Promise.all(buscas).then(() => { cacheSLATempos = mapasDeTempo; desenharInterfaceSLA(diasNoMes); document.getElementById('conteudo-tempos').style.display = 'block'; });
+            Promise.all(buscas).then(() => { cacheSLATempos = mT; desenharInterfaceSLA(dMes); document.getElementById('conteudo-tempos').style.display = 'block'; });
         }
 
-        function desenharInterfaceSLA(diasNoMes) {
-            var slaDia = {}; for(let i=1; i<=diasNoMes; i++) slaDia[i] = { laS:0, laQ:0, lcS:0, lcQ:0, g1S:0, g1Q:0, g2S:0, g2Q:0, g3S:0, g3Q:0, g4S:0, g4Q:0, g5S:0, g5Q:0 };
-            var totApoio = { s:0, q:0 }, totCentral = { s:0, q:0 }, totG1 = {s:0,q:0}, totG2 = {s:0,q:0}, totG3 = {s:0,q:0}, totG4 = {s:0,q:0}, totG5 = {s:0,q:0}; 
-            var rankingSLA = [];
-
-            // NOVO: Criando os contadores de setores
-            var contagemSetoresApoio = {};
-            var contagemSetoresCentral = {};
+        function desenharInterfaceSLA(dias) {
+            var sD = {}; for(let i=1; i<=dias; i++) sD[i] = { laS:0, laQ:0, lcS:0, lcQ:0, g1S:0, g1Q:0, g2S:0, g2Q:0, g3S:0, g3Q:0, g4S:0, g4Q:0, g5S:0, g5Q:0 };
+            var tA = {s:0,q:0}, tC = {s:0,q:0}, tG1={s:0,q:0}, tG2={s:0,q:0}, tG3={s:0,q:0}, tG4={s:0,q:0}, tG5={s:0,q:0}, rSLA = [], cSA = {}, cSC = {};
 
             for(let r in cacheSLATempos) {
-                let m = cacheSLATempos[r], f = m.fim, d = m.diaEntrega, t = m.timeline;
+                let m = cacheSLATempos[r], f = m.fim, d = m.dE, t = m.tl;
                 if(m.inicio && f >= m.inicio && m.origem) {
                     let dif = f - m.inicio;
-                    if(m.origem === "A") { 
-                        slaDia[d].laS += dif; slaDia[d].laQ++; totApoio.s += dif; totApoio.q++; 
-                        if(!contagemSetoresApoio[m.setor]) contagemSetoresApoio[m.setor] = { qtd: 0, somaMs: 0 };
-                        contagemSetoresApoio[m.setor].qtd++;
-                        contagemSetoresApoio[m.setor].somaMs += dif;
-                    } 
-                    else { 
-                        slaDia[d].lcS += dif; slaDia[d].lcQ++; totCentral.s += dif; totCentral.q++; 
-                        if(!contagemSetoresCentral[m.setor]) contagemSetoresCentral[m.setor] = { qtd: 0, somaMs: 0 };
-                        contagemSetoresCentral[m.setor].qtd++;
-                        contagemSetoresCentral[m.setor].somaMs += dif;
-                    }
-                    rankingSLA.push({ req: r, tempo: dif, setor: m.setor });
+                    if(m.origem === "A") { sD[d].laS += dif; sD[d].laQ++; tA.s += dif; tA.q++; if(!cSA[m.st]) cSA[m.st]={q:0,s:0}; cSA[m.st].q++; cSA[m.st].s+=dif; } 
+                    else { sD[d].lcS += dif; sD[d].lcQ++; tC.s += dif; tC.q++; if(!cSC[m.st]) cSC[m.st]={q:0,s:0}; cSC[m.st].q++; cSC[m.st].s+=dif; }
+                    rSLA.push({ req: r, t: dif, st: m.st });
                 }
                 if(t) {
-                    if(t.sa && t.co && t.co >= t.sa) { let dif = t.co-t.sa; slaDia[d].g1S += dif; slaDia[d].g1Q++; totG1.s += dif; totG1.q++; }
-                    if(t.co && t.ca && t.ca >= t.co) { let dif = t.ca-t.co; slaDia[d].g2S += dif; slaDia[d].g2Q++; totG2.s += dif; totG2.q++; }
-                    if(t.ca && t.re && t.re >= t.ca) { let dif = t.re-t.ca; slaDia[d].g3S += dif; slaDia[d].g3Q++; totG3.s += dif; totG3.q++; }
-                    if(t.re && f && f >= t.re) { let dif = f-t.re; slaDia[d].g4S += dif; slaDia[d].g4Q++; totG4.s += dif; totG4.q++; }
-                    if(t.sc && f && f >= t.sc) { let dif = f-t.sc; slaDia[d].g5S += dif; slaDia[d].g5Q++; totG5.s += dif; totG5.q++; }
+                    if(t.sa && t.co && t.co >= t.sa) { let dif = t.co-t.sa; sD[d].g1S += dif; sD[d].g1Q++; tG1.s += dif; tG1.q++; }
+                    if(t.co && t.ca && t.ca >= t.co) { let dif = t.ca-t.co; sD[d].g2S += dif; sD[d].g2Q++; tG2.s += dif; tG2.q++; }
+                    if(t.ca && t.re && t.re >= t.ca) { let dif = t.re-t.ca; sD[d].g3S += dif; sD[d].g3Q++; tG3.s += dif; tG3.q++; }
+                    if(t.re && f && f >= t.re) { let dif = f-t.re; sD[d].g4S += dif; sD[d].g4Q++; tG4.s += dif; tG4.q++; }
+                    if(t.sc && f && f >= t.sc) { let dif = f-t.sc; sD[d].g5S += dif; sD[d].g5Q++; tG5.s += dif; tG5.q++; }
                 }
             }
-            document.getElementById('sla-tot-apoio').innerText = totApoio.q > 0 ? formataSLA(totApoio.s / totApoio.q) : "N/D"; document.getElementById('sla-tot-central').innerText = totCentral.q > 0 ? formataSLA(totCentral.s / totCentral.q) : "N/D";
-            document.getElementById('gap-sep-conf').innerText = totG1.q > 0 ? formataSLA(totG1.s / totG1.q) : "N/D"; document.getElementById('gap-conf-carr').innerText = totG2.q > 0 ? formataSLA(totG2.s / totG2.q) : "N/D";
-            document.getElementById('gap-carr-rec').innerText = totG3.q > 0 ? formataSLA(totG3.s / totG3.q) : "N/D"; document.getElementById('gap-rec-ent').innerText = totG4.q > 0 ? formataSLA(totG4.s / totG4.q) : "N/D";
-            document.getElementById('gap-sepc-ent').innerText = totG5.q > 0 ? formataSLA(totG5.s / totG5.q) : "N/D";
-            rankingSLA.sort((a,b) => a.tempo - b.tempo);
-            var htmlFast = "", htmlSlow = "";
-            for(var i=0; i<5 && i<rankingSLA.length; i++) htmlFast += `<li><span class="req">${rankingSLA[i].req} <span class="setor">${rankingSLA[i].setor}</span></span> <span style="color:#27ae60; font-weight:bold;">${formataSLA(rankingSLA[i].tempo)}</span></li>`;
-            for(var i=0; i<5 && i<rankingSLA.length; i++) { var item = rankingSLA[rankingSLA.length - 1 - i]; htmlSlow += `<li><span class="req">${item.req} <span class="setor">${item.setor}</span></span> <span style="color:#c0392b; font-weight:bold;">${formataSLA(item.tempo)}</span></li>`; }
-            document.getElementById('lista-top-fast').innerHTML = htmlFast || "<li>Sem dados suficientes.</li>";
-            document.getElementById('lista-top-slow').innerHTML = htmlSlow || "<li>Sem dados suficientes.</li>";
+            document.getElementById('sla-tot-apoio').innerText = tA.q > 0 ? formataSLA(tA.s / tA.q) : "N/D"; document.getElementById('sla-tot-central').innerText = tC.q > 0 ? formataSLA(tC.s / tC.q) : "N/D";
+            document.getElementById('gap-sep-conf').innerText = tG1.q > 0 ? formataSLA(tG1.s / tG1.q) : "N/D"; document.getElementById('gap-conf-carr').innerText = tG2.q > 0 ? formataSLA(tG2.s / tG2.q) : "N/D";
+            document.getElementById('gap-carr-rec').innerText = tG3.q > 0 ? formataSLA(tG3.s / tG3.q) : "N/D"; document.getElementById('gap-rec-ent').innerText = tG4.q > 0 ? formataSLA(tG4.s / tG4.q) : "N/D";
+            document.getElementById('gap-sepc-ent').innerText = tG5.q > 0 ? formataSLA(tG5.s / tG5.q) : "N/D";
+            
+            rSLA.sort((a,b) => a.t - b.t); var hF = "", hS = "";
+            for(var i=0; i<5 && i<rSLA.length; i++) hF += `<li><span class="req">${rSLA[i].req} <span class="setor">${rSLA[i].st}</span></span> <span style="color:#27ae60; font-weight:bold;">${formataSLA(rSLA[i].t)}</span></li>`;
+            for(var i=0; i<5 && i<rSLA.length; i++) { var x = rSLA[rSLA.length - 1 - i]; hS += `<li><span class="req">${x.req} <span class="setor">${x.st}</span></span> <span style="color:#c0392b; font-weight:bold;">${formataSLA(x.t)}</span></li>`; }
+            document.getElementById('lista-top-fast').innerHTML = hF || "<li>Sem dados suficientes.</li>"; document.getElementById('lista-top-slow').innerHTML = hS || "<li>Sem dados suficientes.</li>";
 
-            // NOVO: Processamento e Renderização dos Top 5 Setores Mais Movimentados com SLA
-            var arraySetoresApoio = Object.keys(contagemSetoresApoio).map(s => ({ setor: s, qtd: contagemSetoresApoio[s].qtd, somaMs: contagemSetoresApoio[s].somaMs })).sort((a,b) => b.qtd - a.qtd);
-            var arraySetoresCentral = Object.keys(contagemSetoresCentral).map(s => ({ setor: s, qtd: contagemSetoresCentral[s].qtd, somaMs: contagemSetoresCentral[s].somaMs })).sort((a,b) => b.qtd - a.qtd);
-
-            var htmlSetoresApoio = "", htmlSetoresCentral = "";
-            for(var i=0; i<5 && i<arraySetoresApoio.length; i++) {
-                var mediaApoio = formataSLA(arraySetoresApoio[i].somaMs / arraySetoresApoio[i].qtd);
-                htmlSetoresApoio += `<li><span class="req">${arraySetoresApoio[i].setor}</span> <span><b style="color:#d35400; font-size:15px;">⏱️ ${mediaApoio}</b> <span style="color:#7f8c8d; font-size:12px; margin-left:8px;">(${arraySetoresApoio[i].qtd} entregas)</span></span></li>`;
-            }
-            for(var i=0; i<5 && i<arraySetoresCentral.length; i++) {
-                var mediaCentral = formataSLA(arraySetoresCentral[i].somaMs / arraySetoresCentral[i].qtd);
-                htmlSetoresCentral += `<li><span class="req">${arraySetoresCentral[i].setor}</span> <span><b style="color:#16a085; font-size:15px;">⏱️ ${mediaCentral}</b> <span style="color:#7f8c8d; font-size:12px; margin-left:8px;">(${arraySetoresCentral[i].qtd} entregas)</span></span></li>`;
-            }
-
-            document.getElementById('lista-top-setores-apoio').innerHTML = htmlSetoresApoio || "<li>Sem dados suficientes.</li>";
-            document.getElementById('lista-top-setores-central').innerHTML = htmlSetoresCentral || "<li>Sem dados suficientes.</li>";
-            // FIM DO NOVO BLOCO
+            var aSA = Object.keys(cSA).map(s => ({ st: s, q: cSA[s].q, sMs: cSA[s].s })).sort((a,b) => b.q - a.q), hSA = "";
+            var aSC = Object.keys(cSC).map(s => ({ st: s, q: cSC[s].q, sMs: cSC[s].s })).sort((a,b) => b.q - a.q), hSC = "";
+            for(var i=0; i<5 && i<aSA.length; i++) hSA += `<li><span class="req">${aSA[i].st}</span> <span><b style="color:#d35400; font-size:15px;">⏱️ ${formataSLA(aSA[i].sMs/aSA[i].q)}</b> <span style="color:#7f8c8d; font-size:12px; margin-left:8px;">(${aSA[i].q} entregas)</span></span></li>`;
+            for(var i=0; i<5 && i<aSC.length; i++) hSC += `<li><span class="req">${aSC[i].st}</span> <span><b style="color:#16a085; font-size:15px;">⏱️ ${formataSLA(aSC[i].sMs/aSC[i].q)}</b> <span style="color:#7f8c8d; font-size:12px; margin-left:8px;">(${aSC[i].q} entregas)</span></span></li>`;
+            document.getElementById('lista-top-setores-apoio').innerHTML = hSA || "<li>Sem dados suficientes.</li>"; document.getElementById('lista-top-setores-central').innerHTML = hSC || "<li>Sem dados suficientes.</li>";
 
             var lbl = [], dLa=[], dLc=[], dG1=[], dG2=[], dG3=[], dG4=[], dG5=[];
-            for(let i=1; i<=diasNoMes; i++) {
-                lbl.push("Dia "+i); let s = slaDia[i];
+            for(let i=1; i<=dias; i++) {
+                lbl.push("Dia "+i); let s = sD[i];
                 dLa.push(s.laQ>0 ? ((s.laS/s.laQ)/3600000).toFixed(2) : null); dLc.push(s.lcQ>0 ? ((s.lcS/s.lcQ)/3600000).toFixed(2) : null);
                 dG1.push(s.g1Q>0 ? ((s.g1S/s.g1Q)/3600000).toFixed(2) : null); dG2.push(s.g2Q>0 ? ((s.g2S/s.g2Q)/3600000).toFixed(2) : null);
-                dG3.push(s.g3Q>0 ? ((s.g3S/s.g3Q)/3600000).toFixed(2) : null); dG4.push(s.g4Q>0 ? ((s.g4S/s.g4Q)/3600000).toFixed(2) : null);
-                dG5.push(s.g5Q>0 ? ((s.g5S/s.g5Q)/3600000).toFixed(2) : null);
+                dG3.push(s.g3Q>0 ? ((s.g3S/s.g3Q)/3600000).toFixed(2) : null); dG4.push(s.g4Q>0 ? ((s.g4S/s.g4Q)/3600000).toFixed(2) : null); dG5.push(s.g5Q>0 ? ((s.g5S/s.g5Q)/3600000).toFixed(2) : null);
             }
             var pTt = { callbacks: { label: c => c.dataset.label+': '+Math.floor(c.parsed.y)+'h '+Math.round((c.parsed.y-Math.floor(c.parsed.y))*60)+'m' }};
             if(gSLA) gSLA.destroy(); gSLA = new Chart(document.getElementById('chartSLA').getContext('2d'), { type: 'line', data: { labels: lbl, datasets: [{ label: 'Apoio', data: dLa, borderColor: '#f39c12', backgroundColor: '#f39c12', tension: 0.3 }, { label: 'Central', data: dLc, borderColor: '#1abc9c', backgroundColor: '#1abc9c', tension: 0.3 }] }, options: { responsive: true, maintainAspectRatio: false, spanGaps: true, plugins: { datalabels: { display: false }, tooltip: pTt } } });
@@ -880,350 +635,17 @@
 
         function calcularSLASetor() {
             if(!cacheSLATempos) return alert("Gere o relatório mensal primeiro.");
-            var setorBuscado = document.getElementById('filtroSetorSLA').value.trim().toUpperCase(); 
-            if(!setorBuscado) return alert("Digite o nome do setor.");
-            
-            var somaMsApoio = 0, qtdApoio = 0;
-            var somaMsCentral = 0, qtdCentral = 0;
-            
+            var sB = document.getElementById('filtroSetorSLA').value.trim().toUpperCase(); if(!sB) return alert("Digite o nome do setor.");
+            var sMA = 0, qA = 0, sMC = 0, qC = 0;
             for(var req in cacheSLATempos) { 
                 var m = cacheSLATempos[req]; 
-                if(m.setor.toUpperCase().includes(setorBuscado) && m.inicio && m.fim && m.fim >= m.inicio) { 
-                    if(m.origem === "A") {
-                        somaMsApoio += (m.fim - m.inicio); qtdApoio++; 
-                    } else {
-                        somaMsCentral += (m.fim - m.inicio); qtdCentral++; 
-                    }
+                if(m.st.toUpperCase().includes(sB) && m.inicio && m.fim && m.fim >= m.inicio) { 
+                    if(m.origem === "A") { sMA += (m.fim - m.inicio); qA++; } else { sMC += (m.fim - m.inicio); qC++; }
                 } 
             }
-            
-            // Atualiza os dados do Card Apoio
-            document.getElementById('nome-setor-apoio').innerText = "Apoio ➔ " + setorBuscado; 
-            document.getElementById('amostra-setor-apoio').innerText = qtdApoio;
-            document.getElementById('sla-setor-apoio').innerText = qtdApoio > 0 ? formataSLA(somaMsApoio/qtdApoio) : "N/D"; 
-
-            // Atualiza os dados do Card Central
-            document.getElementById('nome-setor-central').innerText = "Central ➔ " + setorBuscado; 
-            document.getElementById('amostra-setor-central').innerText = qtdCentral;
-            document.getElementById('sla-setor-central').innerText = qtdCentral > 0 ? formataSLA(somaMsCentral/qtdCentral) : "N/D"; 
-
+            document.getElementById('nome-setor-apoio').innerText = "Apoio ➔ " + sB; document.getElementById('amostra-setor-apoio').innerText = qA; document.getElementById('sla-setor-apoio').innerText = qA > 0 ? formataSLA(sMA/qA) : "N/D"; 
+            document.getElementById('nome-setor-central').innerText = "Central ➔ " + sB; document.getElementById('amostra-setor-central').innerText = qC; document.getElementById('sla-setor-central').innerText = qC > 0 ? formataSLA(sMC/qC) : "N/D"; 
             document.getElementById('box-sla-setor').style.display = 'flex';
-        }
-
-        function buscarCicloVida() {
-            var req = document.getElementById('inputRaioX').value.trim();
-            if(req.length !== 7) return alert("Digite 7 dígitos.");
-            document.getElementById('load-raiox').style.display = 'inline-block'; document.getElementById('resultado-raiox').style.display = 'none';
-
-            bancoDeDados.collection("checkpoints_logistica").where("requisicao", "==", req).get().then(res => {
-                document.getElementById('load-raiox').style.display = 'none';
-                if(res.empty) return alert("Nenhum histórico encontrado para esta requisição.");
-
-                document.getElementById('raiox-titulo-req').innerText = req;
-                var tlContainer = document.getElementById('raiox-timeline'); tlContainer.innerHTML = "";
-                var todosBipes = []; res.forEach(d => todosBipes.push(d.data()));
-
-                var eventoSeparadoVol1 = todosBipes.find(b => (parseInt(b.volume) === 1 || !b.volume) && b.status.includes("Separado"));
-                var bipesPorVolume = {}; todosBipes.forEach(b => { var v = parseInt(b.volume) || 1; if(!bipesPorVolume[v]) bipesPorVolume[v] = []; bipesPorVolume[v].push(b); });
-
-                if (eventoSeparadoVol1) {
-                    for (var vol in bipesPorVolume) {
-                        if (parseInt(vol) > 1 && !bipesPorVolume[vol].some(b => b.status.includes("Separado"))) {
-                            var eventoHerdado = JSON.parse(JSON.stringify(eventoSeparadoVol1)); eventoHerdado.herdado = true; bipesPorVolume[vol].push(eventoHerdado);
-                        }
-                    }
-                }
-
-                var volumesOrdem = Object.keys(bipesPorVolume).sort((a,b) => parseInt(a) - parseInt(b));
-
-                volumesOrdem.forEach(vol => {
-                    var bipes = bipesPorVolume[vol]; bipes.sort((a, b) => a.ordem - b.ordem);
-                    
-                    // INTELIGÊNCIA DE ROTAS (Baseada na Origem e Transferências)
-                    var originatedAtCentral = bipes.some(b => b.status.includes("Separado (Central)"));
-                    var originatedAtApoio = bipes.some(b => b.status === "Separado" || b.status.includes("Separado (Apoio)"));
-                    var originatedAtCAF = bipes.some(b => b.status.includes("Separado (CAF)"));
-                    var originatedAtUruguai = bipes.some(b => b.status.includes("Separado (Central Uruguai)"));
-                    
-                    var fluxoIdeal = [];
-
-                    if (originatedAtCAF || bipes.some(b => b.status.includes("Recebido (CAF)"))) {
-                        if (bipes.some(b => b.status.includes("Recebido (CAF)"))) {
-                            // ROTA A: Transferência para a CAF
-                            if (originatedAtCentral) {
-                                fluxoIdeal = [
-                                    { nome: "Separado (Central)", filtros: ["Separado (Central)"] },
-                                    { nome: "Carregado", filtros: ["Carregado", "Carregado (Central)"] },
-                                    { nome: "Recebido (CAF)", filtros: ["Recebido (CAF)"] },
-                                    { nome: "Entregue no Setor", filtros: ["Entregue"] } // Filtro genérico para qualquer entrega
-                                ];
-                            } else {
-                                fluxoIdeal = [
-                                    { nome: "Separado (Apoio)", filtros: ["Separado (Apoio)", "Separado"] },
-                                    { nome: "Conferido (Apoio)", filtros: ["Conferido", "Conferido (Apoio)"] },
-                                    { nome: "Carregado (Transporte)", filtros: ["Carregado", "Carregado (Transporte)"] },
-                                    { nome: "Recebido (CAF)", filtros: ["Recebido (CAF)"] },
-                                    { nome: "Entregue no Setor", filtros: ["Entregue"] }
-                                ];
-                            }
-                        } else {
-                            // ROTA B: Fluxo Direto CAF
-                            fluxoIdeal = [
-                                { nome: "Separado (CAF)", filtros: ["Separado (CAF)"] },
-                                { nome: "Conferido (CAF)", filtros: ["Conferido (CAF)"] },
-                                { nome: "Entregue no Setor", filtros: ["Entregue"] }
-                            ];
-                        }
-                    } else if (originatedAtUruguai || bipes.some(b => b.status.includes("Recebido (Central Uruguai)"))) {
-                        if (bipes.some(b => b.status.includes("Recebido (Central Uruguai)"))) {
-                            // ROTA C: Transferência para o Uruguai
-                            if (originatedAtCentral) {
-                                fluxoIdeal = [
-                                    { nome: "Separado (Central)", filtros: ["Separado (Central)"] },
-                                    { nome: "Carregado", filtros: ["Carregado", "Carregado (Central)"] },
-                                    { nome: "Recebido (Uruguai)", filtros: ["Recebido (Central Uruguai)"] },
-                                    { nome: "Entregue no Setor", filtros: ["Entregue"] }
-                                ];
-                            } else {
-                                fluxoIdeal = [
-                                    { nome: "Separado (Apoio)", filtros: ["Separado (Apoio)", "Separado"] },
-                                    { nome: "Conferido (Apoio)", filtros: ["Conferido", "Conferido (Apoio)"] },
-                                    { nome: "Carregado (Transporte)", filtros: ["Carregado", "Carregado (Transporte)"] },
-                                    { nome: "Recebido (Uruguai)", filtros: ["Recebido (Central Uruguai)"] },
-                                    { nome: "Entregue no Setor", filtros: ["Entregue"] }
-                                ];
-                            }
-                        } else {
-                            // ROTA D: Fluxo Direto Uruguai
-                            fluxoIdeal = [
-                                { nome: "Separado (Uruguai)", filtros: ["Separado (Central Uruguai)"] },
-                                { nome: "Entregue no Setor", filtros: ["Entregue"] }
-                            ];
-                        }
-                    } else {
-                        // ROTA E: Fluxo Padrão Antigo
-                        if (originatedAtApoio || bipes.some(b => b.status.includes("Carregado") || (b.status.includes("Recebido") && !b.status.includes("CAF") && !b.status.includes("Uruguai")))) {
-                            fluxoIdeal = [
-                                { nome: "Separado (Apoio)", filtros: ["Separado (Apoio)", "Separado"] },
-                                { nome: "Conferido (Apoio)", filtros: ["Conferido"] },
-                                { nome: "Carregado (Transporte)", filtros: ["Carregado"] },
-                                { nome: "Recebido (Central)", filtros: ["Recebido", "Recebido (Central)"] },
-                                { nome: "Entregue no Setor", filtros: ["Entregue"] }
-                            ];
-                        } else {
-                            fluxoIdeal = [
-                                { nome: "Separado (Central)", filtros: ["Separado (Central)"] },
-                                { nome: "Entregue no Setor", filtros: ["Entregue"] }
-                            ];
-                        }
-                    }
-
-                    var htmlVolume = `<div style="min-width:320px; background:#fff; padding:15px; border:2px solid #bdc3c7; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.05);"><h4 style="text-align:center; color:#d35400; margin-top:0; border-bottom:2px solid #eee; padding-bottom:10px;">Volume ${vol}</h4>`;
-                    var ultimaOrdemValida = null; var primeiraOrdem = bipes[0].ordem; var ultimaOrdem = bipes[bipes.length-1].ordem; var temEntrega = bipes.some(b => b.status.includes("Entregue"));
-                    var indexAlcancado = -1; bipes.forEach(b => { fluxoIdeal.forEach((f, i) => { if(f.filtros.some(fil => b.status.includes(fil)) && i > indexAlcancado) indexAlcancado = i; }); });
-
-                    fluxoIdeal.forEach((etapa, i) => {
-                        var achou = bipes.find(b => etapa.filtros.some(fil => b.status.includes(fil)));
-                        if(achou && ultimaOrdemValida && achou.ordem > ultimaOrdemValida) htmlVolume += `<div class="raiox-intervalo">⏳ Tempo na etapa: ${formataSLA(achou.ordem - ultimaOrdemValida)}</div>`;
-                        htmlVolume += '<div class="raiox-etapa">';
-                        if(achou) { ultimaOrdemValida = achou.ordem; var bgIcone = achou.herdado ? '#3498db' : '#2ecc71'; var txHerdado = achou.herdado ? ' <span style="font-size:11px; color:#3498db; font-weight:normal;">(Herdado Vol 1)</span>' : ''; htmlVolume += `<div class="raiox-icone" style="background-color:${bgIcone};">✓</div><div class="raiox-detalhe"><h4>${achou.status}${txHerdado}</h4><p>👤 ${achou.nome} | 🕒 ${achou.data}</p></div>`; } 
-                        else if(i < indexAlcancado) htmlVolume += `<div class="raiox-icone icone-falha">!</div><div class="raiox-detalhe"><h4 style="color:#e74c3c;">${etapa.nome}</h4><p style="color:#e74c3c;">(Pulou a etapa)</p></div>`; 
-                        else htmlVolume += `<div class="raiox-icone icone-pendente">...</div><div class="raiox-detalhe"><h4 style="color:#95a5a6;">${etapa.nome}</h4><p>Aguardando...</p></div>`;
-                        htmlVolume += '</div>';
-                    });
-
-                    if (temEntrega) htmlVolume += `<div style="margin-top:20px; padding:10px; background:#e8f6f3; border:1px solid #2ecc71; border-radius:5px; text-align:center;"><strong style="color:#27ae60;">🏁 Tempo Total do Ciclo</strong><br><span style="font-size:18px; font-weight:bold; color:#2c3e50;">${formataSLA(ultimaOrdem - primeiraOrdem)}</span></div>`;
-                    htmlVolume += `</div>`; tlContainer.innerHTML += htmlVolume;
-                });
-                document.getElementById('resultado-raiox').style.display = 'block';
-            }).catch(erro => { document.getElementById('load-raiox').style.display = 'none'; alert("Erro ao consultar o banco."); console.error(erro); });
-        }
-
-        var pagLog = 1, curPriLog = null, curUltLog = null;
-        
-        function carregarDadosLogistica(dir) {
-            var lim = parseInt(document.getElementById('limiteLogistica').value) || 10; 
-            var reqFiltro = document.getElementById('filtroReqLogistica').value.trim();
-            document.getElementById('load-logistica').style.display = 'inline-block';
-            var tb = document.getElementById('corpo-logistica'); 
-            var data = document.getElementById('filtroDataLogistica').value; 
-            var dInicio = new Date(data+"T00:00:00").getTime();
-            
-            var query = bancoDeDados.collection("checkpoints_logistica")
-                .where("ordem", ">=", dInicio)
-                .where("ordem", "<=", dInicio+86399999)
-                .orderBy("ordem", "desc");
-
-            if (reqFiltro !== "") {
-                document.getElementById('paginacao-logistica').style.display = 'none';
-                query.get().then(res => {
-                    document.getElementById('load-logistica').style.display = 'none';
-                    tb.innerHTML = '';
-                    var achouAlgo = false;
-                    res.forEach(d => {
-                        var ev = d.data();
-                        if (ev.requisicao === reqFiltro) {
-                            achouAlgo = true;
-                            var hora = ev.data.split(" ")[1] || ev.data;
-                            var str = encodeURIComponent(JSON.stringify(ev)); 
-                            tb.innerHTML += `<tr id="row-${d.id}"><td>${hora}</td><td>${ev.nome}</td><td style="color:#2980b9;font-weight:bold;">${ev.requisicao}</td><td>Vol ${ev.volume||1}</td><td>${ev.status}</td><td><button class="btn-excluir" onclick="abrirModalExclusao('${d.id}', '${str}')">Excluir</button></td></tr>`;
-                        }
-                    });
-                    if (!achouAlgo) tb.innerHTML = `<tr><td colspan="6">Nenhum lançamento encontrado para a Requisição ${reqFiltro} nesta data.</td></tr>`;
-                }).catch(e => { alert("Erro na busca."); document.getElementById('load-logistica').style.display = 'none'; });
-                return;
-            }
-
-            document.getElementById('paginacao-logistica').style.display = 'flex';
-            if (dir === 1 && curUltLog) { query = query.startAfter(curUltLog).limit(lim); pagLog++; } 
-            else if (dir === -1 && curPriLog) { query = query.endBefore(curPriLog).limitToLast(lim); pagLog--; } 
-            else { query = query.limit(lim); pagLog = 1; }
-            
-            query.get().then(res => {
-                document.getElementById('load-logistica').style.display = 'none';
-                if(res.empty) { 
-                    if(dir===0) tb.innerHTML = '<tr><td colspan="6">Nenhum dado.</td></tr>'; 
-                    if(dir===1) pagLog--; 
-                    if(dir===-1) pagLog++; 
-                } else {
-                    tb.innerHTML = ''; curPriLog = res.docs[0]; curUltLog = res.docs[res.docs.length-1];
-                    res.forEach(d => { 
-                        var ev = d.data(), hora = ev.data.split(" ")[1] || ev.data, str = encodeURIComponent(JSON.stringify(ev)); 
-                        tb.innerHTML += `<tr id="row-${d.id}"><td>${hora}</td><td>${ev.nome}</td><td style="color:#2980b9;font-weight:bold;">${ev.requisicao}</td><td>Vol ${ev.volume||1}</td><td>${ev.status}</td><td><button class="btn-excluir" onclick="abrirModalExclusao('${d.id}', '${str}')">Excluir</button></td></tr>`; 
-                    });
-                }
-                document.getElementById('info-pag-log').innerText = "Pág " + pagLog; 
-                document.getElementById('btn-ant-log').disabled = (pagLog <= 1); 
-                document.getElementById('btn-prox-log').disabled = (res.docs.length < lim);
-            });
-        }
-
-        var idDel = null, dadosDel = null;
-        
-        function abrirModalExclusao(id, str) { 
-            idDel = id; 
-            dadosDel = JSON.parse(decodeURIComponent(str)); 
-            document.getElementById('texto-resumo-exclusao').innerHTML = `Excluir a Requisição <b>${dadosDel.requisicao} (Vol ${dadosDel.volume||1})</b> da etapa <b>${dadosDel.status}</b>?`; 
-            document.getElementById('input-justificativa').value = ""; 
-            document.getElementById('modal-justificativa').style.display = 'block'; 
-        }
-        
-        function fecharModal() { 
-            document.getElementById('modal-justificativa').style.display = 'none'; 
-        }
-        
-        // =========================================================================
-        // MOTOR DE EXCLUSÃO CORRIGIDO (DUAL WRITE REVERT) - VERSÃO 1.18.2
-        // =========================================================================
-        function processarExclusaoFinal() {
-            var just = document.getElementById('input-justificativa').value.trim(); 
-            if(just.length < 5) return alert("Justificativa obrigatória.");
-            
-            // Trava o botão para não dar duplo clique
-            var btnConfirmar = document.querySelector('#modal-justificativa button:last-child');
-            btnConfirmar.innerText = "Excluindo...";
-            btnConfirmar.disabled = true;
-
-            var req = dadosDel.requisicao;
-            var volTarget = dadosDel.volume || 1;
-            var idDocEstadoAtual = req + "-" + volTarget;
-
-            // 1. Grava no Histórico de Exclusões
-            bancoDeDados.collection("historico_exclusoes").add({ 
-                idRegistroApagado: idDel, 
-                requisicao: req, 
-                status: dadosDel.status, 
-                volume: volTarget, 
-                operadorOriginal: dadosDel.nome, 
-                excluidoPorNome: gestorLogado.nome, 
-                justificativa: just, 
-                dataExclusao: new Date().toLocaleString('pt-BR'), 
-                ordemExclusao: new Date().getTime() 
-            })
-            // 2. Apaga o erro da Tabela de Logística Geral
-            .then(() => bancoDeDados.collection("checkpoints_logistica").doc(idDel).delete())
-            .then(() => { 
-                // 3. Busca TODO o histórico dessa requisição para achar a etapa anterior
-                return bancoDeDados.collection("checkpoints_logistica").where("requisicao", "==", req).get();
-            })
-            .then((resultado) => {
-                var eventoAnterior = null;
-                
-                // Filtra em JavaScript para não precisar de novos índices no Firebase
-                resultado.forEach(doc => {
-                    var ev = doc.data();
-                    var evVol = ev.volume || 1;
-                    
-                    if (evVol == volTarget) {
-                        // Encontra o último evento válido (com maior timestamp de ordem)
-                        if (!eventoAnterior || ev.ordem > eventoAnterior.ordem) {
-                            eventoAnterior = ev;
-                        }
-                    }
-                });
-
-                // 4. Reescreve o "Estado Atual" com o bipe anterior (se existir), ou apaga tudo se era o único bipe
-                if (eventoAnterior) {
-                    return bancoDeDados.collection("caixas_estado_atual").doc(idDocEstadoAtual).set(eventoAnterior);
-                } else {
-                    return bancoDeDados.collection("caixas_estado_atual").doc(idDocEstadoAtual).delete();
-                }
-            })
-            .then(() => { 
-                fecharModal(); 
-                var linhaApagada = document.getElementById('row-' + idDel); 
-                if(linhaApagada) linhaApagada.remove(); 
-                
-                // Restaura o botão
-                btnConfirmar.innerText = "Confirmar Exclusão";
-                btnConfirmar.disabled = false;
-                
-                alert("✅ Registro excluído com sucesso!");
-            })
-            .catch(erro => { 
-                console.error(erro); 
-                alert("Erro ao excluir o registro."); 
-                btnConfirmar.innerText = "Confirmar Exclusão";
-                btnConfirmar.disabled = false;
-            });
-        }
-
-        // =========================================================================
-        // MOTOR DE HISTÓRICO DE AUDITORIA
-        // =========================================================================
-        var pagAud = 1, curPriAud = null, curUltAud = null;
-        
-        function carregarAuditoria(dir) {
-            var lim = parseInt(document.getElementById('limiteAuditoria').value) || 10; 
-            document.getElementById('load-auditoria').style.display = 'inline-block';
-            var tb = document.getElementById('corpo-auditoria'); 
-            var query = bancoDeDados.collection("historico_exclusoes").orderBy("ordemExclusao", "desc");
-            
-            if (dir === 1 && curUltAud) { query = query.startAfter(curUltAud).limit(lim); pagAud++; } 
-            else if (dir === -1 && curPriAud) { query = query.endBefore(curPriAud).limitToLast(lim); pagAud--; } 
-            else { query = query.limit(lim); pagAud = 1; }
-            
-            query.get().then(res => {
-                document.getElementById('load-auditoria').style.display = 'none';
-                if(res.empty) { 
-                    if(dir===0) tb.innerHTML = '<tr><td colspan="6">Vazio.</td></tr>'; 
-                    if(dir===1) pagAud--; 
-                    if(dir===-1) pagAud++; 
-                } else {
-                    tb.innerHTML = ''; curPriAud = res.docs[0]; curUltAud = res.docs[res.docs.length-1];
-                    res.forEach(d => { 
-                        var l = d.data(); 
-                        tb.innerHTML += `<tr><td>${l.dataExclusao}</td><td><b>${l.requisicao}</b> (Vol ${l.volume||1})</td><td>${l.status}</td><td>${l.operadorOriginal}</td><td style="color:#e74c3c;">${l.excluidoPorNome}</td><td><i>"${l.justificativa}"</i></td></tr>`; 
-                    });
-                }
-                document.getElementById('info-pag-aud').innerText = "Pág " + pagAud; 
-                document.getElementById('btn-ant-aud').disabled = (pagAud <= 1); 
-                document.getElementById('btn-prox-aud').disabled = (res.docs.length < lim);
-            }).catch(erro => {
-                console.error("Erro ao carregar auditoria:", erro);
-                document.getElementById('load-auditoria').style.display = 'none';
-                alert("Erro ao carregar o histórico de exclusões.");
-            });
         }
 
     </script>
