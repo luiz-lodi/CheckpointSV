@@ -125,7 +125,7 @@
 
     <script>
         // CONTROLE OFICIAL DE VERSÃO E ASSINATURA 🚀
-        const APP_VERSION = "2.0.0";
+        const APP_VERSION = "2.0.1";
         const APP_DATE = "31/03/2026";
         
         document.getElementById('display-versao').innerText = `Módulo Romaneio | Versão: ${APP_VERSION} (${APP_DATE})`;
@@ -167,7 +167,14 @@
 
         function validarAcesso(tipo) {
             var matRaw = document.getElementById('idMatricula').value.trim();
-            if (matRaw === "") return;
+            
+            // NOVO: Mensagem de erro caso o usuário não preencha o crachá
+            if (matRaw === "") {
+                alert("⚠️ Por favor, informe a sua matrícula (crachá) antes de gerar o romaneio.");
+                document.getElementById('idMatricula').focus();
+                return;
+            }
+            
             var mat = parseInt(matRaw.slice(-6), 10).toString();
             
             if (listaColaboradores[mat]) {
@@ -189,8 +196,9 @@
                 
                 buscarCargaAtual(tipoRomaneioAtual); 
             } else {
-                alert("Matrícula não encontrada!");
+                alert("❌ Matrícula não encontrada!");
                 document.getElementById('idMatricula').value = "";
+                document.getElementById('idMatricula').focus();
             }
         }
 
