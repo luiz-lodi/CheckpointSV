@@ -167,10 +167,10 @@
 
     <script>
         // CONTROLE OFICIAL DE VERSÃO E ASSINATURA 🚀
-        const APP_VERSION = "3.35.1";
+        const APP_VERSION = "4.0.0";
         const APP_DATE = "31/03/2026";
         
-        document.getElementById('display-versao').innerText = `Versão: ${APP_VERSION} (${APP_DATE})`;
+        document.getElementById('display-versao').innerText = `Módulo Tela do Operador | Versão: ${APP_VERSION} (${APP_DATE})`;
         console.log(`%c🚀 Checkpoint HSVP Operador | Versão ${APP_VERSION} | Novos Fluxos e Usuários`, "color: #3498db; font-size: 14px; font-weight: bold;");
 
         var firebaseConfig = {
@@ -239,8 +239,11 @@
             "QR-SEP-CENTRAL-URUGUAI": "Separado (Central Uruguai)",
             "QR-RECEBIDO-CENTRAL-URUGUAI": "Recebido (Central Uruguai)",
             
-            // Fluxo Almoxarifado Central (Teixeira Soares) - Novo
-            "QR-CARREGADO-CENTRAL": "Carregado (Central)"
+            // Fluxo Almoxarifado Central (Teixeira Soares)
+            "QR-CARREGADO-CENTRAL": "Carregado (Central)",
+
+            // NOVO: Fluxo de Rota Externa (Unidades Externas)
+            "QR-ROTA-EXTERNA": "Entregue (Rota Externa)"
         };
 
         // ==========================================
