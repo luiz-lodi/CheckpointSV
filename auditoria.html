@@ -26,15 +26,11 @@
         #painel-gestao { display: none; padding-top: 15px; } 
         .layout-app { display: flex; gap: 20px; align-items: flex-start; }
         
+        /* MENU LATERAL */
         .sidebar { width: 280px; background: #34495e; border-radius: 8px; padding: 10px 0; flex-shrink: 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden;}
-        .menu-btn { display: flex; justify-content: space-between; align-items: center; width: 100%; text-align: left; padding: 15px 20px; background: none; border: none; color: #ecf0f1; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.2s; border-left: 4px solid transparent; }
+        .menu-btn { display: block; width: 100%; text-align: left; padding: 15px 20px; background: none; border: none; color: #ecf0f1; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.2s; border-left: 4px solid transparent; }
         .menu-btn:hover { background: #2c3e50; }
         .menu-btn.ativo { background: #2c3e50; border-left-color: #f1c40f; color: #f1c40f; }
-        .submenu { display: none; background: #2c3e50; padding: 5px 0; }
-        .submenu.aberto { display: block; }
-        .submenu-btn { display: block; width: 100%; text-align: left; padding: 12px 20px 12px 40px; background: none; border: none; color: #bdc3c7; font-size: 14px; cursor: pointer; transition: 0.2s; }
-        .submenu-btn:hover { color: #fff; background: #1a252f; }
-        .submenu-btn.ativo { color: #f1c40f; font-weight: bold; background: #1a252f; border-left: 3px solid #f1c40f;}
 
         .conteudo-principal { flex: 1; background: white; border-radius: 8px; padding: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); min-width: 0; min-height: 600px;}
         .secao-app { display: none; }
@@ -99,13 +95,10 @@
         <div id="painel-gestao">
             <div class="layout-app">
                 <div class="sidebar">
-                    <button class="menu-btn ativo" onclick="toggleSubmenu('sub-auditoria', this)">🛡️ Auditoria Logística <span class="seta">▲</span></button>
-                    <div id="sub-auditoria" class="submenu aberto">
-                        <button class="submenu-btn ativo" onclick="mudarAbaFilha('aba-auditoria-raiox', this)">Ciclo de Vida</button>
-                        <button class="submenu-btn" onclick="mudarAbaFilha('aba-auditoria-exclusao', this)">Excluir Lançamentos</button>
-                        <button class="submenu-btn" onclick="mudarAbaFilha('aba-auditoria-historico', this)">Histórico de Exclusões</button>
-                        <button class="submenu-btn" onclick="mudarAbaFilha('aba-auditoria-logs', this)">Logs de Erros de Bipagem</button>
-                    </div>
+                    <button class="menu-btn ativo" onclick="mudarAbaPrincipal('aba-auditoria-raiox', this)">🔍 Ciclo de Vida (Raio-X)</button>
+                    <button class="menu-btn" onclick="mudarAbaPrincipal('aba-auditoria-exclusao', this)">🗑️ Excluir Lançamentos</button>
+                    <button class="menu-btn" onclick="mudarAbaPrincipal('aba-auditoria-historico', this)">📜 Histórico de Exclusões</button>
+                    <button class="menu-btn" onclick="mudarAbaPrincipal('aba-auditoria-logs', this)">⚠️ Logs de Erros de Bipagem</button>
                 </div>
 
                 <div class="conteudo-principal">
@@ -215,7 +208,7 @@
     </div>
 
     <script>
-        const APP_VERSION = "1.0.0";
+        const APP_VERSION = "1.1.0";
         const APP_DATE = "31/03/2026";
         document.getElementById('display-versao').innerText = `Módulo Auditoria | Versão: ${APP_VERSION} (${APP_DATE})`;
 
@@ -253,14 +246,12 @@
         }
         function fazerLogout() { firebase.auth().signOut(); }
 
-        function toggleSubmenu(idSubmenu, btn) {
-            var sub = document.getElementById(idSubmenu), seta = btn.querySelector('.seta');
-            sub.classList.toggle('aberto'); seta.innerText = sub.classList.contains('aberto') ? "▲" : "▼";
-        }
-        function mudarAbaFilha(idAba, btn) {
+        function mudarAbaPrincipal(idAba, btn) {
             document.querySelectorAll('.secao-app').forEach(el => el.classList.remove('ativa'));
-            document.querySelectorAll('.submenu-btn').forEach(b => b.classList.remove('ativo'));
-            document.getElementById(idAba).classList.add('ativa'); btn.classList.add('ativo');
+            document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('ativo'));
+            document.getElementById(idAba).classList.add('ativa'); 
+            btn.classList.add('ativo');
+            
             if(idAba === 'aba-auditoria-exclusao') carregarDadosLogistica(0);
             if(idAba === 'aba-auditoria-historico') carregarAuditoria(0);
             if(idAba === 'aba-auditoria-logs') carregarLogsErros();
