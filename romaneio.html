@@ -20,8 +20,9 @@
         .box-login input { width: 100%; padding: 12px; font-size: 16px; margin-bottom: 15px; border: 2px solid #ccc; border-radius: 5px; box-sizing: border-box; }
         .btn-acao { width: 100%; padding: 15px; font-size: 16px; font-weight: bold; border: none; border-radius: 5px; cursor: pointer; color: white; transition: 0.2s; }
         .btn-entrar { background-color: #3498db; }
+        .btn-entrar-externa { background-color: #caa501; margin-top: 10px;}
         .btn-imprimir { background-color: #8e44ad; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 20px;}
-        .btn-atualizar { background-color: #f39c12; margin-bottom: 20px; width: auto; padding: 10px 20px;}
+        .btn-voltar { background-color: #e74c3c; margin-top: 10px; }
 
         /* Tabela de Revisão na Tela */
         table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 15px; }
@@ -66,19 +67,17 @@
     </div>
 
     <div class="container">
-        <h1 class="no-print">🚚 Romaneio de Carga</h1>
+        <h1 class="no-print" id="titulo-pagina">🚚 Emissão de Romaneio</h1>
 
         <div id="box-login" class="box-login">
             <h3 style="color: #7f8c8d; margin-bottom: 20px;">Identificação do Emissor</h3>
-            <input type="number" id="idMatricula" placeholder="Digite sua Matrícula e Enter">
-            <button class="btn-acao btn-entrar" onclick="validarAcesso()">Acessar Romaneio</button>
+            <input type="number" id="idMatricula" placeholder="Digite sua Matrícula (crachá)">
+            
+            <button class="btn-acao btn-entrar" onclick="validarAcesso('NORMAL')">🚚 Gerar Romaneio NORMAL</button>
+            <button class="btn-acao btn-entrar-externa" onclick="validarAcesso('EXTERNA')">🛻 Gerar Romaneio ROTA EXTERNA</button>
         </div>
 
         <div id="tela-romaneio">
-            <div class="no-print" style="display: flex; justify-content: flex-end;">
-                <button class="btn-acao btn-atualizar" onclick="buscarCargaAtual()">🔄 Atualizar Dados da Carga</button>
-            </div>
-
             <div class="resumo">
                 <div>
                     <strong>Emissor:</strong> <span id="nomeEmissor"></span><br>
@@ -90,10 +89,10 @@
             <table>
                 <thead>
                     <tr>
-                        <th width="15%">Hora Carga</th>
+                        <th width="15%">Hora</th>
                         <th width="20%">Requisição</th>
                         <th width="15%">Volume</th>
-                        <th width="30%">Operador (Quem carregou)</th>
+                        <th width="30%">Operador (Expedição)</th>
                         <th width="20%" style="text-align: center;">Conf. Destino</th>
                     </tr>
                 </thead>
@@ -106,12 +105,15 @@
                 <button class="btn-acao btn-imprimir" onclick="window.print()" id="btnImprimir" style="display:none;">
                     🖨️ Imprimir Documento de Romaneio
                 </button>
+                <button class="btn-acao btn-voltar" onclick="voltarParaSelecao()">
+                    🔙 Voltar para Seleção
+                </button>
             </div>
 
             <div class="footer-impressao">
                 <div class="assinatura">Expedição (Apoio)</div>
-                <div class="assinatura">Motorista (Transporte)</div>
-                <div class="assinatura">Recebimento (Central)</div>
+                <div class="assinatura" id="assinatura-transporte">Motorista (Transporte Interno)</div>
+                <div class="assinatura">Recebimento (Destino)</div>
             </div>
         </div>
     </div>
@@ -123,12 +125,12 @@
 
     <script>
         // CONTROLE OFICIAL DE VERSÃO E ASSINATURA 🚀
-        const APP_VERSION = "1.4.2";
+        const APP_VERSION = "2.0.0";
         const APP_DATE = "31/03/2026";
         
-        document.getElementById('display-versao').innerText = `Módulo Romaneio |Versão: ${APP_VERSION} (${APP_DATE})`;
+        document.getElementById('display-versao').innerText = `Módulo Romaneio | Versão: ${APP_VERSION} (${APP_DATE})`;
 
-        console.log(`%c🚀 Checkpoint HSVP Romaneio | Criado por Luiz Henrique Link Lodi & Gemini | Versão ${APP_VERSION} | Fix: Índice do Firebase`, "color: #8e44ad; font-size: 14px; font-weight: bold;");
+        console.log(`%c🚀 Checkpoint HSVP Romaneio | Criado por Luiz Henrique Link Lodi & Gemini | Versão ${APP_VERSION} | Rotas Externas`, "color: #8e44ad; font-size: 14px; font-weight: bold;");
 
         // Configuração Firebase
         var firebaseConfig = {
@@ -146,55 +148,71 @@
         var bancoDeDados = firebase.firestore();
 
         var nomeOperadorAtual = "";
+        var tipoRomaneioAtual = "NORMAL";
+        
         var listaColaboradores = {
             "144006": "BRUNA LOURENCO", "1249": "BRUNA QUEVEDO", "168314": "CAIO MATHEUS", "167407": "ENI", 
             "1764": "GUILHERME", "163591": "HENZO", "167702": "JOAO GUSTAVO", "151357": "LUIZ HENRIQUE", 
             "54976": "MAURO", "500008": "OTÁVIO", "76988": "ROSELIA", "168297": "STEFANI", "168604": "ALESSANDRO", 
             "162513": "DANIEL", "166732": "ARMANDO", "168313": "ERICK", "104602": "EVANDRO", "164846": "FERNANDA", 
-            "147628": "GABRIEL", "292": "IDERALDO", "166913": "LUIS GUSTAVO", "167733": "RAFAEL", "139320": "RENAN"
+            "147628": "GABRIEL", "292": "IDERALDO", "166913": "LUIS GUSTAVO", "167733": "RAFAEL", "139320": "RENAN",
+            "294": "GLAUCEMARA", "139100": "FELIPE", "1194": "BRENDA", "2411": "CLAUDIA"
         };
 
         window.onload = function() { document.getElementById('idMatricula').focus(); };
 
         document.getElementById('idMatricula').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') { e.preventDefault(); validarAcesso(); }
+            if (e.key === 'Enter') { e.preventDefault(); validarAcesso('NORMAL'); }
         });
 
-        function validarAcesso() {
+        function validarAcesso(tipo) {
             var matRaw = document.getElementById('idMatricula').value.trim();
             if (matRaw === "") return;
             var mat = parseInt(matRaw.slice(-6), 10).toString();
             
             if (listaColaboradores[mat]) {
                 nomeOperadorAtual = listaColaboradores[mat];
+                tipoRomaneioAtual = tipo;
+                
                 document.getElementById('box-login').style.display = 'none';
                 document.getElementById('tela-romaneio').style.display = 'block';
                 document.getElementById('nomeEmissor').innerText = nomeOperadorAtual;
+
+                // Muda o Título da Página e a Assinatura do Rodapé baseada na escolha
+                if (tipo === 'EXTERNA') {
+                    document.getElementById('titulo-pagina').innerText = "🛻 Romaneio de Carga - Rota Externa";
+                    document.getElementById('assinatura-transporte').innerText = "Entregador Terceirizado";
+                } else {
+                    document.getElementById('titulo-pagina').innerText = "🚚 Romaneio de Carga - Padrão";
+                    document.getElementById('assinatura-transporte').innerText = "Motorista (Transporte Interno)";
+                }
                 
-                buscarCargaAtual(); 
+                buscarCargaAtual(tipoRomaneioAtual); 
             } else {
                 alert("Matrícula não encontrada!");
                 document.getElementById('idMatricula').value = "";
             }
         }
 
-        function buscarCargaAtual() {
+        function buscarCargaAtual(tipo) {
             document.getElementById('corpo-tabela').innerHTML = '<tr><td colspan="5" style="text-align:center;">⏳ Consultando Expedição...</td></tr>';
             document.getElementById('btnImprimir').style.display = 'none';
             document.getElementById('dataEmissao').innerText = new Date().toLocaleString('pt-BR');
 
             var inicioDoDia = new Date().setHours(0,0,0,0);
+            
+            // LÓGICA DE BUSCA BASEADA NO BOTÃO ESCOLHIDO
+            var statusDesejado = (tipo === 'EXTERNA') ? "Entregue (Rota Externa)" : "Carregado (Transporte)";
 
-            // MUDANÇA: Retiramos o .where() da data para não exigir índice composto no Firebase.
             bancoDeDados.collection("caixas_estado_atual")
-                .where("status", "==", "Carregado (Transporte)")
+                .where("status", "==", statusDesejado)
                 .get()
                 .then(function(resultado) {
                     var itensNaCarga = [];
 
                     resultado.forEach(function(doc) {
                         var item = doc.data();
-                        // Filtramos a data aqui no JavaScript, poupando a cota e o índice do Firebase
+                        // Filtra a data para não exigir índice composto no Firebase
                         if (item.ordem >= inicioDoDia) {
                             itensNaCarga.push(item);
                         }
@@ -214,11 +232,11 @@
             document.getElementById('totalVolumes').innerText = itens.length;
 
             if (itens.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#e74c3c; font-weight:bold;">Nenhum volume aguardando transporte no momento.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#e74c3c; font-weight:bold;">Nenhum volume nesta rota no momento.</td></tr>';
                 return;
             }
 
-            // Ordena pela hora em que foi carregado
+            // Ordena pela hora
             itens.sort(function(a, b) { return a.ordem - b.ordem; });
 
             itens.forEach(function(item) {
@@ -236,6 +254,15 @@
 
             // Libera o botão de imprimir
             document.getElementById('btnImprimir').style.display = 'block';
+        }
+
+        // Função do novo botão VOLTAR
+        function voltarParaSelecao() {
+            document.getElementById('tela-romaneio').style.display = 'none';
+            document.getElementById('box-login').style.display = 'block';
+            document.getElementById('corpo-tabela').innerHTML = '<tr><td colspan="5" style="text-align:center;">Buscando dados na Expedição...</td></tr>';
+            document.getElementById('btnImprimir').style.display = 'none';
+            document.getElementById('titulo-pagina').innerText = "🚚 Emissão de Romaneio";
         }
     </script>
 </body>
