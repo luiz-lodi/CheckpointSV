@@ -155,11 +155,11 @@
 
     <script>
         // CONTROLE OFICIAL DE VERSÃO E ASSINATURA 🚀
-        const APP_VERSION = "2.12.2";
+        const APP_VERSION = "2.13.0";
         const APP_DATE = "31/03/2026";
         
-        document.getElementById('display-versao').innerText = `Versão: ${APP_VERSION} (${APP_DATE})`;
-        console.log(`%c🚀 Checkpoint HSVP Dashboard | Criado por Luiz Henrique Link Lodi & Gemini | Versão ${APP_VERSION} | Escudo Anti-F5 (30min)`, "color: #3498db; font-size: 14px; font-weight: bold;");
+        document.getElementById('display-versao').innerText = `Módulo Dashboard | Versão: ${APP_VERSION} (${APP_DATE})`;
+        console.log(`%c🚀 Checkpoint HSVP Dashboard | Criado por Luiz Henrique Link Lodi & Gemini | Versão ${APP_VERSION} | Escudo Anti-F5 (30min) | Rota Externa`, "color: #3498db; font-size: 14px; font-weight: bold;");
 
         var firebaseConfig = {
             apiKey: "AIzaSyDHUlqzRw_vSyp9livOvQ0rjBYT9l_yofs",
@@ -209,15 +209,12 @@
                 
                 // Valida se o cache é de "Hoje" (Evita carregar cache de ontem se o cara abriu as 08h)
                 if (dataDoCache.getTime() >= inicioDoDia) {
-                    // Exibe a mensagem visual do bloqueio
                     exibirAlertaCache(dataDoCache);
-                    
-                    // Converte os dados do texto do navegador de volta para Array e desenha
                     var bipesSalvosNoHD = JSON.parse(cacheDados);
                     processarRelatorioDireto(bipesSalvosNoHD);
                     
                     document.getElementById('msg-loading').style.display = 'none';
-                    return; // 🛑 INTERROMPE A FUNÇÃO AQUI. O BANCO DE DADOS FOI POUPADO!
+                    return; 
                 }
             }
 
@@ -234,13 +231,12 @@
                         bipesExtraidos.push(doc.data());
                     });
 
-                    // Grava a foto exata do momento no LocalStorage para blindar as próximas aberturas/F5
                     localStorage.setItem('dash_hsvp_tempo', new Date().getTime());
                     localStorage.setItem('dash_hsvp_dados', JSON.stringify(bipesExtraidos));
 
                     processarRelatorioDireto(bipesExtraidos);
                     document.getElementById('msg-loading').style.display = 'none';
-                    document.getElementById('alerta-cache').style.display = 'none'; // Esconde alerta se buscou direto da nuvem
+                    document.getElementById('alerta-cache').style.display = 'none';
                 })
                 .catch(function(erro) {
                     console.error(erro);
@@ -248,10 +244,8 @@
                 });
         }
 
-        // Exibe o horário legível para o usuário entender o limite de 30 min
         function exibirAlertaCache(dataUltimaAtualizacao) {
             var dataProxima = new Date(dataUltimaAtualizacao.getTime() + (30 * 60 * 1000));
-            
             var strUltima = dataUltimaAtualizacao.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
             var strProxima = dataProxima.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
@@ -259,7 +253,6 @@
             document.getElementById('alerta-cache').style.display = 'block';
         }
 
-        // Função modificada para receber uma lista limpa (Array) ao invés da resposta bruta do Firebase
         function processarRelatorioDireto(bipes) {
             var totais = { separado: 0, conferido: 0, carregado: 0, recebido: 0, sepCentral: 0, entregue: 0 };
             var colaboradores = {};
@@ -278,6 +271,9 @@
                     totais.separado++; colaboradores[nome].separado++; colaboradores[nome].total++;
                 } else if (status.indexOf("Conferido") !== -1) {
                     totais.conferido++; colaboradores[nome].conferido++; colaboradores[nome].total++;
+                // Lógica Interceptada: A Rota Externa soma no Carregado do Colaborador!
+                } else if (status.indexOf("Entregue (Rota Externa)") !== -1) {
+                    totais.carregado++; colaboradores[nome].carregado++; colaboradores[nome].total++;
                 } else if (status.indexOf("Carregado") !== -1) {
                     totais.carregado++; colaboradores[nome].carregado++; colaboradores[nome].total++;
                 } else if (status.indexOf("Recebido") !== -1) {
