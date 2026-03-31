@@ -167,7 +167,7 @@
 
     <script>
         // CONTROLE OFICIAL DE VERSÃO E ASSINATURA 🚀
-        const APP_VERSION = "3.35.0";
+        const APP_VERSION = "3.35.1";
         const APP_DATE = "31/03/2026";
         
         document.getElementById('display-versao').innerText = `Versão: ${APP_VERSION} (${APP_DATE})`;
@@ -599,7 +599,7 @@
                     alert("ATENÇÃO!\nO Volume " + proximoVolume + " da requisição " + requisicao + " já passou por uma etapa mais avançada.\nEsta caixa não retornará para o início do Kanban.");
                 } else {
                     adicionarRegistroFalhaNaTela(requisicao, "Já existe em etapa avançada");
-                    registrarErroNuvem(requisicao, "Já existe em etapa avançada"); // <-- LINHA NOVA
+                    registrarErroNuvem(requisicao, "Já existe em etapa avançada"); // <-- PARA REGISTRAR LOG DOS ERROS
                     errosNoLote++; 
                 }
                 if(callbackAposProcessar) callbackAposProcessar();
@@ -633,6 +633,7 @@
                     alert("ATENÇÃO!\nEsta requisição possui apenas " + maxVolExistente + " volume(s) registrado(s) nas etapas de Separação/Conferência.\nVocê não pode avançar o volume " + proximoVolume + ".");
                 } else {
                     adicionarRegistroFalhaNaTela(requisicao, msgErro);
+                    registrarErroNuvem(requisicao, msgErro); // <-- PARA REGISTRAR LOG DOS ERROS
                     errosNoLote++; 
                 }
                 if(callbackAposProcessar) callbackAposProcessar();
