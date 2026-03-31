@@ -30,14 +30,9 @@
         .layout-app { display: flex; gap: 20px; align-items: flex-start; }
         
         .sidebar { width: 280px; background: #34495e; border-radius: 8px; padding: 10px 0; flex-shrink: 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden;}
-        .menu-btn { display: flex; justify-content: space-between; align-items: center; width: 100%; text-align: left; padding: 15px 20px; background: none; border: none; color: #ecf0f1; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.2s; border-left: 4px solid transparent; }
+        .menu-btn { display: block; width: 100%; text-align: left; padding: 15px 20px; background: none; border: none; color: #ecf0f1; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.2s; border-left: 4px solid transparent; }
         .menu-btn:hover { background: #2c3e50; }
         .menu-btn.ativo { background: #2c3e50; border-left-color: #f1c40f; color: #f1c40f; }
-        .submenu { display: none; background: #2c3e50; padding: 5px 0; }
-        .submenu.aberto { display: block; }
-        .submenu-btn { display: block; width: 100%; text-align: left; padding: 12px 20px 12px 40px; background: none; border: none; color: #bdc3c7; font-size: 14px; cursor: pointer; transition: 0.2s; }
-        .submenu-btn:hover { color: #fff; background: #1a252f; }
-        .submenu-btn.ativo { color: #f1c40f; font-weight: bold; background: #1a252f; border-left: 3px solid #f1c40f;}
 
         .conteudo-principal { flex: 1; background: white; border-radius: 8px; padding: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); min-width: 0; min-height: 600px;}
         .secao-app { display: none; }
@@ -122,13 +117,10 @@
             <div class="layout-app">
                 <div class="sidebar">
                     <button class="menu-btn ativo" onclick="mudarAbaPrincipal('aba-mural', this)">📌 Mural de Avisos</button>
-                    <button class="menu-btn" onclick="toggleSubmenu('sub-bi', this)">📈 Relatórios BI <span class="seta">▼</span></button>
-                    <div id="sub-bi" class="submenu">
-                        <button class="submenu-btn" onclick="mudarAbaFilha('aba-bi-dashboard', this)">Dashboard Diário</button>
-                        <button class="submenu-btn" onclick="mudarAbaFilha('aba-bi-processos', this)">Processos</button>
-                        <button class="submenu-btn" onclick="mudarAbaFilha('aba-bi-produtividade', this)">Produtividade</button>
-                        <button class="submenu-btn" onclick="mudarAbaFilha('aba-bi-tempos', this)">Tempos (SLAs)</button>
-                    </div>
+                    <button class="menu-btn" onclick="mudarAbaPrincipal('aba-bi-dashboard', this)">📊 Dashboard Diário</button>
+                    <button class="menu-btn" onclick="mudarAbaPrincipal('aba-bi-processos', this)">📈 Processos Logísticos</button>
+                    <button class="menu-btn" onclick="mudarAbaPrincipal('aba-bi-produtividade', this)">🏆 Produtividade</button>
+                    <button class="menu-btn" onclick="mudarAbaPrincipal('aba-bi-tempos', this)">⏱️ Tempos (SLAs)</button>
                 </div>
 
                 <div class="conteudo-principal">
@@ -346,7 +338,7 @@
     </div>
 
     <script>
-        const APP_VERSION = "2.0.0";
+        const APP_VERSION = "2.2.0";
         const APP_DATE = "31/03/2026";
         document.getElementById('display-versao').innerText = `Módulo BI | Versão: ${APP_VERSION} (${APP_DATE})`;
 
@@ -399,24 +391,11 @@
 
         function mudarAbaPrincipal(idAba, btn) {
             document.querySelectorAll('.secao-app').forEach(el => el.classList.remove('ativa'));
-            document.querySelectorAll('.menu-btn, .submenu-btn').forEach(b => b.classList.remove('ativo'));
-            document.querySelectorAll('.submenu').forEach(sub => sub.classList.remove('aberto'));
-            document.querySelectorAll('.menu-btn .seta').forEach(seta => seta.innerText = "▼");
-            document.getElementById(idAba).classList.add('ativa'); btn.classList.add('ativo');
+            document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('ativo'));
+            document.getElementById(idAba).classList.add('ativa'); 
+            btn.classList.add('ativo');
+            
             if(idAba === 'aba-mural') carregarMensagens();
-        }
-
-        function toggleSubmenu(idSubmenu, btn) {
-            var sub = document.getElementById(idSubmenu), seta = btn.querySelector('.seta');
-            document.querySelectorAll('.submenu').forEach(s => { if(s.id !== idSubmenu) { s.classList.remove('aberto'); s.previousElementSibling.querySelector('.seta').innerText = "▼"; } });
-            sub.classList.toggle('aberto'); seta.innerText = sub.classList.contains('aberto') ? "▲" : "▼";
-        }
-
-        function mudarAbaFilha(idAba, btn) {
-            document.querySelectorAll('.secao-app').forEach(el => el.classList.remove('ativa'));
-            document.querySelectorAll('.menu-btn, .submenu-btn').forEach(b => b.classList.remove('ativo'));
-            document.getElementById(idAba).classList.add('ativa'); btn.classList.add('ativo');
-            btn.parentElement.previousElementSibling.classList.add('ativo');
             if(idAba === 'aba-bi-dashboard') carregarDadosBIDashboard();
             if(idAba === 'aba-bi-processos') carregarDadosBI('processos');
             if(idAba === 'aba-bi-produtividade') carregarDadosBI('produtividade');
@@ -442,9 +421,13 @@
                 var h = new Date(b.ordem).getHours(); if(h < minH) minH = h; if(h > maxH) maxH = h;
                 if(!horasData[h]) horasData[h] = {sep:0, conf:0, carr:0, rec:0, sepc:0, ent:0};
                 var s = b.status || "";
-                if (s.includes("Separado (Central)")) horasData[h].sepc++; else if (s.includes("Separado (Apoio)") || s === "Separado") horasData[h].sep++;
-                else if (s.includes("Conferido")) horasData[h].conf++; else if (s.includes("Carregado")) horasData[h].carr++;
-                else if (s.includes("Recebido")) horasData[h].rec++; else if (s.includes("Entregue")) horasData[h].ent++;
+                if (s.includes("Separado (Central)")) horasData[h].sepc++; 
+                else if (s.includes("Separado (Apoio)") || s === "Separado") horasData[h].sep++;
+                else if (s.includes("Conferido")) horasData[h].conf++; 
+                else if (s.includes("Entregue (Rota Externa)")) horasData[h].carr++; 
+                else if (s.includes("Carregado")) horasData[h].carr++;
+                else if (s.includes("Recebido")) horasData[h].rec++; 
+                else if (s.includes("Entregue")) horasData[h].ent++;
             });
             var labels = [], dSep=[], dConf=[], dCarr=[], dRec=[], dSepC=[], dEnt=[];
             for(var i = minH; i <= maxH; i++) {
@@ -469,10 +452,16 @@
             var tot = { sep: 0, conf: 0, carr: 0, rec: 0, sepc: 0, ent: 0 }, colabs = {}, reqsApoio = new Set(), reqsCentral = new Set();
             bipes.forEach(b => {
                 var n = b.nome || "DESCONHECIDO", s = b.status || ""; if (!colabs[n]) colabs[n] = { sep:0, conf:0, carr:0, rec:0, sepc:0, ent:0, tot:0 };
-                if (s.includes("Separado (Central)")) { tot.sepc++; colabs[n].sepc++; colabs[n].tot++; } else if (s.includes("Separado (Apoio)") || s === "Separado") { tot.sep++; colabs[n].sep++; colabs[n].tot++; } 
-                else if (s.includes("Conferido")) { tot.conf++; colabs[n].conf++; colabs[n].tot++; } else if (s.includes("Carregado")) { tot.carr++; colabs[n].carr++; colabs[n].tot++; } 
-                else if (s.includes("Recebido")) { tot.rec++; colabs[n].rec++; colabs[n].tot++; } else if (s.includes("Entregue")) { tot.ent++; colabs[n].ent++; colabs[n].tot++; }
-                if (s.includes("Central") && s.includes("Separado")) reqsCentral.add(b.requisicao); else if (s.includes("Apoio") || s === "Separado" || s.includes("Conferido") || s.includes("Carregado")) reqsApoio.add(b.requisicao);
+                if (s.includes("Separado (Central)")) { tot.sepc++; colabs[n].sepc++; colabs[n].tot++; } 
+                else if (s.includes("Separado (Apoio)") || s === "Separado") { tot.sep++; colabs[n].sep++; colabs[n].tot++; } 
+                else if (s.includes("Conferido")) { tot.conf++; colabs[n].conf++; colabs[n].tot++; } 
+                else if (s.includes("Entregue (Rota Externa)")) { tot.carr++; colabs[n].carr++; colabs[n].tot++; } 
+                else if (s.includes("Carregado")) { tot.carr++; colabs[n].carr++; colabs[n].tot++; } 
+                else if (s.includes("Recebido")) { tot.rec++; colabs[n].rec++; colabs[n].tot++; } 
+                else if (s.includes("Entregue")) { tot.ent++; colabs[n].ent++; colabs[n].tot++; }
+                
+                if (s.includes("Central") && s.includes("Separado")) reqsCentral.add(b.requisicao); 
+                else if (s.includes("Apoio") || s === "Separado" || s.includes("Conferido") || s.includes("Carregado") || s.includes("Rota Externa")) reqsApoio.add(b.requisicao);
             });
             document.getElementById('kpi-req-apoio-dia').innerText = reqsApoio.size; document.getElementById('kpi-req-central-dia').innerText = reqsCentral.size; document.getElementById('kpi-req-total-dia').innerText = reqsApoio.size + reqsCentral.size;
             document.getElementById('tot-separado').innerText = tot.sep; document.getElementById('tot-conferido').innerText = tot.conf; document.getElementById('tot-carregado').innerText = tot.carr;
@@ -524,16 +513,22 @@
             var tot = { sep: 0, conf: 0, carr: 0, rec: 0, sepc: 0, ent: 0 }, reqsApoio = new Set(), reqsCentral = new Set();
             bipes.forEach(ev => {
                 var s = ev.status || "";
-                if (s.includes("Separado (Central)")) tot.sepc++; else if (s.includes("Separado (Apoio)") || s === "Separado") tot.sep++;
-                else if (s.includes("Conferido")) tot.conf++; else if (s.includes("Carregado")) tot.carr++;
-                else if (s.includes("Recebido")) tot.rec++; else if (s.includes("Entregue")) tot.ent++;
-                if (s.includes("Central") && s.includes("Separado")) reqsCentral.add(ev.requisicao); else if (s.includes("Apoio") || s === "Separado" || s.includes("Conferido") || s.includes("Carregado")) reqsApoio.add(ev.requisicao);
+                if (s.includes("Separado (Central)")) tot.sepc++; 
+                else if (s.includes("Separado (Apoio)") || s === "Separado") tot.sep++;
+                else if (s.includes("Conferido")) tot.conf++; 
+                else if (s.includes("Entregue (Rota Externa)")) tot.carr++; 
+                else if (s.includes("Carregado")) tot.carr++;
+                else if (s.includes("Recebido")) tot.rec++; 
+                else if (s.includes("Entregue")) tot.ent++;
+                
+                if (s.includes("Central") && s.includes("Separado")) reqsCentral.add(ev.requisicao); 
+                else if (s.includes("Apoio") || s === "Separado" || s.includes("Conferido") || s.includes("Carregado") || s.includes("Rota Externa")) reqsApoio.add(ev.requisicao);
             });
             document.getElementById('kpi-req-apoio').innerText = reqsApoio.size; document.getElementById('kpi-req-central').innerText = reqsCentral.size; document.getElementById('kpi-req-total').innerText = reqsApoio.size + reqsCentral.size;
             if(gEtapas) gEtapas.destroy();
             gEtapas = new Chart(document.getElementById('chartEtapas').getContext('2d'), { type: 'bar', data: { labels: ['Sep. Apoio', 'Conferido', 'Carregado', 'Recebido', 'Sep. Central', 'Entregue'], datasets: [{ data: [tot.sep, tot.conf, tot.carr, tot.rec, tot.sepc, tot.ent], backgroundColor: ['#f39c12', '#8e44ad', '#d35400', '#3498db', '#16a085', '#2ecc71'], borderRadius: 4 }] }, options: { layout: { padding: { top: 30 } }, responsive: true, maintainAspectRatio: false, plugins: { datalabels: { color: '#2c3e50', anchor: 'end', align: 'top', font: { weight: 'bold', size: 14 } }, legend: { display: false } } } });
             if(gSetores) gSetores.destroy();
-            gSetores = new Chart(document.getElementById('chartSetores').getContext('2d'), { type: 'doughnut', data: { labels: ['Apoio', 'Central'], datasets: [{ data: [tot.sep+tot.conf+tot.carr, tot.rec+tot.sepc+tot.ent], backgroundColor: ['#e67e22', '#2980b9'] }] }, options: { layout: { padding: { top: 10 } }, responsive: true, maintainAspectRatio: false, plugins: { datalabels: { color: '#fff', font: { weight: 'bold', size: 16 }, formatter: function(v, ctx) { var t = ctx.chart.data.datasets[0].data.reduce((a,b)=>a+b,0); return t > 0 ? Math.round((v/t)*100)+'%' : ''; } }, legend: { position: 'bottom', labels: { font: { size: 14 } } } } } });
+            gSetores = new Chart(document.getElementById('chartSetores').getContext('2d'), { type: 'doughnut', data: { labels: ['Apoio', 'Central'], datasets: [{ data: [tot.sep+tot.conf+tot.carr, tot.rec+tot.sepc+tot.ent], backgroundColor: ['#e67e22', '#2980b9'] }] }, options: { layout: { padding: { top: 10 } }, responsive: true, maintainAspectRatio: false, plugins: { datalabels: { color: '#fff', font: { weight: 'bold', size: 16 }, formatter: function(value, ctx) { var t = ctx.chart.data.datasets[0].data.reduce((a,b)=>a+b,0); return t > 0 ? Math.round((value/t)*100)+'%' : ''; } }, legend: { position: 'bottom', labels: { font: { size: 14 } } } } } });
             if(gCargaMensal) gCargaMensal.destroy();
             gCargaMensal = new Chart(document.getElementById('chartCargaMensal').getContext('2d'), { type: 'line', data: processarCargaDeTrabalhoPorHora(bipes), options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { display: false }, legend: { position: 'bottom', labels: { boxWidth: 12 } } }, scales: { y: { beginAtZero: true } } } });
             document.getElementById('conteudo-processos').style.display = 'block';
@@ -543,9 +538,13 @@
             var colabs = {}, totGer = { sep:0, conf:0, carr:0, rec:0, sepc:0, ent:0, tot:0 };
             bipes.forEach(ev => {
                 var n = ev.nome || "DESCONHECIDO", s = ev.status || ""; if(!colabs[n]) colabs[n] = { sep:0, conf:0, carr:0, rec:0, sepc:0, ent:0, tot:0 };
-                if(s.includes("Separado (Central)")) { colabs[n].sepc++; colabs[n].tot++; totGer.sepc++; totGer.tot++;} else if(s.includes("Separado (Apoio)") || s === "Separado") { colabs[n].sep++; colabs[n].tot++; totGer.sep++; totGer.tot++;}
-                else if(s.includes("Conferido")) { colabs[n].conf++; colabs[n].tot++; totGer.conf++; totGer.tot++;} else if(s.includes("Carregado")) { colabs[n].carr++; colabs[n].tot++; totGer.carr++; totGer.tot++;}
-                else if(s.includes("Recebido")) { colabs[n].rec++; colabs[n].tot++; totGer.rec++; totGer.tot++;} else if(s.includes("Entregue")) { colabs[n].ent++; colabs[n].tot++; totGer.ent++; totGer.tot++;}
+                if(s.includes("Separado (Central)")) { colabs[n].sepc++; colabs[n].tot++; totGer.sepc++; totGer.tot++;} 
+                else if(s.includes("Separado (Apoio)") || s === "Separado") { colabs[n].sep++; colabs[n].tot++; totGer.sep++; totGer.tot++;}
+                else if(s.includes("Conferido")) { colabs[n].conf++; colabs[n].tot++; totGer.conf++; totGer.tot++;} 
+                else if(s.includes("Entregue (Rota Externa)")) { colabs[n].carr++; colabs[n].tot++; totGer.carr++; totGer.tot++;} 
+                else if(s.includes("Carregado")) { colabs[n].carr++; colabs[n].tot++; totGer.carr++; totGer.tot++;}
+                else if(s.includes("Recebido")) { colabs[n].rec++; colabs[n].tot++; totGer.rec++; totGer.tot++;} 
+                else if(s.includes("Entregue")) { colabs[n].ent++; colabs[n].tot++; totGer.ent++; totGer.tot++;}
             });
             var mx = { sep:0, conf:0, carr:0, rec:0, sepc:0, ent:0, tot:0 }, tb = document.getElementById('corpo-tabela-prod'), dg = []; tb.innerHTML = '';
             Object.keys(colabs).forEach(n => { let d = colabs[n]; if(d.sep > mx.sep) mx.sep = d.sep; if(d.conf > mx.conf) mx.conf = d.conf; if(d.carr > mx.carr) mx.carr = d.carr; if(d.rec > mx.rec) mx.rec = d.rec; if(d.sepc > mx.sepc) mx.sepc = d.sepc; if(d.ent > mx.ent) mx.ent = d.ent; if(d.tot > mx.tot) mx.tot = d.tot; });
