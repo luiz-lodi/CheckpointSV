@@ -167,11 +167,11 @@
 
     <script>
         // CONTROLE OFICIAL DE VERSÃO E ASSINATURA 🚀
-        const APP_VERSION = "4.0.0";
+        const APP_VERSION = "4.1.0";
         const APP_DATE = "31/03/2026";
         
         document.getElementById('display-versao').innerText = `Módulo Tela do Operador | Versão: ${APP_VERSION} (${APP_DATE})`;
-        console.log(`%c🚀 Checkpoint HSVP Operador | Versão ${APP_VERSION} | Novos Fluxos e Usuários`, "color: #3498db; font-size: 14px; font-weight: bold;");
+        console.log(`%c🚀 Checkpoint HSVP Operador | Versão ${APP_VERSION} | Inteligência de Volume Fix`, "color: #3498db; font-size: 14px; font-weight: bold;");
 
         var firebaseConfig = {
             apiKey: "AIzaSyDHUlqzRw_vSyp9livOvQ0rjBYT9l_yofs",
@@ -242,7 +242,7 @@
             // Fluxo Almoxarifado Central (Teixeira Soares)
             "QR-CARREGADO-CENTRAL": "Carregado (Central)",
 
-            // NOVO: Fluxo de Rota Externa (Unidades Externas)
+            // Fluxo de Rota Externa (Unidades Externas)
             "QR-ROTA-EXTERNA": "Entregue (Rota Externa)"
         };
 
@@ -590,59 +590,64 @@
             var dadosReq = memoriaVolumes[requisicao];
             if (!dadosReq.statusVol[statusFinal]) dadosReq.statusVol[statusFinal] = [];
             
-            var volumesOcupados = dadosReq.statusVol[statusFinal];
-            var proximoVolume = 1; 
-            while (volumesOcupados.includes(proximoVolume)) proximoVolume++;
-
-            if (dadosReq.pesoMaxVol[proximoVolume] && dadosReq.pesoMaxVol[proximoVolume] > pesoNovoStatus) {
-                dispararAlertaErro();
-                mostrarToast("⛔ Retrocesso Bloqueado (" + requisicao + ")");
-                
-                if (!isModoLoteSyncing) {
-                    alert("ATENÇÃO!\nO Volume " + proximoVolume + " da requisição " + requisicao + " já passou por uma etapa mais avançada.\nEsta caixa não retornará para o início do Kanban.");
-                } else {
-                    adicionarRegistroFalhaNaTela(requisicao, "Já existe em etapa avançada");
-                    registrarErroNuvem(requisicao, "Já existe em etapa avançada"); // <-- PARA REGISTRAR LOG DOS ERROS
-                    errosNoLote++; 
-                }
-                if(callbackAposProcessar) callbackAposProcessar();
-                return; 
-            }
-
             var maxVolExistente = 0;
             for (var v in dadosReq.pesoMaxVol) {
                 if (parseInt(v) > maxVolExistente) maxVolExistente = parseInt(v);
             }
 
-            // Mantém a regra rígida de SLA: Tem que ter sido separado antes!
-            if (pesoNovoStatus >= 3 && proximoVolume > maxVolExistente) {
-                
+            var proximoVolume = 1;
+            while (proximoVolume <= maxVolExistente + 1) {
+                // 1. Se este volume já tem EXATAMENTE este status, pula para o próximo
+                if (dadosReq.statusVol[statusFinal].includes(proximoVolume)) {
+                    proximoVolume++;
+                    continue;
+                }
+                // 2. Se este volume já passou desta etapa (já tem um peso maior registrado), pula
+                if (dadosReq.pesoMaxVol[proximoVolume] && dadosReq.pesoMaxVol[proximoVolume] > pesoNovoStatus) {
+                    proximoVolume++;
+                    continue;
+                }
+                // 3. Se a etapa exige que o volume já exista (peso > 1), e ele não existe, pula
+                if (pesoNovoStatus > 1 && !dadosReq.pesoMaxVol[proximoVolume]) {
+                    proximoVolume++;
+                    continue;
+                }
+                // Se passou por todas as regras, encontrou o volume correto!
+                break; 
+            }
+
+            if (proximoVolume > maxVolExistente + 1 || (pesoNovoStatus > 1 && !dadosReq.pesoMaxVol[proximoVolume])) {
                 // SISTEMA DE CACHE INTELIGENTE (Background Refresh)
                 var agora = new Date().getTime();
-                // Se o cache for mais velho que 5 segundos (5000 ms), limpa e tenta de novo silenciosamente
                 if (agora - dadosReq.ultimaBusca > 5000) {
                     memoriaVolumes[requisicao] = undefined; 
                     processarBipeInteligente(requisicao, statusFinal, callbackAposProcessar);
-                    return; // Para a execução atual, a nova busca assumirá o controle
+                    return; 
                 }
 
-                // Se chegou aqui, é porque o erro é real ou o cache já acabou de ser atualizado e o volume não existe mesmo.
                 dispararAlertaErro();
-                mostrarToast("⛔ Volume Excedente!");
                 
-                var msgErro = "Limite excedido! Apenas " + maxVolExistente + " volume(s) liberado(s).";
+                var msgErro = "Erro de sequência!";
+                if (pesoNovoStatus > 1 && !dadosReq.pesoMaxVol[proximoVolume]) {
+                    msgErro = "A caixa precisa ser Separada primeiro!";
+                } else {
+                    msgErro = "Limite excedido! Apenas " + maxVolExistente + " volume(s) liberado(s) para esta etapa.";
+                }
+
+                mostrarToast("⛔ Bloqueado!");
                 
                 if (!isModoLoteSyncing) {
-                    alert("ATENÇÃO!\nEsta requisição possui apenas " + maxVolExistente + " volume(s) registrado(s) nas etapas de Separação/Conferência.\nVocê não pode avançar o volume " + proximoVolume + ".");
+                    alert("ATENÇÃO!\n" + msgErro + "\nRequisição: " + requisicao);
                 } else {
                     adicionarRegistroFalhaNaTela(requisicao, msgErro);
-                    registrarErroNuvem(requisicao, msgErro); // <-- PARA REGISTRAR LOG DOS ERROS
+                    registrarErroNuvem(requisicao, msgErro); 
                     errosNoLote++; 
                 }
                 if(callbackAposProcessar) callbackAposProcessar();
                 return;
             }
 
+            // Gravação Local na Memória
             dadosReq.statusVol[statusFinal].push(proximoVolume);
             if (!dadosReq.pesoMaxVol[proximoVolume] || pesoNovoStatus > dadosReq.pesoMaxVol[proximoVolume]) {
                 dadosReq.pesoMaxVol[proximoVolume] = pesoNovoStatus;
