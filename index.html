@@ -167,8 +167,8 @@
 
     <script>
         // CONTROLE OFICIAL DE VERSÃO E ASSINATURA 🚀
-        const APP_VERSION = "4.1.0";
-        const APP_DATE = "31/03/2026";
+        const APP_VERSION = "4.1.1";
+        const APP_DATE = "01/04/2026";
         
         document.getElementById('display-versao').innerText = `Módulo Tela do Operador | Versão: ${APP_VERSION} (${APP_DATE})`;
         console.log(`%c🚀 Checkpoint HSVP Operador | Versão ${APP_VERSION} | Inteligência de Volume Fix`, "color: #3498db; font-size: 14px; font-weight: bold;");
@@ -607,16 +607,33 @@
                     proximoVolume++;
                     continue;
                 }
-                // 3. Se a etapa exige que o volume já exista (peso > 1), e ele não existe, pula
-                if (pesoNovoStatus > 1 && !dadosReq.pesoMaxVol[proximoVolume]) {
-                    proximoVolume++;
-                    continue;
+                // 3. NOVA REGRA DO DESDOBRAMENTO:
+                // Se o volume não existe (!dadosReq.pesoMaxVol[proximoVolume]), ele SÓ pode nascer nas etapas internas (1, 2 ou 3)
+                if (!dadosReq.pesoMaxVol[proximoVolume]) {
+                    // Recebimento (4) e Entrega (5) não podem criar volumes fantasmas
+                    if (pesoNovoStatus >= 4) {
+                        proximoVolume++;
+                        continue;
+                    }
+                    // Conferência (2) e Carregado (3) podem criar volumes, MAS a requisição tem que ter nascido (Vol 1 precisa existir)
+                    if (pesoNovoStatus > 1 && !dadosReq.pesoMaxVol[1]) {
+                        proximoVolume++;
+                        continue;
+                    }
                 }
                 // Se passou por todas as regras, encontrou o volume correto!
                 break; 
             }
 
-            if (proximoVolume > maxVolExistente + 1 || (pesoNovoStatus > 1 && !dadosReq.pesoMaxVol[proximoVolume])) {
+            // Condição de Bloqueio Final ajustada para as novas regras
+            var isBloqueado = proximoVolume > maxVolExistente + 1;
+            if (!isBloqueado && !dadosReq.pesoMaxVol[proximoVolume]) {
+                if (pesoNovoStatus >= 4 || (pesoNovoStatus > 1 && !dadosReq.pesoMaxVol[1])) {
+                    isBloqueado = true;
+                }
+            }
+
+            if (isBloqueado) {
                 // SISTEMA DE CACHE INTELIGENTE (Background Refresh)
                 var agora = new Date().getTime();
                 if (agora - dadosReq.ultimaBusca > 5000) {
@@ -628,10 +645,12 @@
                 dispararAlertaErro();
                 
                 var msgErro = "Erro de sequência!";
-                if (pesoNovoStatus > 1 && !dadosReq.pesoMaxVol[proximoVolume]) {
-                    msgErro = "A caixa precisa ser Separada primeiro!";
+                if (pesoNovoStatus > 1 && !dadosReq.pesoMaxVol[1]) {
+                    msgErro = "A requisição precisa ser Separada primeiro!";
+                } else if (pesoNovoStatus >= 4 && !dadosReq.pesoMaxVol[proximoVolume]) {
+                    msgErro = "Volume não existe! Impossível entregar caixas não despachadas.";
                 } else {
-                    msgErro = "Limite excedido! Apenas " + maxVolExistente + " volume(s) liberado(s) para esta etapa.";
+                    msgErro = "Limite excedido ou etapa já registrada para os volumes atuais.";
                 }
 
                 mostrarToast("⛔ Bloqueado!");
