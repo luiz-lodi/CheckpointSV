@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Auditoria - Checkpoint HSVP</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛡️</text></svg>">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; color: #333; display: flex; flex-direction: column; min-height: 100vh;}
+        
+        .navbar-top { background-color: #2c3e50; padding: 15px; text-align: center; margin-bottom: 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-radius: 8px;}
+        .navbar-top a { color: #ecf0f1; text-decoration: none; margin: 0 15px; font-weight: bold; font-size: 16px; }
+        .navbar-top a.ativo { color: #f1c40f; }
+
+        #tela-login { background: white; max-width: 400px; margin: 50px auto; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; }
+        .input-group { margin-bottom: 15px; text-align: left; }
+        .input-group label { display: block; font-weight: bold; font-size: 14px; color: #2c3e50; margin-bottom: 5px;}
+        .input-group input { width: 100%; padding: 12px; border: 2px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 16px; }
+        .btn-login { background-color: #2c3e50; color: white; border: none; padding: 15px; width: 100%; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px;}
+
+        #painel-gestao { display: none; padding-top: 15px; } 
+        .layout-app { display: flex; gap: 20px; align-items: flex-start; }
+        
+        /* MENU LATERAL */
+        .sidebar { width: 280px; background: #34495e; border-radius: 8px; padding: 10px 0; flex-shrink: 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden;}
+        .menu-btn { display: block; width: 100%; text-align: left; padding: 15px 20px; background: none; border: none; color: #ecf0f1; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.2s; border-left: 4px solid transparent; }
+        .menu-btn:hover { background: #2c3e50; }
+        .menu-btn.ativo { background: #2c3e50; border-left-color: #f1c40f; color: #f1c40f; }
+
+        .conteudo-principal { flex: 1; background: white; border-radius: 8px; padding: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); min-width: 0; min-height: 600px;}
+        .secao-app { display: none; }
+        .secao-app.ativa { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .secao-titulo { color: #2c3e50; font-size: 22px; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 0; margin-bottom: 20px; }
+
+        .filtro-container { background: #f8f9fa; padding: 15px; border-radius: 8px; display: flex; align-items: center; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; border: 1px solid #eee;}
+        .filtro-container input, .filtro-container select { padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 15px; }
+        .btn-acao { background-color: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; }
+        .loading { color: #e67e22; font-weight: bold; display: none; margin-left: auto; }
+
+        .tabela-wrapper { overflow-x: auto; margin-bottom: 15px; border-radius: 8px; border: 1px solid #eee; }
+        table { width: 100%; border-collapse: collapse; min-width: 700px; }
+        th, td { padding: 12px; text-align: center; border-bottom: 1px solid #eee; font-size: 14px; }
+        th { background: #2c3e50; color: white; text-transform: uppercase; font-size: 12px;}
+        tr:hover { background: #f9f9f9; }
+        
+        .btn-excluir { background: #e74c3c; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;}
+        .paginacao { display: flex; justify-content: space-between; align-items: center; background: #ecf0f1; padding: 10px; border-radius: 5px; }
+        .paginacao button { background: #34495e; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .paginacao button:disabled { background: #bdc3c7; cursor: not-allowed; }
+
+        .raiox-etapa { display: flex; align-items: center; margin-bottom: 0; }
+        .raiox-icone { width: 35px; height: 35px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; color: white; margin-right: 15px; z-index: 2; position: relative;}
+        .icone-ok { background-color: #2ecc71; }
+        .icone-falha { background-color: #e74c3c; }
+        .icone-pendente { background-color: #bdc3c7; }
+        .raiox-detalhe { flex: 1; border-bottom: 1px dashed #eee; padding-bottom: 8px; margin-top: 15px;}
+        .raiox-detalhe h4 { margin: 0; color: #2c3e50; }
+        .raiox-detalhe p { margin: 2px 0 0 0; font-size: 13px; color: #7f8c8d; }
+        .raiox-intervalo { margin-left: 16px; border-left: 3px dashed #bdc3c7; padding: 10px 0 10px 35px; color: #d35400; font-size: 13px; font-weight: bold; }
+
+        .modal-overlay { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); }
+        .modal-content { background: #fff; margin: 10% auto; padding: 25px; border-radius: 8px; width: 90%; max-width: 450px; }
+
+        .app-footer { margin-top: auto; text-align: center; padding: 20px; color: #7f8c8d; font-size: 12px; line-height: 1.5; }
+        .app-footer strong { color: #34495e; }
+    </style>
+</head>
+<body>
+
+    <div class="navbar-top">
+        <a href="index.html">📱 Tela do Operador</a>
+        <a href="romaneio.html">🚚 Romaneio</a>
+        <a href="kanban.html">🚥 Kanban</a>
+        <a href="dashboard.html">📊 Dashboard</a>
+        <a href="gestao.html">📈 BI Gestão</a>
+        <a href="auditoria.html" class="ativo">🛡️ Auditoria</a>
+    </div>
+
+    <div class="container" style="flex: 1;">
+        <div id="tela-login">
+            <h3 style="color: #2c3e50; margin-top: 0;">Acesso Restrito - Auditores</h3>
+            <div class="input-group"><label>E-mail:</label><input type="email" id="emailGestor"></div>
+            <div class="input-group"><label>Senha:</label><input type="password" id="senhaGestor" onkeypress="if(event.key === 'Enter') fazerLogin()"></div>
+            <button class="btn-login" id="btn-login-btn" onclick="fazerLogin()">Acessar Sistema</button>
+            <div id="msg-erro" style="color: #e74c3c; margin-top: 15px; font-weight: bold; display: none;">E-mail ou senha incorretos!</div>
+        </div>
+
+        <div id="painel-gestao">
+            <div class="layout-app">
+                <div class="sidebar">
+                    <button class="menu-btn ativo" onclick="mudarAbaPrincipal('aba-auditoria-raiox', this)">🔍 Ciclo de Vida (Raio-X)</button>
+                    <button class="menu-btn" onclick="mudarAbaPrincipal('aba-auditoria-exclusao', this)">🗑️ Excluir Lançamentos</button>
+                    <button class="menu-btn" onclick="mudarAbaPrincipal('aba-auditoria-historico', this)">📜 Histórico de Exclusões</button>
+                    <button class="menu-btn" onclick="mudarAbaPrincipal('aba-auditoria-logs', this)">⚠️ Logs de Erros de Bipagem</button>
+                </div>
+
+                <div class="conteudo-principal">
+                    <div style="text-align: right; color: #27ae60; font-weight: bold; margin-bottom: 10px;" id="id-logado"></div>
+
+                    <div id="aba-auditoria-raiox" class="secao-app ativa">
+                        <h2 class="secao-titulo">Ciclo de Vida da Requisição (Raio-X)</h2>
+                        <div class="filtro-container">
+                            <label>Número da Requisição:</label>
+                            <input type="number" id="inputRaioX">
+                            <button class="btn-acao" onclick="buscarCicloVida()">Consultar Rastreabilidade</button>
+                            <span class="loading" id="load-raiox">Mapeando... ⏳</span>
+                        </div>
+                        <div id="resultado-raiox" style="display:none; padding: 15px; background: #fdfefe; border: 1px solid #eee; border-radius: 8px;">
+                            <h3 style="margin-top:0; text-align:center;">Registros Requisição <span id="raiox-titulo-req" style="color:#8e44ad;"></span></h3>
+                            <div id="raiox-timeline" style="display: flex; gap: 20px; overflow-x: auto; padding-bottom: 15px; align-items: flex-start;"></div>
+                        </div>
+                    </div>
+
+                    <div id="aba-auditoria-exclusao" class="secao-app">
+                        <h2 class="secao-titulo">Exclusão de Lançamentos</h2>
+                        <div class="filtro-container">
+                            <label>Data:</label><input type="date" id="filtroDataLogistica">
+                            <label>Consulta por Requisição:</label>
+                            <input type="number" id="filtroReqLogistica" style="width: 120px;" onkeypress="if(event.key === 'Enter') carregarDadosLogistica(0)">
+                            <button class="btn-acao" onclick="carregarDadosLogistica(0)">Buscar</button>
+                            <label>Itens por pág:</label>
+                            <select id="limiteLogistica" onchange="carregarDadosLogistica(0)">
+                                <option value="10" selected>10 itens</option>
+                                <option value="20">20 itens</option>
+                                <option value="50">50 itens</option>
+                            </select>
+                            <span class="loading" id="load-logistica">Buscando... ⏳</span>
+                        </div>
+                        <div class="tabela-wrapper">
+                            <table>
+                                <thead><tr><th>Hora</th><th>Operador</th><th>Requisição</th><th>Vol</th><th>Etapa</th><th>Ação</th></tr></thead>
+                                <tbody id="corpo-logistica"></tbody>
+                            </table>
+                        </div>
+                        <div class="paginacao" id="paginacao-logistica">
+                            <button id="btn-ant-log" onclick="carregarDadosLogistica(-1)">⬅️ Anterior</button>
+                            <span id="info-pag-log">Página 1</span>
+                            <button id="btn-prox-log" onclick="carregarDadosLogistica(1)">Próxima ➡️</button>
+                        </div>
+                    </div>
+
+                    <div id="aba-auditoria-historico" class="secao-app">
+                        <h2 class="secao-titulo">Histórico de Exclusões</h2>
+                        <div class="filtro-container">
+                            <label>Itens por pág:</label>
+                            <select id="limiteAuditoria" onchange="carregarAuditoria(0)">
+                                <option value="10" selected>10 itens</option>
+                                <option value="20">20 itens</option>
+                                <option value="50">50 itens</option>
+                            </select>
+                            <span class="loading" id="load-auditoria">Buscando... ⏳</span>
+                        </div>
+                        <div class="tabela-wrapper">
+                            <table>
+                                <thead><tr><th>Data Exclusão</th><th>Requisição (Vol)</th><th>Etapa Apagada</th><th>Autor Original</th><th>Excluído Por</th><th>Motivo</th></tr></thead>
+                                <tbody id="corpo-auditoria"></tbody>
+                            </table>
+                        </div>
+                        <div class="paginacao">
+                            <button id="btn-ant-aud" onclick="carregarAuditoria(-1)">⬅️ Anterior</button>
+                            <span id="info-pag-aud">Página 1</span>
+                            <button id="btn-prox-aud" onclick="carregarAuditoria(1)">Próxima ➡️</button>
+                        </div>
+                    </div>
+
+                    <div id="aba-auditoria-logs" class="secao-app">
+                        <h2 class="secao-titulo">Logs de Erros de Bipagem (Modo Lote)</h2>
+                        <div class="filtro-container">
+                            <label>Data:</label><input type="date" id="filtroDataLogs">
+                            <button class="btn-acao" onclick="carregarLogsErros()">Buscar Falhas</button>
+                            <span class="loading" id="load-logs">Buscando... ⏳</span>
+                        </div>
+                        <div class="tabela-wrapper">
+                            <table>
+                                <thead><tr><th>Data/Hora</th><th>Operador</th><th>Requisição</th><th>Etapa / Destino</th><th>Motivo do Bloqueio</th></tr></thead>
+                                <tbody id="corpo-logs"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-footer">
+        <strong>SISTEMA WMS - CHECKPOINT LOGÍSTICO HSVP</strong><br>
+        <span id="display-versao"></span>
+    </div>
+
+    <div id="modal-justificativa" class="modal-overlay">
+        <div class="modal-content">
+            <h3 style="color:#e74c3c; margin-top:0;">⚠️ Atenção: Ação Irreversível</h3>
+            <p id="texto-resumo-exclusao"></p>
+            <input type="text" id="input-justificativa" placeholder="Justifique o motivo da exclusão" style="width:100%; padding:10px; margin-bottom:15px; border: 1px solid #e74c3c;">
+            <div style="text-align: right;">
+                <button onclick="fecharModal()" style="padding:10px; cursor:pointer;">Cancelar</button>
+                <button onclick="processarExclusaoFinal()" style="padding:10px; background:#e74c3c; color:white; border:none; cursor:pointer; font-weight:bold;">Confirmar Exclusão</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const APP_VERSION = "1.2.0";
+        const APP_DATE = "02/07/2026";
+        document.getElementById('display-versao').innerText = `Módulo Auditoria | Versão: ${APP_VERSION} (${APP_DATE})`;
+
+        var firebaseConfig = {
+            apiKey: "AIzaSyAfDFjbyhv3rCRT6iy2kIJhoj_n2Q_2uJk",
+            authDomain: "checkpoint-hsvp-v2.firebaseapp.com",
+            projectId: "checkpoint-hsvp-v2",
+            storageBucket: "checkpoint-hsvp-v2.firebasestorage.app",
+            messagingSenderId: "1631082796",
+            appId: "1:1631082796:web:aaf6f79bfcc7e45e907489",
+            measurementId: "G-QF1KWNSVFJ"
+        };
+        firebase.initializeApp(firebaseConfig);
+        var bancoDeDados = firebase.firestore();
+        var gestorLogado = null;
+
+        firebase.auth().onAuthStateChanged(function(user) {
+            if (user) {
+                var mapaGestores = { "farmluiz@hsvp.com.br": "LUIZ LODI", "farmquevedo@hsvp.com.br": "BRUNA QUEVEDO", "supervisao.logistica@hsvp.com.br": "RENAN REIS" };
+                gestorLogado = { email: user.email, nome: mapaGestores[user.email] || user.email.split('@')[0].toUpperCase().replace('.', ' ') };
+                document.getElementById('tela-login').style.display = 'none'; document.getElementById('painel-gestao').style.display = 'block';
+                document.getElementById('id-logado').innerHTML = "👤 Auditor: " + gestorLogado.nome + " | <a href='#' onclick='fazerLogout()' style='color:#e74c3c; text-decoration:none; margin-left: 10px;'>[Sair]</a>";
+                var hoje = new Date(), d = String(hoje.getDate()).padStart(2,'0'), m = String(hoje.getMonth()+1).padStart(2,'0'), y = hoje.getFullYear();
+                document.getElementById('filtroDataLogistica').value = y+'-'+m+'-'+d;
+                document.getElementById('filtroDataLogs').value = y+'-'+m+'-'+d;
+            } else {
+                document.getElementById('tela-login').style.display = 'block'; document.getElementById('painel-gestao').style.display = 'none'; gestorLogado = null;
+            }
+        });
+
+        function fazerLogin() {
+            var email = document.getElementById('emailGestor').value.trim(), sen = document.getElementById('senhaGestor').value.trim();
+            document.getElementById('btn-login-btn').innerText = "Autenticando...";
+            firebase.auth().signInWithEmailAndPassword(email, sen).then(() => document.getElementById('btn-login-btn').innerText = "Acessar Sistema")
+            .catch(() => { document.getElementById('btn-login-btn').innerText = "Acessar Sistema"; document.getElementById('msg-erro').style.display = 'block'; });
+        }
+        function fazerLogout() { firebase.auth().signOut(); }
+
+        function mudarAbaPrincipal(idAba, btn) {
+            document.querySelectorAll('.secao-app').forEach(el => el.classList.remove('ativa'));
+            document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('ativo'));
+            document.getElementById(idAba).classList.add('ativa'); 
+            btn.classList.add('ativo');
+            
+            if(idAba === 'aba-auditoria-exclusao') carregarDadosLogistica(0);
+            if(idAba === 'aba-auditoria-historico') carregarAuditoria(0);
+            if(idAba === 'aba-auditoria-logs') carregarLogsErros();
+        }
+
+        function formataSLA(ms) { if(ms<0||!ms||isNaN(ms)) return "N/D"; let mm = Math.floor(ms/60000), h = Math.floor(mm/60), m = mm%60; return (h>0 ? h+"h " : "") + (m<10?"0"+m:m)+"m"; }
+
+        function buscarCicloVida() {
+            var req = document.getElementById('inputRaioX').value.trim();
+            if(req.length !== 7) return alert("Digite 7 dígitos.");
+            document.getElementById('load-raiox').style.display = 'inline-block'; document.getElementById('resultado-raiox').style.display = 'none';
+
+            bancoDeDados.collection("checkpoints_logistica").where("requisicao", "==", req).get().then(res => {
+                document.getElementById('load-raiox').style.display = 'none';
+                if(res.empty) return alert("Nenhum histórico encontrado para esta requisição.");
+
+                document.getElementById('raiox-titulo-req').innerText = req;
+                var tlContainer = document.getElementById('raiox-timeline'); tlContainer.innerHTML = "";
+                var todosBipes = []; res.forEach(d => todosBipes.push(d.data()));
+
+                var eventoSeparadoVol1 = todosBipes.find(b => (parseInt(b.volume) === 1 || !b.volume) && b.status.includes("Separado"));
+                var bipesPorVolume = {}; todosBipes.forEach(b => { var v = parseInt(b.volume) || 1; if(!bipesPorVolume[v]) bipesPorVolume[v] = []; bipesPorVolume[v].push(b); });
+
+                if (eventoSeparadoVol1) {
+                    for (var vol in bipesPorVolume) {
+                        if (parseInt(vol) > 1 && !bipesPorVolume[vol].some(b => b.status.includes("Separado"))) {
+                            var eventoHerdado = JSON.parse(JSON.stringify(eventoSeparadoVol1)); eventoHerdado.herdado = true; bipesPorVolume[vol].push(eventoHerdado);
+                        }
+                    }
+                }
+
+                Object.keys(bipesPorVolume).sort((a,b) => parseInt(a) - parseInt(b)).forEach(vol => {
+                    var bipes = bipesPorVolume[vol]; bipes.sort((a, b) => a.ordem - b.ordem);
+                    var originatedAtCentral = bipes.some(b => b.status.includes("Separado (Central)"));
+                    var originatedAtApoio = bipes.some(b => b.status === "Separado" || b.status.includes("Separado (Apoio)"));
+                    var originatedAtCAF = bipes.some(b => b.status.includes("Separado (CAF)"));
+                    var originatedAtUruguai = bipes.some(b => b.status.includes("Separado (Central Uruguai)"));
+                    var fluxoIdeal = [];
+
+                    if (originatedAtCAF || bipes.some(b => b.status.includes("Recebido (CAF)"))) {
+                        if (bipes.some(b => b.status.includes("Recebido (CAF)"))) {
+                            if (originatedAtCentral) fluxoIdeal = [ { nome: "Separado (Central)", filtros: ["Separado (Central)"] }, { nome: "Carregado", filtros: ["Carregado", "Carregado (Central)"] }, { nome: "Recebido (CAF)", filtros: ["Recebido (CAF)"] }, { nome: "Entregue no Setor", filtros: ["Entregue"] } ];
+                            else fluxoIdeal = [ { nome: "Separado (Apoio)", filtros: ["Separado (Apoio)", "Separado"] }, { nome: "Conferido (Apoio)", filtros: ["Conferido", "Conferido (Apoio)"] }, { nome: "Carregado (Transporte)", filtros: ["Carregado", "Carregado (Transporte)"] }, { nome: "Recebido (CAF)", filtros: ["Recebido (CAF)"] }, { nome: "Entregue no Setor", filtros: ["Entregue"] } ];
+                        } else fluxoIdeal = [ { nome: "Separado (CAF)", filtros: ["Separado (CAF)"] }, { nome: "Conferido (CAF)", filtros: ["Conferido (CAF)"] }, { nome: "Entregue no Setor", filtros: ["Entregue"] } ];
+                    } else if (originatedAtUruguai || bipes.some(b => b.status.includes("Recebido (Central Uruguai)"))) {
+                        if (bipes.some(b => b.status.includes("Recebido (Central Uruguai)"))) {
+                            if (originatedAtCentral) fluxoIdeal = [ { nome: "Separado (Central)", filtros: ["Separado (Central)"] }, { nome: "Carregado", filtros: ["Carregado", "Carregado (Central)"] }, { nome: "Recebido (Uruguai)", filtros: ["Recebido (Central Uruguai)"] }, { nome: "Entregue no Setor", filtros: ["Entregue"] } ];
+                            else fluxoIdeal = [ { nome: "Separado (Apoio)", filtros: ["Separado (Apoio)", "Separado"] }, { nome: "Conferido (Apoio)", filtros: ["Conferido", "Conferido (Apoio)"] }, { nome: "Carregado (Transporte)", filtros: ["Carregado", "Carregado (Transporte)"] }, { nome: "Recebido (Uruguai)", filtros: ["Recebido (Central Uruguai)"] }, { nome: "Entregue no Setor", filtros: ["Entregue"] } ];
+                        } else fluxoIdeal = [ { nome: "Separado (Uruguai)", filtros: ["Separado (Central Uruguai)"] }, { nome: "Entregue no Setor", filtros: ["Entregue"] } ];
+                    } else {
+                        if (originatedAtApoio || bipes.some(b => b.status.includes("Carregado") || (b.status.includes("Recebido") && !b.status.includes("CAF") && !b.status.includes("Uruguai")))) {
+                            fluxoIdeal = [ { nome: "Separado (Apoio)", filtros: ["Separado (Apoio)", "Separado"] }, { nome: "Conferido (Apoio)", filtros: ["Conferido"] }, { nome: "Carregado (Transporte)", filtros: ["Carregado"] }, { nome: "Recebido (Central)", filtros: ["Recebido", "Recebido (Central)"] }, { nome: "Entregue no Setor", filtros: ["Entregue"] } ];
+                        } else fluxoIdeal = [ { nome: "Separado (Central)", filtros: ["Separado (Central)"] }, { nome: "Entregue no Setor", filtros: ["Entregue"] } ];
+                    }
+
+                    var htmlVolume = `<div style="min-width:320px; background:#fff; padding:15px; border:2px solid #bdc3c7; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.05);"><h4 style="text-align:center; color:#d35400; margin-top:0; border-bottom:2px solid #eee; padding-bottom:10px;">Volume ${vol}</h4>`;
+                    var ultimaOrdemValida = null, primeiraOrdem = bipes[0].ordem, ultimaOrdem = bipes[bipes.length-1].ordem, temEntrega = bipes.some(b => b.status.includes("Entregue"));
+                    var indexAlcancado = -1; bipes.forEach(b => { fluxoIdeal.forEach((f, i) => { if(f.filtros.some(fil => b.status.includes(fil)) && i > indexAlcancado) indexAlcancado = i; }); });
+
+                    fluxoIdeal.forEach((etapa, i) => {
+                        var achou = bipes.find(b => etapa.filtros.some(fil => b.status.includes(fil)));
+                        if(achou && ultimaOrdemValida && achou.ordem > ultimaOrdemValida) htmlVolume += `<div class="raiox-intervalo">⏳ Tempo na etapa: ${formataSLA(achou.ordem - ultimaOrdemValida)}</div>`;
+                        htmlVolume += '<div class="raiox-etapa">';
+                        if(achou) { ultimaOrdemValida = achou.ordem; var bgIcone = achou.herdado ? '#3498db' : '#2ecc71'; var txHerdado = achou.herdado ? ' <span style="font-size:11px; color:#3498db; font-weight:normal;">(Herdado Vol 1)</span>' : ''; htmlVolume += `<div class="raiox-icone" style="background-color:${bgIcone};">✓</div><div class="raiox-detalhe"><h4>${achou.status}${txHerdado}</h4><p>👤 ${achou.nome} | 🕒 ${achou.data}</p></div>`; } 
+                        else if(i < indexAlcancado) htmlVolume += `<div class="raiox-icone icone-falha">!</div><div class="raiox-detalhe"><h4 style="color:#e74c3c;">${etapa.nome}</h4><p style="color:#e74c3c;">(Pulou a etapa)</p></div>`; 
+                        else htmlVolume += `<div class="raiox-icone icone-pendente">...</div><div class="raiox-detalhe"><h4 style="color:#95a5a6;">${etapa.nome}</h4><p>Aguardando...</p></div>`;
+                        htmlVolume += '</div>';
+                    });
+
+                    if (temEntrega) htmlVolume += `<div style="margin-top:20px; padding:10px; background:#e8f6f3; border:1px solid #2ecc71; border-radius:5px; text-align:center;"><strong style="color:#27ae60;">🏁 Tempo Total do Ciclo</strong><br><span style="font-size:18px; font-weight:bold; color:#2c3e50;">${formataSLA(ultimaOrdem - primeiraOrdem)}</span></div>`;
+                    htmlVolume += `</div>`; tlContainer.innerHTML += htmlVolume;
+                });
+                document.getElementById('resultado-raiox').style.display = 'block';
+            }).catch(erro => { document.getElementById('load-raiox').style.display = 'none'; alert("Erro ao consultar o banco."); });
+        }
+
+        var pagLog = 1, curPriLog = null, curUltLog = null;
+        function carregarDadosLogistica(dir) {
+            var lim = parseInt(document.getElementById('limiteLogistica').value) || 10; 
+            var reqFiltro = document.getElementById('filtroReqLogistica').value.trim();
+            document.getElementById('load-logistica').style.display = 'inline-block';
+            var tb = document.getElementById('corpo-logistica'), data = document.getElementById('filtroDataLogistica').value, dInicio = new Date(data+"T00:00:00").getTime();
+            var query = bancoDeDados.collection("checkpoints_logistica").where("ordem", ">=", dInicio).where("ordem", "<=", dInicio+86399999).orderBy("ordem", "desc");
+
+            if (reqFiltro !== "") {
+                document.getElementById('paginacao-logistica').style.display = 'none';
+                query.get().then(res => {
+                    document.getElementById('load-logistica').style.display = 'none'; tb.innerHTML = ''; var achouAlgo = false;
+                    res.forEach(d => { var ev = d.data(); if (ev.requisicao === reqFiltro) { achouAlgo = true; tb.innerHTML += `<tr id="row-${d.id}"><td>${ev.data.split(" ")[1] || ev.data}</td><td>${ev.nome}</td><td style="color:#2980b9;font-weight:bold;">${ev.requisicao}</td><td>Vol ${ev.volume||1}</td><td>${ev.status}</td><td><button class="btn-excluir" onclick="abrirModalExclusao('${d.id}', '${encodeURIComponent(JSON.stringify(ev))}')">Excluir</button></td></tr>`; } });
+                    if (!achouAlgo) tb.innerHTML = `<tr><td colspan="6">Nenhum lançamento encontrado para a Requisição ${reqFiltro}.</td></tr>`;
+                }).catch(e => { alert("Erro na busca."); document.getElementById('load-logistica').style.display = 'none'; });
+                return;
+            }
+
+            document.getElementById('paginacao-logistica').style.display = 'flex';
+            if (dir === 1 && curUltLog) { query = query.startAfter(curUltLog).limit(lim); pagLog++; } else if (dir === -1 && curPriLog) { query = query.endBefore(curPriLog).limitToLast(lim); pagLog--; } else { query = query.limit(lim); pagLog = 1; }
+            
+            query.get().then(res => {
+                document.getElementById('load-logistica').style.display = 'none';
+                if(res.empty) { if(dir===0) tb.innerHTML = '<tr><td colspan="6">Nenhum dado.</td></tr>'; if(dir===1) pagLog--; if(dir===-1) pagLog++; } else {
+                    tb.innerHTML = ''; curPriLog = res.docs[0]; curUltLog = res.docs[res.docs.length-1];
+                    res.forEach(d => { var ev = d.data(); tb.innerHTML += `<tr id="row-${d.id}"><td>${ev.data.split(" ")[1] || ev.data}</td><td>${ev.nome}</td><td style="color:#2980b9;font-weight:bold;">${ev.requisicao}</td><td>Vol ${ev.volume||1}</td><td>${ev.status}</td><td><button class="btn-excluir" onclick="abrirModalExclusao('${d.id}', '${encodeURIComponent(JSON.stringify(ev))}')">Excluir</button></td></tr>`; });
+                }
+                document.getElementById('info-pag-log').innerText = "Pág " + pagLog; document.getElementById('btn-ant-log').disabled = (pagLog <= 1); document.getElementById('btn-prox-log').disabled = (res.docs.length < lim);
+            });
+        }
+
+        var idDel = null, dadosDel = null;
+        function abrirModalExclusao(id, str) { idDel = id; dadosDel = JSON.parse(decodeURIComponent(str)); document.getElementById('texto-resumo-exclusao').innerHTML = `Excluir a Requisição <b>${dadosDel.requisicao} (Vol ${dadosDel.volume||1})</b> da etapa <b>${dadosDel.status}</b>?`; document.getElementById('input-justificativa').value = ""; document.getElementById('modal-justificativa').style.display = 'block'; }
+        function fecharModal() { document.getElementById('modal-justificativa').style.display = 'none'; }
+        
+        function processarExclusaoFinal() {
+            var just = document.getElementById('input-justificativa').value.trim(); if(just.length < 5) return alert("Justificativa obrigatória.");
+            var btnConfirmar = document.querySelector('#modal-justificativa button:last-child'); btnConfirmar.innerText = "Excluindo..."; btnConfirmar.disabled = true;
+            var req = dadosDel.requisicao, volTarget = dadosDel.volume || 1, idDocEstadoAtual = req + "-" + volTarget;
+
+            bancoDeDados.collection("historico_exclusoes").add({ idRegistroApagado: idDel, requisicao: req, status: dadosDel.status, volume: volTarget, operadorOriginal: dadosDel.nome, excluidoPorNome: gestorLogado.nome, justificativa: just, dataExclusao: new Date().toLocaleString('pt-BR'), ordemExclusao: new Date().getTime() })
+            .then(() => bancoDeDados.collection("checkpoints_logistica").doc(idDel).delete()).then(() => bancoDeDados.collection("checkpoints_logistica").where("requisicao", "==", req).get())
+            .then((res) => {
+                var evAnt = null; res.forEach(doc => { var ev = doc.data(); if ((ev.volume || 1) == volTarget) { if (!evAnt || ev.ordem > evAnt.ordem) evAnt = ev; } });
+                if (evAnt) return bancoDeDados.collection("caixas_estado_atual").doc(idDocEstadoAtual).set(evAnt); else return bancoDeDados.collection("caixas_estado_atual").doc(idDocEstadoAtual).delete();
+            }).then(() => { fecharModal(); var linha = document.getElementById('row-' + idDel); if(linha) linha.remove(); btnConfirmar.innerText = "Confirmar Exclusão"; btnConfirmar.disabled = false; alert("✅ Registro excluído com sucesso!"); })
+            .catch(erro => { console.error(erro); alert("Erro ao excluir."); btnConfirmar.innerText = "Confirmar Exclusão"; btnConfirmar.disabled = false; });
+        }
+
+        var pagAud = 1, curPriAud = null, curUltAud = null;
+        function carregarAuditoria(dir) {
+            var lim = parseInt(document.getElementById('limiteAuditoria').value) || 10; document.getElementById('load-auditoria').style.display = 'inline-block';
+            var tb = document.getElementById('corpo-auditoria'), query = bancoDeDados.collection("historico_exclusoes").orderBy("ordemExclusao", "desc");
+            if (dir === 1 && curUltAud) { query = query.startAfter(curUltAud).limit(lim); pagAud++; } else if (dir === -1 && curPriAud) { query = query.endBefore(curPriAud).limitToLast(lim); pagAud--; } else { query = query.limit(lim); pagAud = 1; }
+            query.get().then(res => {
+                document.getElementById('load-auditoria').style.display = 'none';
+                if(res.empty) { if(dir===0) tb.innerHTML = '<tr><td colspan="6">Vazio.</td></tr>'; if(dir===1) pagAud--; if(dir===-1) pagAud++; } else {
+                    tb.innerHTML = ''; curPriAud = res.docs[0]; curUltAud = res.docs[res.docs.length-1];
+                    res.forEach(d => { var l = d.data(); tb.innerHTML += `<tr><td>${l.dataExclusao}</td><td><b>${l.requisicao}</b> (Vol ${l.volume||1})</td><td>${l.status}</td><td>${l.operadorOriginal}</td><td style="color:#e74c3c;">${l.excluidoPorNome}</td><td><i>"${l.justificativa}"</i></td></tr>`; });
+                }
+                document.getElementById('info-pag-aud').innerText = "Pág " + pagAud; document.getElementById('btn-ant-aud').disabled = (pagAud <= 1); document.getElementById('btn-prox-aud').disabled = (res.docs.length < lim);
+            });
+        }
+
+        // CARREGA LOGS DE ERROS DE BIPAGEM
+        function carregarLogsErros() {
+            document.getElementById('load-logs').style.display = 'inline-block';
+            var tb = document.getElementById('corpo-logs'), data = document.getElementById('filtroDataLogs').value, dInicio = new Date(data+"T00:00:00").getTime();
+            
+            bancoDeDados.collection("logs_erros_bipagem").where("ordem", ">=", dInicio).where("ordem", "<=", dInicio+86399999).orderBy("ordem", "desc").get().then(res => {
+                document.getElementById('load-logs').style.display = 'none'; tb.innerHTML = '';
+                if(res.empty) { tb.innerHTML = '<tr><td colspan="5">Nenhum erro registrado nesta data.</td></tr>'; return; }
+                res.forEach(d => { var ev = d.data(); tb.innerHTML += `<tr><td>${ev.data}</td><td>${ev.operador}</td><td style="color:#c0392b;font-weight:bold;">${ev.requisicao}</td><td>${ev.etapa}</td><td style="color:#e74c3c;">${ev.motivo}</td></tr>`; });
+            }).catch(e => { alert("Erro ao buscar logs de erro."); document.getElementById('load-logs').style.display = 'none'; });
+        }
+
+    </script>
+</body>
+</html>
