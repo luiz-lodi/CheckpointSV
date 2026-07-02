@@ -1,7 +1,7 @@
 {
-  "name": "Checkpoint HSVP",
-  "short_name": "Checkpoint",
-  "description": "Sistema de Controle Logístico HSVP",
+  "name": "Checkpoint HSVP V2",
+  "short_name": "Check V2",
+  "description": "Sistema de Controle Logístico HSVP (Nova Infraestrutura)",
   "start_url": "index.html",
   "display": "standalone",
   "background_color": "#f4f4f9",
