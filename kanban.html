@@ -114,8 +114,8 @@
 
     <div class="header-ferramentas">
         <div class="filtros-fluxo">
-            <button class="btn-fluxo" onclick="filtrarFluxo('TODOS', this)">🌐 Todos</button>
-            <button class="btn-fluxo ativo" onclick="filtrarFluxo('APOIO', this)">🏭 Fluxo Apoio</button>
+            <button class="btn-fluxo ativo" onclick="filtrarFluxo('TODOS', this)">🌐 Todos</button>
+            <button class="btn-fluxo" onclick="filtrarFluxo('APOIO', this)">🏭 Fluxo Apoio</button>
             <button class="btn-fluxo" onclick="filtrarFluxo('CENTRAL', this)">🏥 Fluxo Central</button>
         </div>
         
@@ -160,7 +160,7 @@
 
     <script>
         // CONTROLE OFICIAL DE VERSÃO E ASSINATURA 🚀
-        const APP_VERSION = "1.22.0";
+        const APP_VERSION = "1.21.0";
         const APP_DATE = "02/07/2026";
         
         document.getElementById('display-versao').innerText = `Módulo Kanban |Versão: ${APP_VERSION} (${APP_DATE})`;
@@ -191,9 +191,6 @@
             
             carregarKanbanTempoReal();
             setInterval(verificarSLAsAoVivo, 60000);
-
-            // NOVO: Aciona o filtro de Apoio automaticamente ao carregar
-            filtrarFluxo('APOIO', document.getElementById('btn-filtro-apoio'));
         };
 
         function atualizarTotalVisivel() {
