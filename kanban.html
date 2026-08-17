@@ -12,10 +12,26 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
 
     <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #ecf0f1; margin: 0; padding: 20px; color: #333; display: flex; flex-direction: column; min-height: 100vh;}
+        body { 
+            font-family: 'Segoe UI', Arial, sans-serif; 
+            background-color: #ecf0f1; 
+            margin: 0; 
+            padding: 0; 
+            color: #333; 
+            display: flex; 
+            flex-direction: column; 
+            height: 100vh; 
+            overflow: hidden; 
+        }
         
         /* BARRA DE FERRAMENTAS UNIFICADA - COMPACTA */
-        .header-ferramentas { background: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px; }
+        .header-ferramentas { 
+            background: white; padding: 12px 20px; border-radius: 8px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; 
+            justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; 
+            margin: 0 20px 20px 20px; 
+            flex-shrink: 0; 
+        }
         
         .titulo-compacto { font-size: 16px; font-weight: bold; color: #2c3e50; display: flex; align-items: center; gap: 8px; margin-right: auto;}
         .titulo-compacto span.data { font-size: 13px; color: #7f8c8d; font-weight: normal; }
@@ -37,10 +53,40 @@
         .badge-alerta { background-color: #f1c40f; color: #2c3e50; padding: 8px 15px; border-radius: 30px; font-size: 13px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1);}
         .badge-alerta span { color: #2c3e50; font-size: 16px; margin-left: 5px; }
 
-        .kanban-board { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 20px; align-items: flex-start; flex: 1; transition: all 0.3s ease; }
+        .kanban-board { 
+            display: flex; gap: 15px; 
+            padding: 0 20px 20px 20px; 
+            align-items: stretch; /* AJUSTE: Força todas as colunas a terem a mesma altura */
+            flex: 1; 
+            overflow-x: auto; 
+            overflow-y: auto; 
+            transition: all 0.3s ease; 
+        }
 
-        .coluna { background-color: #dfe6e9; min-width: 250px; flex: 1; border-radius: 8px; padding: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: opacity 0.3s, width 0.3s; }
-        .coluna h3 { text-align: center; margin-top: 0; padding-bottom: 10px; border-bottom: 2px solid #b2bec3; font-size: 15px;}
+        .coluna { 
+            background-color: #dfe6e9; 
+            min-width: 250px; 
+            flex: 1; 
+            border-radius: 8px; 
+            padding: 10px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05); 
+            transition: opacity 0.3s, width 0.3s; 
+        }
+        
+        /* Título da coluna (Sticky) */
+        .coluna h3 { 
+            position: sticky; 
+            top: 0; 
+            z-index: 2; 
+            background-color: #dfe6e9; 
+            margin: -10px -10px 10px -10px; 
+            padding: 15px 10px 10px 10px; 
+            border-radius: 8px 8px 0 0; 
+            text-align: center; 
+            border-bottom: 2px solid #b2bec3; 
+            font-size: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
+        }
 
         #col-separado h3 { color: #f39c12; border-color: #f39c12; }
         #col-conferido h3 { color: #8e44ad; border-color: #8e44ad; }
@@ -67,13 +113,23 @@
         @keyframes pulseSla { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
 
         /* ESTILO DO RODAPÉ (VERSÃO) */
-        .app-footer { margin-top: 40px; text-align: center; padding: 20px; color: #7f8c8d; font-size: 11px; border-top: 1px solid #bdc3c7; }
+        .app-footer { 
+            margin-top: 0; 
+            text-align: center; 
+            padding: 15px 20px; 
+            color: #7f8c8d; 
+            font-size: 11px; 
+            border-top: 1px solid #bdc3c7; 
+            background-color: #ecf0f1; 
+            flex-shrink: 0; 
+            z-index: 10;
+        }
         .app-footer strong { color: #34495e; }
     </style>
 </head>
 <body>
 
-    <div style="background-color: #2c3e50; padding: 12px; text-align: center; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+    <div style="background-color: #2c3e50; padding: 12px; text-align: center; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); flex-shrink: 0;">
         <a href="index.html" style="color: #ecf0f1; text-decoration: none; margin: 0 15px; font-weight: bold; font-size: 15px;">📱 Tela do Operador</a>
         <a href="romaneio.html" style="color: #ecf0f1; text-decoration: none; margin: 0 15px; font-weight: bold; font-size: 15px;">🚚 Romaneio</a>
         <a href="kanban.html" style="color: #f1c40f; text-decoration: none; margin: 0 15px; font-weight: bold; font-size: 15px;">🚥 Kanban</a>
@@ -136,11 +192,11 @@
 
     <script>
         // CONTROLE OFICIAL DE VERSÃO E ASSINATURA 🚀
-        const APP_VERSION = "1.23.0";
-        const APP_DATE = "23/07/2026";
+        const APP_VERSION = "1.23.3";
+        const APP_DATE = "14/08/2026";
         
-        document.getElementById('display-versao').innerText = `Módulo Kanban |Versão: ${APP_VERSION} (${APP_DATE})`;
-        console.log(`%c🚀 Checkpoint HSVP Kanban | Versão ${APP_VERSION} | Compactação, Agrupamento e AutoScroll`, "color: #f1c40f; font-size: 14px; font-weight: bold;");
+        document.getElementById('display-versao').innerText = `Módulo Kanban | Versão: ${APP_VERSION} (${APP_DATE})`;
+        console.log(`%c🚀 Checkpoint HSVP Kanban | Versão ${APP_VERSION} | Fix Altura das Colunas`, "color: #f1c40f; font-size: 14px; font-weight: bold;");
 
         var firebaseConfig = {
             apiKey: "AIzaSyAfDFjbyhv3rCRT6iy2kIJhoj_n2Q_2uJk",
@@ -167,34 +223,35 @@
             
             carregarKanbanTempoReal();
             setInterval(verificarSLAsAoVivo, 60000);
-            iniciarAutoScroll(); // NOVO: Motor de Rolagem de Tela
+            iniciarAutoScroll(); 
         };
 
         // =====================================
         // MOTOR DE AUTO-SCROLL DA TELA (DASHBOARD)
         // =====================================
         function iniciarAutoScroll() {
+            var board = document.querySelector('.kanban-board');
+            if (!board) return; 
+
             var passoScroll = 1; 
-            var intervaloScroll = 40; // milissegundos
-            var tempoPausa = 5000; // 5 segundos no topo/rodapé
+            var intervaloScroll = 40; 
+            var tempoPausa = 5000; 
             var direcao = 1; 
             var pausado = false;
 
             setInterval(function() {
                 if (pausado) return;
 
-                var limiteRolagem = document.documentElement.scrollHeight - window.innerHeight;
-                if (limiteRolagem <= 0) return; // Não rola se não houver conteúdo oculto
+                var limiteRolagem = board.scrollHeight - board.clientHeight;
+                if (limiteRolagem <= 0) return; 
 
-                window.scrollBy(0, passoScroll * direcao);
-                var posicaoAtual = window.scrollY;
+                board.scrollBy(0, passoScroll * direcao);
+                var posicaoAtual = Math.ceil(board.scrollTop);
 
-                // Chegou no Rodapé
                 if (direcao === 1 && posicaoAtual >= limiteRolagem - 1) {
                     pausado = true;
                     setTimeout(function() { direcao = -1; pausado = false; }, tempoPausa);
                 }
-                // Chegou no Topo
                 else if (direcao === -1 && posicaoAtual <= 0) {
                     pausado = true;
                     setTimeout(function() { direcao = 1; pausado = false; }, tempoPausa);
@@ -213,11 +270,9 @@
             
             colunas.forEach(function(coluna) {
                 if (window.getComputedStyle(coluna).display !== 'none') {
-                    // Contabiliza total de Volumes lendo o contador do título da coluna
                     var valorColuna = parseInt(coluna.querySelector('.contador').innerText) || 0;
                     total += valorColuna;
 
-                    // Contabiliza pendências e SLAs lendo a quantidade embutida em cada card agrupado
                     var cartoes = coluna.querySelectorAll('.cartao');
                     cartoes.forEach(function(c) {
                         var qtdVolumesCard = parseInt(c.getAttribute('data-qtd-vols')) || 1;
@@ -236,7 +291,6 @@
             document.querySelectorAll('.btn-fluxo').forEach(b => b.classList.remove('ativo'));
             btn.classList.add('ativo');
 
-            // Garante que todas começam visíveis antes de aplicar a regra
             document.getElementById('col-separado').style.display = 'block';
             document.getElementById('col-conferido').style.display = 'block';
             document.getElementById('col-sep-central').style.display = 'block';
@@ -307,81 +361,11 @@
             ouvintesNuvem.push(ouvinte1, ouvinte2);
         }
 
-        function renderizarKanbanDaMemoria(inicioDoDia) {
-            limparColunas();
-            
-            // Estrutura para agrupar caixas da mesma Requisição e na mesma Coluna
-            var grupos = { separado: {}, conferido: {}, carregado: {}, recebido: {}, sepCentral: {}, entregue: {} };
-            var contagens = { separado: 0, conferido: 0, carregado: 0, recebido: 0, sepCentral: 0, entregue: 0 };
-
-            var bipesOrdenados = Array.from(estadoGlobalKanban.values());
-            bipesOrdenados.sort(function(a, b) { return a.ordem - b.ordem; });
-
-            // 1. Fase de Agrupamento
-            bipesOrdenados.forEach(function(dados) {
-                var status = dados.status || "";
-                var isEntregue = status.indexOf("Entregue") !== -1;
-                var isAtrasado = dados.ordem < inicioDoDia && !isEntregue;
-
-                // Descarta caixas entregues em dias anteriores (limpeza da memória)
-                if (isEntregue && dados.ordem < inicioDoDia) return;
-
-                var idColunaAlvo = '';
-                if (status.indexOf("Separado (Central)") !== -1) idColunaAlvo = 'sepCentral';
-                else if (status.indexOf("Separado (Apoio)") !== -1 || status === "Separado") idColunaAlvo = 'separado';
-                else if (status.indexOf("Conferido") !== -1) idColunaAlvo = 'conferido';
-                else if (status.indexOf("Carregado") !== -1) idColunaAlvo = 'carregado';
-                else if (status.indexOf("Recebido") !== -1) idColunaAlvo = 'recebido';
-                else if (status.indexOf("Entregue") !== -1) idColunaAlvo = 'entregue';
-
-                if (idColunaAlvo) {
-                    var reqNum = dados.requisicao;
-                    
-                    if (!grupos[idColunaAlvo][reqNum]) {
-                        grupos[idColunaAlvo][reqNum] = {
-                            requisicao: reqNum,
-                            nome: dados.nome,
-                            status: status,
-                            data: dados.data, // Mantém a data do bipe mais antigo deste grupo nesta coluna
-                            ordem: dados.ordem,
-                            isAtrasado: isAtrasado,
-                            isEntregue: isEntregue,
-                            volumes: []
-                        };
-                    }
-                    
-                    var volInt = parseInt(dados.volume) || 1;
-                    if (!grupos[idColunaAlvo][reqNum].volumes.includes(volInt)) {
-                        grupos[idColunaAlvo][reqNum].volumes.push(volInt);
-                        contagens[idColunaAlvo]++; // Incrementa o volume total da coluna
-                    }
-                }
-            });
-
-            // 2. Fase de Renderização das Colunas Agrupadas
-            renderizarColunaGrupos('separado', '#col-separado', contagens.separado);
-            renderizarColunaGrupos('conferido', '#col-conferido', contagens.conferido);
-            renderizarColunaGrupos('carregado', '#col-carregado', contagens.carregado);
-            renderizarColunaGrupos('recebido', '#col-recebido', contagens.recebido);
-            renderizarColunaGrupos('sepCentral', '#col-sep-central', contagens.sepCentral);
-            renderizarColunaGrupos('entregue', '#col-entregue', contagens.entregue);
-
-            verificarSLAsAoVivo();
-        }
-
         function limparColunas() {
             var listas = document.querySelectorAll('.lista-cartoes');
             for (var i = 0; i < listas.length; i++) { listas[i].innerHTML = ''; }
         }
 
-        function renderizarColunaGrupos(idGrupoObj, seletorHTML, countVolumes) {
-            var reqsArray = Object.values(gruposGlobal[idGrupoObj] || {}); // (O loop forEach populou os grupos locais, vou injetar a lógica direto no contexto)
-            
-            // Ajuste no escopo da variável grupos: passaremos ela via parâmetro de uma função local
-            // (Isso foi reatorado para ficar mais limpo e não depender de variáveis globais)
-        }
-        
-        // Re-escrita do renderizar dentro do contexto seguro
         function renderizarKanbanDaMemoria(inicioDoDia) {
             limparColunas();
             var grupos = { separado: {}, conferido: {}, carregado: {}, recebido: {}, sepCentral: {}, entregue: {} };
@@ -425,7 +409,6 @@
                 }
             });
 
-            // Helper de Renderização
             function renderHTMLPara(tgt, seletorHTML, counterHTML) {
                 var html = '';
                 var arrayReqs = Object.values(grupos[tgt]);
