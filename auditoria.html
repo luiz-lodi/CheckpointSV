@@ -68,6 +68,32 @@
         .modal-overlay { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); }
         .modal-content { background: #fff; margin: 10% auto; padding: 25px; border-radius: 8px; width: 90%; max-width: 450px; }
 
+        /* ===================== v1.3.0 - EXPORTACAO DE DADOS ===================== */
+        .exp-banner-legado { display:none; background:#fdebd0; border:2px solid #e67e22; color:#a04000; padding:15px; border-radius:8px; margin-bottom:20px; font-weight:bold; text-align:center; font-size:15px; line-height:1.5; }
+        .exp-bloco { background:#f8f9fa; border:1px solid #e5e8ec; border-radius:8px; padding:18px; margin-bottom:18px; }
+        .exp-bloco h4 { margin:0 0 12px 0; color:#2c3e50; font-size:16px; }
+        .exp-status-grid { display:flex; gap:15px; flex-wrap:wrap; }
+        .exp-status-card { flex:1; min-width:220px; background:#fff; border:1px solid #e5e8ec; border-radius:6px; padding:12px 15px; }
+        .exp-status-card .rot { font-size:11px; color:#7f8c8d; text-transform:uppercase; font-weight:bold; letter-spacing:0.5px; }
+        .exp-status-card .val { font-size:20px; font-weight:bold; color:#2c3e50; margin-top:4px; }
+        .exp-barra-fundo { background:#e5e8ec; border-radius:10px; height:10px; margin-top:8px; overflow:hidden; }
+        .exp-barra-preench { background:#27ae60; height:100%; width:0%; transition:width .3s; }
+        .exp-confirma { display:none; background:#fff8e1; border:2px solid #f1c40f; border-radius:8px; padding:20px; margin-bottom:18px; }
+        .exp-confirma table { min-width:0; width:100%; }
+        .exp-confirma td { text-align:left; border-bottom:1px dashed #e8e2c4; padding:9px 4px; font-size:14px; }
+        .exp-confirma td:last-child { text-align:right; font-weight:bold; color:#2c3e50; }
+        .btn-exp-confirmar { background:#27ae60; color:#fff; border:none; padding:12px 25px; border-radius:5px; font-weight:bold; cursor:pointer; font-size:15px; }
+        .btn-exp-confirmar:disabled { background:#bdc3c7; cursor:not-allowed; }
+        .btn-exp-cancelar { background:#bdc3c7; color:#2c3e50; border:none; padding:12px 20px; border-radius:5px; font-weight:bold; cursor:pointer; margin-left:8px; }
+        .exp-downloads { display:none; }
+        .exp-arquivo { display:flex; align-items:center; justify-content:space-between; gap:15px; background:#fff; border:1px solid #e5e8ec; border-left:5px solid #27ae60; border-radius:6px; padding:12px 15px; margin-bottom:10px; }
+        .exp-arquivo .info { font-size:14px; color:#2c3e50; font-weight:bold; }
+        .exp-arquivo .info small { display:block; color:#7f8c8d; font-size:12px; margin-top:3px; font-weight:normal; }
+        .btn-download { background:#8e44ad; color:#fff; border:none; padding:10px 18px; border-radius:5px; font-weight:bold; cursor:pointer; white-space:nowrap; }
+        .btn-download.baixado { background:#95a5a6; }
+        .exp-aviso { background:#fdecea; border-left:5px solid #e74c3c; padding:12px 15px; border-radius:5px; color:#922b21; font-size:13px; font-weight:bold; margin-bottom:15px; line-height:1.5; }
+        .exp-erro { display:none; background:#fdecea; border:2px solid #e74c3c; color:#922b21; padding:15px; border-radius:8px; margin-bottom:18px; font-size:14px; line-height:1.6; }
+
         .app-footer { margin-top: auto; text-align: center; padding: 20px; color: #7f8c8d; font-size: 12px; line-height: 1.5; }
         .app-footer strong { color: #34495e; }
     </style>
@@ -99,6 +125,7 @@
                     <button class="menu-btn" onclick="mudarAbaPrincipal('aba-auditoria-exclusao', this)">🗑️ Excluir Lançamentos</button>
                     <button class="menu-btn" onclick="mudarAbaPrincipal('aba-auditoria-historico', this)">📜 Histórico de Exclusões</button>
                     <button class="menu-btn" onclick="mudarAbaPrincipal('aba-auditoria-logs', this)">⚠️ Logs de Erros de Bipagem</button>
+                    <button class="menu-btn" onclick="mudarAbaPrincipal('aba-auditoria-exportar', this)">📤 Exportar Dados</button>
                 </div>
 
                 <div class="conteudo-principal">
@@ -185,6 +212,80 @@
                         </div>
                     </div>
 
+                    <div id="aba-auditoria-exportar" class="secao-app">
+                        <h2 class="secao-titulo">Exportação de Dados para Análise Offline</h2>
+
+                        <div id="exp-banner-legado" class="exp-banner-legado">
+                            ⚠️ ATENÇÃO: consulta apontada para o <u>BANCO LEGADO</u> (Fase 1 — projeto <i>checkpoint-pedidos</i>).<br>
+                            Estes dados são históricos e <u>NÃO</u> refletem a operação atual. Os arquivos virão marcados como LEGADO.
+                        </div>
+
+                        <div class="exp-bloco">
+                            <h4>1. Origem e Período</h4>
+                            <div class="filtro-container" style="margin-bottom:0;">
+                                <label>Banco:</label>
+                                <select id="expBanco" onchange="alternarBancoExportacao()">
+                                    <option value="PRODUCAO" selected>🟢 Produção (checkpoint-hsvp-v2)</option>
+                                    <option value="LEGADO">🟡 Legado / Fase 1 (checkpoint-pedidos)</option>
+                                </select>
+                                <label>Data inicial:</label><input type="date" id="expDataInicio" onchange="resetarEstimativa()">
+                                <label>Data final:</label><input type="date" id="expDataFim" onchange="resetarEstimativa()">
+                                <button class="btn-acao" onclick="calcularEstimativaExportacao()">📐 Calcular Estimativa</button>
+                                <span class="loading" id="load-exp">Processando... ⏳</span>
+                            </div>
+                            <div style="font-size:12px; color:#7f8c8d; margin-top:10px;">
+                                Período máximo permitido por exportação: <b id="exp-max-dias"></b> dias corridos. Nenhuma leitura é consumida até a confirmação.
+                            </div>
+                        </div>
+
+                        <div class="exp-bloco">
+                            <h4>2. Travas de Segurança <a href="#" onclick="carregarStatusTravas(true); return false;" style="font-weight:normal; font-size:12px; color:#3498db; text-decoration:none; margin-left:8px;">[atualizar]</a></h4>
+                            <div class="exp-status-grid">
+                                <div class="exp-status-card">
+                                    <div class="rot">Suas exportações hoje</div>
+                                    <div class="val" id="exp-val-usuario">--</div>
+                                </div>
+                                <div class="exp-status-card">
+                                    <div class="rot">Orçamento global de leituras (dia)</div>
+                                    <div class="val" id="exp-val-global">--</div>
+                                    <div class="exp-barra-fundo"><div class="exp-barra-preench" id="exp-barra"></div></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="exp-erro" class="exp-erro"></div>
+
+                        <div id="exp-confirma" class="exp-confirma">
+                            <h4 style="margin:0 0 12px 0; color:#b9770e;">⚠️ Confirmação obrigatória antes de consumir leituras</h4>
+                            <table>
+                                <tr><td>Banco de origem</td><td id="cf-banco"></td></tr>
+                                <tr><td>Período solicitado</td><td id="cf-periodo"></td></tr>
+                                <tr><td>Dias corridos / dias com operação</td><td id="cf-dias"></td></tr>
+                                <tr><td>Estimativa de leituras</td><td id="cf-leituras"></td></tr>
+                                <tr><td>Percentual da cota diária (50.000)</td><td id="cf-percentual"></td></tr>
+                                <tr><td>Orçamento restante após esta exportação</td><td id="cf-restante"></td></tr>
+                            </table>
+                            <p style="font-size:13px; color:#7f8c8d; margin:12px 0;">
+                                A estimativa é aproximada, calculada por média histórica de documentos por dia. O consumo real é apurado e registrado após a execução.
+                                Ao confirmar, sua cota de exportação do dia é <b>reservada imediatamente</b>, antes da consulta.
+                            </p>
+                            <button class="btn-exp-confirmar" id="btn-exp-confirmar" onclick="executarExportacao()">✅ Confirmar e Exportar</button>
+                            <button class="btn-exp-cancelar" onclick="resetarEstimativa()">Cancelar</button>
+                        </div>
+
+                        <div id="exp-downloads" class="exp-downloads">
+                            <div class="exp-aviso">
+                                🔴 Baixe os arquivos AGORA. Eles estão apenas na memória deste navegador. Se a página for fechada ou recarregada, os dados serão perdidos e a exportação do dia já terá sido consumida.
+                            </div>
+                            <div class="exp-bloco">
+                                <h4>3. Arquivos Gerados</h4>
+                                <div id="exp-lista-arquivos"></div>
+                                <div style="font-size:13px; color:#7f8c8d; margin-top:12px; line-height:1.6;" id="exp-resumo-real"></div>
+                            </div>
+                        </div>
+                    </div>
+
+
                 </div>
             </div>
         </div>
@@ -207,10 +308,25 @@
         </div>
     </div>
 
+    <div id="modal-senha-legado" class="modal-overlay">
+        <div class="modal-content">
+            <h3 style="color:#e67e22; margin-top:0;">🔐 Autenticação no Banco Legado</h3>
+            <p style="font-size:14px; color:#555; line-height:1.5;">O banco legado é um projeto Firebase separado e exige autenticação própria. Informe a senha da conta <b id="senha-legado-email"></b>.</p>
+            <input type="password" id="input-senha-legado" placeholder="Senha do gestor" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #e67e22; border-radius:5px; box-sizing:border-box;" onkeypress="if(event.key==='Enter') confirmarSenhaLegado()">
+            <div id="erro-senha-legado" style="display:none; color:#e74c3c; font-weight:bold; font-size:13px; margin-bottom:10px; line-height:1.4;"></div>
+            <div style="text-align:right;">
+                <button onclick="cancelarSenhaLegado()" style="padding:10px; cursor:pointer;">Cancelar</button>
+                <button onclick="confirmarSenhaLegado()" style="padding:10px; background:#e67e22; color:white; border:none; cursor:pointer; font-weight:bold;">Autenticar</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        const APP_VERSION = "1.2.0";
-        const APP_DATE = "02/07/2026";
+        const APP_VERSION = "1.3.0";
+        const APP_DATE = "01/09/2026";
         document.getElementById('display-versao').innerText = `Módulo Auditoria | Versão: ${APP_VERSION} (${APP_DATE})`;
+
+        console.log(`%c🛡️ Checkpoint HSVP Auditoria | Versão ${APP_VERSION} (${APP_DATE}) | Exportação de Dados + Travas de Cota`, "color: #16a085; font-size: 14px; font-weight: bold;");
 
         var firebaseConfig = {
             apiKey: "AIzaSyAfDFjbyhv3rCRT6iy2kIJhoj_n2Q_2uJk",
@@ -256,6 +372,7 @@
             if(idAba === 'aba-auditoria-exclusao') carregarDadosLogistica(0);
             if(idAba === 'aba-auditoria-historico') carregarAuditoria(0);
             if(idAba === 'aba-auditoria-logs') carregarLogsErros();
+            if(idAba === 'aba-auditoria-exportar') prepararAbaExportacao();
         }
 
         function formataSLA(ms) { if(ms<0||!ms||isNaN(ms)) return "N/D"; let mm = Math.floor(ms/60000), h = Math.floor(mm/60), m = mm%60; return (h>0 ? h+"h " : "") + (m<10?"0"+m:m)+"m"; }
@@ -403,6 +520,562 @@
                 if(res.empty) { tb.innerHTML = '<tr><td colspan="5">Nenhum erro registrado nesta data.</td></tr>'; return; }
                 res.forEach(d => { var ev = d.data(); tb.innerHTML += `<tr><td>${ev.data}</td><td>${ev.operador}</td><td style="color:#c0392b;font-weight:bold;">${ev.requisicao}</td><td>${ev.etapa}</td><td style="color:#e74c3c;">${ev.motivo}</td></tr>`; });
             }).catch(e => { alert("Erro ao buscar logs de erro."); document.getElementById('load-logs').style.display = 'none'; });
+        }
+
+        // =====================================================================
+        // v1.3.0 (01/09/2026) - MOTOR DE EXPORTACAO DE DADOS PARA ANALISE OFFLINE
+        // ---------------------------------------------------------------------
+        // Regras de projeto:
+        //  1. O banco LEGADO e ESTRITAMENTE SOMENTE LEITURA. Nenhuma gravacao.
+        //  2. Os documentos de controle das travas sao SEMPRE gravados em PRODUCAO.
+        //  3. Contadores separados por banco (cotas Firebase sao independentes).
+        //  4. A reserva da trava ocorre ANTES da consulta, com rollback em caso de falha.
+        // =====================================================================
+
+        const CFG_EXP = {
+            MEDIA_DOCS_DIA_CHECKPOINTS: 750,   // calibrado: 32k gravacoes/mes / 2 docs por bipe / 22 dias
+            MEDIA_DOCS_DIA_LOGS: 15,
+            MEDIA_DOCS_DIA_EXCLUSOES: 3,
+            MAX_DIAS_PERIODO: 31,
+            TETO_GLOBAL_LEITURAS_DIA: 20000,
+            LIMITE_USUARIO_PRODUCAO: 1,
+            LIMITE_USUARIO_LEGADO: 2,
+            COTA_FIRESTORE_DIA: 50000,
+            COLECAO_CONTROLE: "controle_exportacoes"
+        };
+
+        // Projeto da Fase 1. Usado APENAS para leitura historica.
+        var firebaseConfigLegado = {
+            apiKey: "AIzaSyDHUlqzRw_vSyp9livOvQ0rjBYT9l_yofs",
+            authDomain: "checkpoint-pedidos.firebaseapp.com",
+            projectId: "checkpoint-pedidos",
+            storageBucket: "checkpoint-pedidos.firebasestorage.app",
+            messagingSenderId: "890832634523",
+            appId: "1:890832634523:web:7f8fa0ee6a2a9c60e27c3e",
+            measurementId: "G-NV3BRV6J2J"
+        };
+
+        var appLegado = null, bancoLegado = null;
+        var expEstimativa = null;
+        var expArquivos = [];
+        var expTravas = { carregado: false, usuarioProd: 0, usuarioLeg: 0, globalProd: 0, globalLeg: 0 };
+        var expExecutando = false;
+        var callbackSenhaLegado = null;
+
+        // ---------------------- UTILITARIOS DE DATA ----------------------
+        function expChaveDia() {
+            var h = new Date();
+            return h.getFullYear() + '-' + String(h.getMonth()+1).padStart(2,'0') + '-' + String(h.getDate()).padStart(2,'0');
+        }
+        function expIdDocUsuario() {
+            return "USR_" + gestorLogado.email.replace(/[^a-zA-Z0-9]/g, "_") + "_" + expChaveDia();
+        }
+        function expIdDocGlobal() { return "GLOBAL_" + expChaveDia(); }
+
+        function expFmtInputData(d) {
+            return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+        }
+        function expFmtDataHora(ms) {
+            if (ms === null || ms === undefined || isNaN(ms)) return "";
+            var d = new Date(ms);
+            return String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + d.getFullYear()
+                 + ' ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0') + ':' + String(d.getSeconds()).padStart(2,'0');
+        }
+        function expFmtData(ms) {
+            if (ms === null || ms === undefined || isNaN(ms)) return "";
+            var d = new Date(ms);
+            return String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + d.getFullYear();
+        }
+        function expFmtHora(ms) {
+            if (ms === null || ms === undefined || isNaN(ms)) return "";
+            var d = new Date(ms);
+            return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0') + ':' + String(d.getSeconds()).padStart(2,'0');
+        }
+        // Duracao em horas decimais com virgula (Excel pt-BR)
+        function expFmtHorasDec(ms) {
+            if (ms === null || ms === undefined || isNaN(ms) || ms < 0) return "";
+            return (ms / 3600000).toFixed(2).replace('.', ',');
+        }
+        function expNum(n) { return Number(n).toLocaleString('pt-BR'); }
+
+        // Conta dias com operacao no intervalo (exclui domingos - padrao observado no consumo)
+        function expContarDiasOperacao(msIni, msFim) {
+            var d = new Date(msIni), lim = new Date(msFim), n = 0;
+            d.setHours(0,0,0,0); lim.setHours(0,0,0,0);
+            while (d.getTime() <= lim.getTime()) {
+                if (d.getDay() !== 0) n++;
+                d.setDate(d.getDate() + 1);
+            }
+            return n;
+        }
+
+        // ---------------------- INSTANCIA DO BANCO LEGADO ----------------------
+        function expObterBancoLegado() {
+            if (!appLegado) {
+                appLegado = firebase.initializeApp(firebaseConfigLegado, "legado");
+                bancoLegado = appLegado.firestore();
+            }
+            return bancoLegado;
+        }
+
+        function expGarantirAutenticacaoLegado() {
+            return new Promise(function(resolve, reject) {
+                expObterBancoLegado();
+                if (appLegado.auth().currentUser) { resolve(); return; }
+                document.getElementById('senha-legado-email').innerText = gestorLogado.email;
+                document.getElementById('input-senha-legado').value = "";
+                document.getElementById('erro-senha-legado').style.display = 'none';
+                document.getElementById('modal-senha-legado').style.display = 'block';
+                setTimeout(function(){ document.getElementById('input-senha-legado').focus(); }, 100);
+                callbackSenhaLegado = { ok: resolve, erro: reject };
+            });
+        }
+
+        function confirmarSenhaLegado() {
+            var senha = document.getElementById('input-senha-legado').value;
+            var divErro = document.getElementById('erro-senha-legado');
+            if (!senha) { divErro.innerText = "Informe a senha."; divErro.style.display = 'block'; return; }
+            divErro.style.display = 'none';
+            appLegado.auth().signInWithEmailAndPassword(gestorLogado.email, senha)
+                .then(function() {
+                    document.getElementById('input-senha-legado').value = "";
+                    document.getElementById('modal-senha-legado').style.display = 'none';
+                    if (callbackSenhaLegado) { callbackSenhaLegado.ok(); callbackSenhaLegado = null; }
+                })
+                .catch(function(e) {
+                    divErro.innerText = "Falha na autenticação do banco legado (" + (e.code || "erro") + "). Verifique a senha ou se esta conta existe no projeto checkpoint-pedidos.";
+                    divErro.style.display = 'block';
+                });
+        }
+
+        function cancelarSenhaLegado() {
+            document.getElementById('input-senha-legado').value = "";
+            document.getElementById('modal-senha-legado').style.display = 'none';
+            if (callbackSenhaLegado) { callbackSenhaLegado.erro({ code: 'cancelado-pelo-usuario' }); callbackSenhaLegado = null; }
+        }
+
+        // ---------------------- PREPARO DA ABA ----------------------
+        function prepararAbaExportacao() {
+            document.getElementById('exp-max-dias').innerText = CFG_EXP.MAX_DIAS_PERIODO;
+            if (!document.getElementById('expDataInicio').value) {
+                var hoje = new Date();
+                document.getElementById('expDataInicio').value = expFmtInputData(new Date(hoje.getFullYear(), hoje.getMonth(), 1));
+                document.getElementById('expDataFim').value = expFmtInputData(hoje);
+            }
+            // Seguranca: o seletor SEMPRE volta para Producao ao (re)abrir a aba.
+            document.getElementById('expBanco').value = 'PRODUCAO';
+            alternarBancoExportacao();
+            carregarStatusTravas(false);
+        }
+
+        function alternarBancoExportacao() {
+            var legado = (document.getElementById('expBanco').value === 'LEGADO');
+            document.getElementById('exp-banner-legado').style.display = legado ? 'block' : 'none';
+            resetarEstimativa();
+            renderizarStatusTravas();
+        }
+
+        function resetarEstimativa() {
+            expEstimativa = null;
+            document.getElementById('exp-confirma').style.display = 'none';
+            document.getElementById('exp-erro').style.display = 'none';
+        }
+
+        function expMostrarErro(html) {
+            var d = document.getElementById('exp-erro');
+            d.innerHTML = html;
+            d.style.display = 'block';
+            document.getElementById('exp-confirma').style.display = 'none';
+        }
+
+        // ---------------------- TRAVAS DE SEGURANCA ----------------------
+        function carregarStatusTravas(forcar) {
+            if (expTravas.carregado && !forcar) { renderizarStatusTravas(); return Promise.resolve(); }
+            document.getElementById('exp-val-usuario').innerText = "...";
+            document.getElementById('exp-val-global').innerText = "...";
+            return Promise.all([
+                bancoDeDados.collection(CFG_EXP.COLECAO_CONTROLE).doc(expIdDocUsuario()).get(),
+                bancoDeDados.collection(CFG_EXP.COLECAO_CONTROLE).doc(expIdDocGlobal()).get()
+            ]).then(function(res) {
+                var u = res[0].exists ? res[0].data() : {};
+                var g = res[1].exists ? res[1].data() : {};
+                expTravas.usuarioProd = u.qtd_producao || 0;
+                expTravas.usuarioLeg  = u.qtd_legado || 0;
+                expTravas.globalProd  = g.leituras_producao || 0;
+                expTravas.globalLeg   = g.leituras_legado || 0;
+                expTravas.carregado = true;
+                renderizarStatusTravas();
+            }).catch(function(e) {
+                console.error("Erro ao ler controle de exportacoes", e);
+                document.getElementById('exp-val-usuario').innerText = "erro";
+                document.getElementById('exp-val-global').innerText = "erro";
+            });
+        }
+
+        function renderizarStatusTravas() {
+            if (!expTravas.carregado) return;
+            var legado = (document.getElementById('expBanco').value === 'LEGADO');
+            var usadas = legado ? expTravas.usuarioLeg : expTravas.usuarioProd;
+            var limite = legado ? CFG_EXP.LIMITE_USUARIO_LEGADO : CFG_EXP.LIMITE_USUARIO_PRODUCAO;
+            var lidas  = legado ? expTravas.globalLeg : expTravas.globalProd;
+            var restante = Math.max(0, CFG_EXP.TETO_GLOBAL_LEITURAS_DIA - lidas);
+
+            document.getElementById('exp-val-usuario').innerText = usadas + " de " + limite + (legado ? " (legado)" : " (produção)");
+            document.getElementById('exp-val-global').innerText = expNum(restante) + " de " + expNum(CFG_EXP.TETO_GLOBAL_LEITURAS_DIA) + " restantes";
+            var pct = Math.min(100, Math.round((restante / CFG_EXP.TETO_GLOBAL_LEITURAS_DIA) * 100));
+            var barra = document.getElementById('exp-barra');
+            barra.style.width = pct + '%';
+            barra.style.background = pct > 50 ? '#27ae60' : (pct > 20 ? '#f39c12' : '#e74c3c');
+        }
+
+        // ---------------------- ESTIMATIVA ----------------------
+        function calcularEstimativaExportacao() {
+            resetarEstimativa();
+            if (!expTravas.carregado) { expMostrarErro("Aguarde a leitura das travas de segurança e tente novamente."); carregarStatusTravas(true); return; }
+
+            var sIni = document.getElementById('expDataInicio').value;
+            var sFim = document.getElementById('expDataFim').value;
+            if (!sIni || !sFim) { expMostrarErro("Informe a data inicial e a data final."); return; }
+
+            var msIni = new Date(sIni + "T00:00:00").getTime();
+            var msFim = new Date(sFim + "T23:59:59").getTime();
+            if (msFim < msIni) { expMostrarErro("A data final não pode ser anterior à data inicial."); return; }
+
+            var diasCorridos = Math.round((new Date(sFim + "T00:00:00").getTime() - msIni) / 86400000) + 1;
+            if (diasCorridos > CFG_EXP.MAX_DIAS_PERIODO) {
+                expMostrarErro("<b>Período excede o limite.</b><br>Solicitado: " + diasCorridos + " dias. Máximo permitido: " + CFG_EXP.MAX_DIAS_PERIODO + " dias corridos por exportação.<br>Para períodos maiores, faça exportações mensais separadas.");
+                return;
+            }
+
+            var legado = (document.getElementById('expBanco').value === 'LEGADO');
+            var usadas = legado ? expTravas.usuarioLeg : expTravas.usuarioProd;
+            var limite = legado ? CFG_EXP.LIMITE_USUARIO_LEGADO : CFG_EXP.LIMITE_USUARIO_PRODUCAO;
+            if (usadas >= limite) {
+                expMostrarErro("<b>Limite individual atingido.</b><br>Você já realizou " + usadas + " de " + limite + " exportação(ões) permitida(s) hoje no banco " + (legado ? "LEGADO" : "PRODUÇÃO") + ".<br>A contagem é reiniciada à meia-noite.");
+                return;
+            }
+
+            var diasOper = expContarDiasOperacao(msIni, msFim);
+            var est = diasOper * (CFG_EXP.MEDIA_DOCS_DIA_CHECKPOINTS + CFG_EXP.MEDIA_DOCS_DIA_LOGS + CFG_EXP.MEDIA_DOCS_DIA_EXCLUSOES);
+            est = est + 2; // documentos de controle
+
+            var lidas = legado ? expTravas.globalLeg : expTravas.globalProd;
+            var restante = CFG_EXP.TETO_GLOBAL_LEITURAS_DIA - lidas;
+            if (est > restante) {
+                expMostrarErro("<b>Orçamento global do dia insuficiente.</b><br>Estimativa desta exportação: " + expNum(est) + " leituras.<br>Disponível hoje: " + expNum(Math.max(0, restante)) + " leituras.<br>Reduza o período ou tente novamente amanhã. Esta trava existe para impedir que a exportação derrube a operação (Kanban e Tela do Operador).");
+                return;
+            }
+
+            expEstimativa = { msIni: msIni, msFim: msFim, sIni: sIni, sFim: sFim, diasCorridos: diasCorridos, diasOper: diasOper, leituras: est, banco: legado ? 'LEGADO' : 'PRODUCAO' };
+
+            document.getElementById('cf-banco').innerText = legado ? "🟡 LEGADO (checkpoint-pedidos)" : "🟢 PRODUÇÃO (checkpoint-hsvp-v2)";
+            document.getElementById('cf-periodo').innerText = expFmtData(msIni) + "  até  " + expFmtData(msFim);
+            document.getElementById('cf-dias').innerText = diasCorridos + " corridos / " + diasOper + " com operação";
+            document.getElementById('cf-leituras').innerText = "~ " + expNum(est) + " leituras";
+            document.getElementById('cf-percentual').innerText = ((est / CFG_EXP.COTA_FIRESTORE_DIA) * 100).toFixed(1).replace('.', ',') + " %";
+            document.getElementById('cf-restante').innerText = expNum(Math.max(0, restante - est)) + " leituras";
+
+            document.getElementById('btn-exp-confirmar').disabled = false;
+            document.getElementById('btn-exp-confirmar').innerText = "✅ Confirmar e Exportar";
+            document.getElementById('exp-confirma').style.display = 'block';
+        }
+
+        // ---------------------- RESERVA E ROLLBACK DAS TRAVAS ----------------------
+        function expReservarTravas(e) {
+            var inc = firebase.firestore.FieldValue.increment;
+            var isLeg = (e.banco === 'LEGADO');
+            var cQtd = isLeg ? 'qtd_legado' : 'qtd_producao';
+            var cLei = isLeg ? 'leituras_legado' : 'leituras_producao';
+
+            var regU = { email: gestorLogado.email, nome: gestorLogado.nome, dia: expChaveDia(),
+                         ultima_execucao: new Date().toLocaleString('pt-BR'),
+                         ultimo_periodo: e.sIni + " a " + e.sFim, ultimo_banco: e.banco };
+            regU[cQtd] = inc(1); regU[cLei] = inc(e.leituras);
+
+            var regG = { dia: expChaveDia(), atualizado_em: new Date().toLocaleString('pt-BR') };
+            regG[cLei] = inc(e.leituras); regG['exportacoes'] = inc(1);
+
+            return Promise.all([
+                bancoDeDados.collection(CFG_EXP.COLECAO_CONTROLE).doc(expIdDocUsuario()).set(regU, { merge: true }),
+                bancoDeDados.collection(CFG_EXP.COLECAO_CONTROLE).doc(expIdDocGlobal()).set(regG, { merge: true })
+            ]).then(function() {
+                if (isLeg) { expTravas.usuarioLeg++; expTravas.globalLeg += e.leituras; }
+                else { expTravas.usuarioProd++; expTravas.globalProd += e.leituras; }
+                renderizarStatusTravas();
+            });
+        }
+
+        function expAjustarConsumoReal(e, real) {
+            var delta = real - e.leituras;
+            var inc = firebase.firestore.FieldValue.increment;
+            var isLeg = (e.banco === 'LEGADO');
+            var cLei = isLeg ? 'leituras_legado' : 'leituras_producao';
+            var regU = {}, regG = {};
+            regU[cLei] = inc(delta); regU['ultimo_consumo_real'] = real;
+            regG[cLei] = inc(delta);
+            if (isLeg) { expTravas.globalLeg += delta; } else { expTravas.globalProd += delta; }
+            renderizarStatusTravas();
+            return Promise.all([
+                bancoDeDados.collection(CFG_EXP.COLECAO_CONTROLE).doc(expIdDocUsuario()).set(regU, { merge: true }),
+                bancoDeDados.collection(CFG_EXP.COLECAO_CONTROLE).doc(expIdDocGlobal()).set(regG, { merge: true })
+            ]).catch(function(err) { console.error("Falha ao ajustar consumo real", err); });
+        }
+
+        function expReverterTravas(e) {
+            var inc = firebase.firestore.FieldValue.increment;
+            var isLeg = (e.banco === 'LEGADO');
+            var cQtd = isLeg ? 'qtd_legado' : 'qtd_producao';
+            var cLei = isLeg ? 'leituras_legado' : 'leituras_producao';
+            var regU = {}, regG = {};
+            regU[cQtd] = inc(-1); regU[cLei] = inc(-e.leituras); regU['tentativas_falhas'] = inc(1);
+            regG[cQtd === 'qtd_legado' ? 'leituras_legado' : 'leituras_producao'] = inc(-e.leituras);
+            regG['exportacoes'] = inc(-1);
+            if (isLeg) { expTravas.usuarioLeg--; expTravas.globalLeg -= e.leituras; }
+            else { expTravas.usuarioProd--; expTravas.globalProd -= e.leituras; }
+            renderizarStatusTravas();
+            return Promise.all([
+                bancoDeDados.collection(CFG_EXP.COLECAO_CONTROLE).doc(expIdDocUsuario()).set(regU, { merge: true }),
+                bancoDeDados.collection(CFG_EXP.COLECAO_CONTROLE).doc(expIdDocGlobal()).set(regG, { merge: true })
+            ]).catch(function(err) { console.error("Falha ao reverter travas", err); });
+        }
+
+        // ---------------------- EXECUCAO ----------------------
+        function executarExportacao() {
+            if (expExecutando || !expEstimativa) return;
+            var e = expEstimativa;
+
+            var preparo = (e.banco === 'LEGADO') ? expGarantirAutenticacaoLegado() : Promise.resolve();
+
+            preparo.then(function() {
+                expExecutando = true;
+                document.getElementById('btn-exp-confirmar').disabled = true;
+                document.getElementById('btn-exp-confirmar').innerText = "Reservando cota...";
+                document.getElementById('load-exp').style.display = 'inline-block';
+                document.getElementById('exp-erro').style.display = 'none';
+                return expReservarTravas(e);
+            }).then(function() {
+                document.getElementById('btn-exp-confirmar').innerText = "Consultando banco...";
+                var db = (e.banco === 'LEGADO') ? expObterBancoLegado() : bancoDeDados;
+                return Promise.all([
+                    db.collection("checkpoints_logistica").where("ordem", ">=", e.msIni).where("ordem", "<=", e.msFim).orderBy("ordem", "asc").get(),
+                    db.collection("logs_erros_bipagem").where("ordem", ">=", e.msIni).where("ordem", "<=", e.msFim).orderBy("ordem", "asc").get(),
+                    db.collection("historico_exclusoes").where("ordemExclusao", ">=", e.msIni).where("ordemExclusao", "<=", e.msFim).orderBy("ordemExclusao", "asc").get()
+                ]);
+            }).then(function(res) {
+                document.getElementById('btn-exp-confirmar').innerText = "Montando arquivos...";
+                var eventos = [], logs = [], exclusoes = [];
+                res[0].forEach(function(d) { eventos.push(d.data()); });
+                res[1].forEach(function(d) { logs.push(d.data()); });
+                res[2].forEach(function(d) { exclusoes.push(d.data()); });
+
+                var real = eventos.length + logs.length + exclusoes.length + 2;
+                montarArquivosExportacao(e, eventos, logs, exclusoes, real);
+                return expAjustarConsumoReal(e, real);
+            }).then(function() {
+                expExecutando = false;
+                document.getElementById('load-exp').style.display = 'none';
+                document.getElementById('exp-confirma').style.display = 'none';
+                document.getElementById('exp-downloads').style.display = 'block';
+            }).catch(function(err) {
+                expExecutando = false;
+                document.getElementById('load-exp').style.display = 'none';
+                document.getElementById('btn-exp-confirmar').disabled = false;
+                document.getElementById('btn-exp-confirmar').innerText = "✅ Confirmar e Exportar";
+
+                if (err && err.code === 'cancelado-pelo-usuario') { return; }
+
+                console.error("Falha na exportacao:", err);
+                var msg;
+                if (err && err.code === 'permission-denied') {
+                    msg = "<b>Permissão negada pelo banco " + e.banco + ".</b><br>" +
+                          "Causa provável: as regras de segurança do Firestore desse projeto exigem um usuário autenticado, e o token de login não é válido para ele. " +
+                          "Verifique, no console do Firebase do projeto correspondente, se a conta <b>" + gestorLogado.email + "</b> existe no Authentication e se a regra de leitura permite o acesso.";
+                } else if (err && err.code === 'failed-precondition') {
+                    msg = "<b>Índice ausente no Firestore.</b><br>O console do navegador (F12) traz um link direto para criar o índice necessário. Nenhum arquivo foi gerado.";
+                } else {
+                    msg = "<b>Falha ao executar a exportação.</b><br>Detalhe: " + ((err && (err.message || err.code)) || "erro desconhecido") + "<br>Nenhum arquivo foi gerado.";
+                }
+                msg += "<br><br><i>A cota reservada foi devolvida. Você pode tentar novamente.</i>";
+                expMostrarErro(msg);
+                expReverterTravas(e);
+            });
+        }
+
+        // ---------------------- GERACAO DOS CSV ----------------------
+        function expCampoCSV(v) {
+            if (v === null || v === undefined) return "";
+            var s = String(v);
+            if (s.indexOf(';') >= 0 || s.indexOf('"') >= 0 || s.indexOf('\n') >= 0 || s.indexOf('\r') >= 0) {
+                s = '"' + s.replace(/"/g, '""') + '"';
+            }
+            return s;
+        }
+        function expMontarCSV(cabecalho, linhas) {
+            var saida = [cabecalho.join(';')];
+            for (var i = 0; i < linhas.length; i++) {
+                var l = linhas[i], p = [];
+                for (var j = 0; j < l.length; j++) p.push(expCampoCSV(l[j]));
+                saida.push(p.join(';'));
+            }
+            return "\uFEFF" + saida.join("\r\n");
+        }
+
+        // Pivot por requisicao. Replica a logica de consolidacao do modulo gestao.html:
+        // menor carimbo de cada etapa; maior carimbo para "Entregue".
+        function expMontarPivotSLA(eventos) {
+            var mapa = {};
+            for (var i = 0; i < eventos.length; i++) {
+                var ev = eventos[i];
+                var req = ev.requisicao;
+                if (!req) continue;
+                var s = ev.status || "";
+                var t = ev.ordem;
+                if (!mapa[req]) mapa[req] = { req: req, inicio: null, statusInicio: "", sc: null, sa: null, co: null, ca: null, re: null, fim: null, setor: "", volumes: {} };
+                var m = mapa[req];
+
+                if (m.inicio === null || t < m.inicio) { m.inicio = t; m.statusInicio = s; }
+                m.volumes[parseInt(ev.volume) || 1] = true;
+
+                if (s.indexOf("Entregue") !== -1) {
+                    if (m.fim === null || t > m.fim) {
+                        m.fim = t;
+                        m.setor = s.replace("Entregue (", "").replace(")", "").trim();
+                        if (m.setor === "Entregue") m.setor = "";
+                    }
+                }
+                if (s.indexOf("Separado (Central)") !== -1)      { if (m.sc === null || t < m.sc) m.sc = t; }
+                else if (s.indexOf("Separado") !== -1)           { if (m.sa === null || t < m.sa) m.sa = t; }
+                else if (s.indexOf("Conferido") !== -1)          { if (m.co === null || t < m.co) m.co = t; }
+                else if (s.indexOf("Carregado") !== -1)          { if (m.ca === null || t < m.ca) m.ca = t; }
+                else if (s.indexOf("Recebido") !== -1)           { if (m.re === null || t < m.re) m.re = t; }
+            }
+
+            function dif(a, b) { return (a !== null && b !== null && b >= a) ? (b - a) : null; }
+
+            var linhas = [];
+            var chaves = Object.keys(mapa).sort();
+            for (var k = 0; k < chaves.length; k++) {
+                var m = mapa[chaves[k]];
+                var origem = (m.statusInicio.indexOf("Central") !== -1) ? "Central" : "Apoio";
+                var completa = ((m.sc !== null || m.sa !== null) && m.fim !== null) ? "SIM" : "NAO";
+                linhas.push([
+                    m.req,
+                    origem,
+                    m.setor,
+                    Object.keys(m.volumes).length,
+                    expFmtDataHora(m.inicio),
+                    expFmtDataHora(m.sc),
+                    expFmtDataHora(m.sa),
+                    expFmtDataHora(m.co),
+                    expFmtDataHora(m.ca),
+                    expFmtDataHora(m.re),
+                    expFmtDataHora(m.fim),
+                    expFmtHorasDec(dif(m.inicio, m.fim)),
+                    expFmtHorasDec(dif(m.sa, m.co)),
+                    expFmtHorasDec(dif(m.co, m.ca)),
+                    expFmtHorasDec(dif(m.ca, m.re)),
+                    expFmtHorasDec(dif(m.re, m.fim)),
+                    expFmtHorasDec(dif(m.sc, m.fim)),
+                    completa,
+                    (m.fim !== null) ? "SIM" : "NAO"
+                ]);
+            }
+            return linhas;
+        }
+
+        function montarArquivosExportacao(e, eventos, logs, exclusoes, real) {
+            var suf = e.banco + "_" + e.sIni + "_a_" + e.sFim;
+            expArquivos = [];
+
+            // ---- ARQUIVO A: eventos brutos ----
+            var linhasA = [];
+            for (var i = 0; i < eventos.length; i++) {
+                var ev = eventos[i];
+                linhasA.push([ expFmtData(ev.ordem), expFmtHora(ev.ordem), ev.ordem, ev.requisicao, ev.volume, ev.status, ev.matricula, ev.nome ]);
+            }
+            expArquivos.push({
+                nome: "checkpoints_" + suf + ".csv",
+                titulo: "Arquivo A — Eventos brutos (checkpoints_logistica)",
+                desc: "Um evento por linha. Base para volumetria e produtividade.",
+                registros: linhasA.length,
+                conteudo: expMontarCSV(["data","hora","ordem","requisicao","volume","status","matricula","nome"], linhasA)
+            });
+
+            // ---- ARQUIVO B: pivot por requisicao / SLA ----
+            var linhasB = expMontarPivotSLA(eventos);
+            expArquivos.push({
+                nome: "sla_requisicoes_" + suf + ".csv",
+                titulo: "Arquivo B — SLA consolidado por requisição",
+                desc: "Uma requisição por linha, com carimbos de cada etapa e durações em horas decimais. Filtre por timeline_completa = SIM antes de calcular médias.",
+                registros: linhasB.length,
+                conteudo: expMontarCSV([
+                    "requisicao","origem","setor_destino","qtd_volumes","primeiro_evento",
+                    "sep_central","sep_apoio","conferido","carregado","recebido","entregue",
+                    "sla_total_horas","gap_sep_conf","gap_conf_carr","gap_carr_rec","gap_rec_ent","gap_sepc_ent",
+                    "timeline_completa","entregue_no_periodo"
+                ], linhasB)
+            });
+
+            // ---- ARQUIVO C: erros de bipagem ----
+            var linhasC = [];
+            for (var j = 0; j < logs.length; j++) {
+                var lg = logs[j];
+                linhasC.push([ expFmtData(lg.ordem), expFmtHora(lg.ordem), lg.requisicao, lg.etapa, lg.motivo, lg.operador, lg.matricula ]);
+            }
+            expArquivos.push({
+                nome: "erros_bipagem_" + suf + ".csv",
+                titulo: "Arquivo C — Erros de bipagem (logs_erros_bipagem)",
+                desc: "Bloqueios registrados no modo lote.",
+                registros: linhasC.length,
+                conteudo: expMontarCSV(["data","hora","requisicao","etapa","motivo","operador","matricula"], linhasC)
+            });
+
+            // ---- ARQUIVO D: exclusoes ----
+            var linhasD = [];
+            for (var x = 0; x < exclusoes.length; x++) {
+                var ex = exclusoes[x];
+                linhasD.push([ expFmtData(ex.ordemExclusao), expFmtHora(ex.ordemExclusao), ex.requisicao, ex.volume, ex.status, ex.operadorOriginal, ex.excluidoPorNome, ex.justificativa, ex.idRegistroApagado ]);
+            }
+            expArquivos.push({
+                nome: "exclusoes_" + suf + ".csv",
+                titulo: "Arquivo D — Histórico de exclusões (historico_exclusoes)",
+                desc: "Rastreabilidade de lançamentos removidos e suas justificativas.",
+                registros: linhasD.length,
+                conteudo: expMontarCSV(["data","hora","requisicao","volume","status","operador_original","excluido_por","justificativa","id_registro_apagado"], linhasD)
+            });
+
+            var html = "";
+            for (var a = 0; a < expArquivos.length; a++) {
+                var arq = expArquivos[a];
+                var kb = (new Blob([arq.conteudo]).size / 1024).toFixed(0);
+                html += '<div class="exp-arquivo"><div class="info">' + arq.titulo +
+                        '<small>' + arq.nome + ' &nbsp;|&nbsp; ' + expNum(arq.registros) + ' registros &nbsp;|&nbsp; ' + expNum(kb) + ' KB</small>' +
+                        '<small>' + arq.desc + '</small></div>' +
+                        '<button class="btn-download" onclick="baixarArquivoExportacao(' + a + ', this)">⬇️ Baixar CSV</button></div>';
+            }
+            document.getElementById('exp-lista-arquivos').innerHTML = html;
+
+            document.getElementById('exp-resumo-real').innerHTML =
+                "<b>Consumo real:</b> " + expNum(real) + " leituras (estimativa era " + expNum(e.leituras) + ").<br>" +
+                "<b>Origem:</b> " + (e.banco === 'LEGADO' ? "🟡 LEGADO (checkpoint-pedidos)" : "🟢 PRODUÇÃO (checkpoint-hsvp-v2)") +
+                " &nbsp;|&nbsp; <b>Período:</b> " + expFmtData(e.msIni) + " a " + expFmtData(e.msFim) + "<br>" +
+                "Formato: CSV separado por ponto e vírgula, UTF-8 com BOM. Abre direto no Excel pt-BR e no Power BI.";
+        }
+
+        function baixarArquivoExportacao(indice, btn) {
+            var arq = expArquivos[indice];
+            if (!arq) return;
+            var blob = new Blob([arq.conteudo], { type: 'text/csv;charset=utf-8;' });
+            var url = URL.createObjectURL(blob);
+            var link = document.createElement('a');
+            link.href = url;
+            link.download = arq.nome;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            setTimeout(function() { URL.revokeObjectURL(url); }, 1500);
+            btn.classList.add('baixado');
+            btn.innerText = "✔️ Baixado (clique para repetir)";
         }
 
     </script>
