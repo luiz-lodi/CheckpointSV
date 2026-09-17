@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auditoria — Checkpoint LAB</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛡️</text></svg>">
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+<style>
+  :root{
+    --rosa:#D6336C; --azul:#1C6DD0; --verde:#1E9E5A; --roxo:#8E44AD;
+    --erro:#E74C3C; --alerta:#F1C40F; --texto:#2C3E50; --cinza:#7F8C8D;
+  }
+  *{box-sizing:border-box}
+  body{font-family:'Segoe UI',Arial,sans-serif;margin:0;background:#ECF0F1;color:var(--texto);min-height:100vh;display:flex;flex-direction:column}
+
+  header{position:sticky;top:0;z-index:900;background:#fff;padding:9px 16px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;box-shadow:0 2px 4px rgba(0,0,0,.06);flex-shrink:0}
+  header h1{font-size:15px;margin:0;display:flex;align-items:baseline;gap:8px;white-space:nowrap}
+  header h1 a{color:inherit;text-decoration:none}
+  header h1 small{font-size:11px;color:var(--cinza);font-weight:normal}
+  .identificado{margin-left:auto;font-size:12px;color:var(--verde);font-weight:bold;white-space:nowrap}
+  .identificado a{color:var(--erro);text-decoration:none;margin-left:10px}
+
+  /* BARRA DE MÓDULOS */
+  .modulos{display:flex;gap:6px;align-items:center;justify-content:center}
+  .modulos a,.modulos span{font-size:12.5px;text-decoration:none;color:var(--texto);padding:6px 12px;border-radius:7px;white-space:nowrap}
+  .modulos a:hover{background:#F0F3F5}
+  .modulos span.atual{background:var(--texto);color:#fff;font-weight:bold}
+
+  main{flex:1;padding:14px 16px}
+
+  /* LOGIN */
+  .login{max-width:380px;margin:60px auto;background:#fff;border-radius:10px;padding:26px;box-shadow:0 3px 10px rgba(0,0,0,.09)}
+  .login h2{margin:0 0 4px;font-size:18px}
+  .login p{margin:0 0 18px;font-size:12.5px;color:var(--cinza)}
+  .login label{display:block;font-size:12px;font-weight:bold;margin-bottom:4px}
+  .login input{width:100%;padding:10px 12px;border:2px solid #CCC;border-radius:6px;font-size:14px;margin-bottom:12px}
+  .login input:focus{border-color:var(--azul);outline:none;background:#F4F9FF}
+  .login button{width:100%;border:none;background:var(--texto);color:#fff;border-radius:6px;padding:11px;font-size:14px;font-weight:bold;cursor:pointer}
+  .login .erro{display:none;color:var(--erro);font-size:13px;font-weight:bold;margin-top:12px;text-align:center}
+
+  /* PAINEL */
+  #painel{display:none}
+  .layout{display:grid;grid-template-columns:230px 1fr;gap:14px;align-items:start}
+  .menu{background:#fff;border-radius:10px;padding:8px;box-shadow:0 2px 5px rgba(0,0,0,.07);display:flex;flex-direction:column;gap:5px;position:sticky;top:60px;max-height:calc(100vh - 118px);overflow-y:auto}
+  .menu button{text-align:left;border:none;background:none;padding:11px 12px;border-radius:7px;font-size:13.5px;color:var(--texto);cursor:pointer;font-family:inherit}
+  .menu button:hover{background:#F0F3F5}
+  .menu button.ativo{background:var(--texto);color:#fff;font-weight:bold}
+
+  .conteudo{background:#fff;border-radius:10px;padding:18px;box-shadow:0 2px 5px rgba(0,0,0,.07);min-height:420px}
+  .secao{display:none}
+  .secao.ativa{display:block}
+  .secao h2{margin:0 0 14px;font-size:17px;border-bottom:2px solid #ECF0F1;padding-bottom:9px}
+
+  .filtros{display:flex;flex-wrap:wrap;gap:9px;align-items:flex-end;margin-bottom:14px}
+  .campo{display:flex;flex-direction:column;gap:3px}
+  .campo label{font-size:11px;font-weight:bold;color:var(--cinza)}
+  .campo input,.campo select{padding:8px 10px;border:2px solid #CCC;border-radius:6px;font-size:14px;font-family:inherit}
+  .campo input:focus,.campo select:focus{border-color:var(--azul);outline:none;background:#F4F9FF}
+  .btn{border:none;background:var(--texto);color:#fff;border-radius:6px;padding:9px 16px;font-size:13px;font-weight:bold;cursor:pointer;font-family:inherit}
+  .btn.claro{background:#95A5A6}
+  .btn.perigo{background:var(--erro)}
+  .btn.icone{background:#fff;color:var(--cinza);border:1px solid #E5E9EB;font-size:15px;padding:8px 11px;line-height:1}
+  .btn.icone:hover{background:#F0F3F5;color:var(--texto)}
+  .btn:disabled{background:#BDC3C7;cursor:default}
+  .carregando{font-size:12.5px;color:var(--cinza);display:none;padding:4px 0}
+  .carregando.ativo{display:block}
+
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  .rolagem{overflow-x:auto;border:1px solid #ECF0F1;border-radius:8px}
+  th{background:#F4F6F7;text-align:left;padding:9px 10px;font-size:11px;color:var(--cinza);white-space:nowrap}
+  td{padding:9px 10px;border-top:1px solid #ECF0F1;vertical-align:middle}
+  tbody tr:hover{background:#FAFCFD}
+  .amostra{font-weight:bold;letter-spacing:.4px}
+  .fora{color:var(--erro);font-weight:bold}
+  .selo-manual{background:#FCF3CF;color:#7D6608;font-size:11px;font-weight:bold;padding:1px 7px;border-radius:12px;margin-left:5px}
+  .limitrofe{color:#7D6608;background:#FCF3CF;padding:1px 7px;border-radius:12px;font-weight:bold}
+  .vazio{text-align:center;color:var(--cinza);padding:22px}
+  .paginacao{display:flex;gap:10px;align-items:center;justify-content:center;margin-top:12px;font-size:12.5px;color:var(--cinza)}
+
+  .pill{display:inline-block;font-size:10.5px;font-weight:bold;padding:2px 9px;border-radius:12px;color:#fff;white-space:nowrap}
+  .pill.transito{background:#34495E}
+  .pill.recebida{background:var(--verde)}
+  .pill.excecao{background:var(--erro)}
+
+  /* CICLO DE VIDA */
+  .resultado{display:none}
+  .cabeca{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#F4F6F7;border-radius:8px;padding:12px 14px;margin-bottom:14px}
+  .cabeca .n{font-size:22px;font-weight:bold;letter-spacing:1px}
+  .etapas{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;margin-bottom:16px}
+  .etapa{border:1px solid #E5E9EB;border-left:6px solid #BDC3C7;border-radius:8px;padding:12px 14px}
+  .etapa h3{margin:0 0 8px;font-size:13px;text-transform:none}
+  .etapa .linha{display:block;font-size:12.5px;color:#566573;line-height:1.7}
+  .etapa.ausente{background:#FBFCFC;color:var(--cinza)}
+  .seta{text-align:center;font-size:12px;color:var(--cinza);white-space:nowrap}
+  .seta b{display:block;font-size:14px;color:var(--texto)}
+  .bloco-titulo{font-size:13px;font-weight:bold;margin:18px 0 8px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{background:#F4F6F7;border:1px solid #E5E9EB;border-radius:20px;padding:4px 11px;font-size:12px;cursor:pointer}
+  .chip:hover{background:#E8EEF1}
+  .chip.atual{background:var(--alerta);border-color:#D4AC0D;font-weight:bold}
+  .remessa{border:1px solid #E5E9EB;border-radius:8px;padding:12px 14px;margin-bottom:10px}
+  .remessa .cab{font-size:12.5px;color:#566573;margin-bottom:8px;line-height:1.7}
+
+  /* MODAL */
+  .fundo{display:none;position:fixed;inset:0;background:rgba(44,62,80,.55);z-index:900;align-items:center;justify-content:center;padding:16px}
+  .fundo.aberto{display:flex}
+  .modal{background:#fff;border-radius:10px;padding:22px;max-width:470px;width:100%;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+  .modal h3{margin:0 0 10px;font-size:16px;color:var(--erro)}
+  .modal p{font-size:13.5px;line-height:1.6;margin:0 0 14px}
+  .opcao{display:flex;gap:9px;align-items:flex-start;border:2px solid #E5E9EB;border-radius:7px;padding:10px 12px;margin-bottom:8px;cursor:pointer;font-size:13px}
+  .opcao:hover{border-color:#CCC}
+  .opcao input{margin-top:2px}
+  .opcao small{display:block;color:var(--cinza);font-size:11.5px;margin-top:2px}
+  .modal textarea{width:100%;min-height:78px;padding:10px;border:2px solid #CCC;border-radius:6px;font-family:inherit;font-size:13.5px;resize:vertical}
+  .modal textarea:focus{border-color:var(--azul);outline:none;background:#F4F9FF}
+  .modal .acoes{display:flex;gap:9px;justify-content:flex-end;margin-top:14px}
+
+  footer{position:sticky;bottom:0;z-index:900;background:#ECF0F1;border-top:1px solid #DCE2E4;text-align:center;color:var(--cinza);font-size:11px;padding:10px}
+  footer b{color:var(--texto)}
+
+  #toast{visibility:hidden;opacity:0;position:fixed;left:50%;top:70px;transform:translateX(-50%);padding:12px 20px;border-radius:6px;color:#fff;font-size:15px;font-weight:bold;z-index:950;transition:opacity .2s;box-shadow:0 4px 10px rgba(0,0,0,.2)}
+  #toast.mostrar{visibility:visible;opacity:1}
+
+  @media (max-width:900px){ .layout{grid-template-columns:1fr} .menu{position:static;flex-direction:row;flex-wrap:wrap} .etapas{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<header>
+  <h1><a href="index.html" title="Página inicial">☑️ CHECKPOINT LAB 🔬</a><small id="relogio"></small></h1>
+  <nav class="modulos" id="barraModulos">
+    <a href="operador-lab.html">🧪 Operador</a>
+    <a href="kanban-lab.html">🚥 Rastreamento de Amostras</a>
+    <span class="atual">🛡️ Auditoria</span>
+    <a href="bi-lab.html">📊 BI - Gestão</a>
+  </nav>
+  <div class="identificado" id="identificado"></div>
+</header>
+
+<main>
+
+  <!-- ================= LOGIN ================= -->
+  <div class="login" id="telaLogin" style="display:none">
+  <h2>Acesso restrito</h2>
+    <p>Módulo de auditoria do Checkpoint LAB.</p>
+    <button id="btnLogin" onclick="fazerLogin()">Entrar com a conta do hospital</button>
+    <div class="erro" id="erroLogin"></div>
+  </div>
+
+  <!-- ================= PAINEL ================= -->
+  <div id="painel">
+    <div class="layout">
+
+      <div class="menu">
+        <button class="ativo" onclick="abrirAba('aba-ciclo', this)">🔍 Ciclo de vida</button>
+        <button onclick="abrirAba('aba-exclusao', this)">🗑️ Excluir lançamentos</button>
+        <button onclick="abrirAba('aba-historico', this)">📜 Histórico de exclusões</button>
+        <button onclick="abrirAba('aba-logs', this)">⚠️ Erros de bipagem</button>
+      </div>
+
+      <div class="conteudo">
+
+        <!-- ---------- CICLO DE VIDA ---------- -->
+        <div class="secao ativa" id="aba-ciclo">
+          <h2>Ciclo de vida da amostra</h2>
+          <div class="filtros">
+            <div class="campo">
+              <label for="buscaAmostra">Número da amostra (11 dígitos)</label>
+              <input type="text" id="buscaAmostra" style="width:230px" inputmode="numeric" autocomplete="off"
+                     onkeypress="if(event.key==='Enter') buscarCicloVida()">
+            </div>
+            <button class="btn" onclick="buscarCicloVida()">Consultar</button>
+          </div>
+          <div class="carregando" id="carregaCiclo">Consultando…</div>
+          <div class="resultado" id="resultadoCiclo"></div>
+        </div>
+
+        <!-- ---------- EXCLUSÃO ---------- -->
+        <div class="secao" id="aba-exclusao">
+          <h2>Excluir lançamentos</h2>
+          <div class="filtros">
+            <div class="campo">
+              <label for="dataExclusao">Data</label>
+              <input type="date" id="dataExclusao" onchange="carregarEventos(0)">
+            </div>
+            <div class="campo">
+              <label for="filtroAmostra">Amostra (opcional)</label>
+              <input type="text" id="filtroAmostra" style="width:170px" inputmode="numeric" autocomplete="off"
+                     onchange="carregarEventos(0)" onkeypress="if(event.key==='Enter') carregarEventos(0)">
+            </div>
+            <div class="campo">
+              <label for="limiteExclusao">Por página</label>
+              <select id="limiteExclusao" onchange="carregarEventos(0)"><option>15</option><option>30</option><option>50</option></select>
+            </div>
+            <button class="btn icone" title="Atualizar" onclick="carregarEventos(0)">&#8635;</button>
+          </div>
+          <div class="carregando" id="carregaEventos">Buscando lançamentos…</div>
+          <div class="rolagem">
+            <table>
+              <thead><tr>
+                <th>Hora</th><th>Amostra</th><th>Etapa</th><th>Unidade</th>
+                <th>Operador</th><th>Temperatura</th><th>Lote</th><th></th>
+              </tr></thead>
+              <tbody id="corpoEventos"><tr><td colspan="8" class="vazio">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+          <div class="paginacao" id="pagEventos" style="display:none">
+            <button class="btn claro" id="btnAntEventos" onclick="carregarEventos(-1)">‹ Anterior</button>
+            <span id="infoPagEventos">Pág 1</span>
+            <button class="btn claro" id="btnProxEventos" onclick="carregarEventos(1)">Próxima ›</button>
+          </div>
+        </div>
+
+        <!-- ---------- HISTÓRICO ---------- -->
+        <div class="secao" id="aba-historico">
+          <h2>Histórico de exclusões</h2>
+          <div class="filtros">
+            <div class="campo">
+              <label for="limiteHistorico">Por página</label>
+              <select id="limiteHistorico" onchange="carregarHistorico(0)"><option>15</option><option>30</option><option>50</option></select>
+            </div>
+            <button class="btn icone" title="Atualizar" onclick="carregarHistorico(0)">&#8635;</button>
+          </div>
+          <div class="carregando" id="carregaHistorico">Carregando…</div>
+          <div class="rolagem">
+            <table>
+              <thead><tr>
+                <th>Data da exclusão</th><th>Amostra</th><th>Escopo</th><th>Etapa</th>
+                <th>Operador original</th><th>Excluído por</th><th>Justificativa</th>
+              </tr></thead>
+              <tbody id="corpoHistorico"><tr><td colspan="7" class="vazio">Sem registros.</td></tr></tbody>
+            </table>
+          </div>
+          <div class="paginacao" id="pagHistorico" style="display:none">
+            <button class="btn claro" id="btnAntHistorico" onclick="carregarHistorico(-1)">‹ Anterior</button>
+            <span id="infoPagHistorico">Pág 1</span>
+            <button class="btn claro" id="btnProxHistorico" onclick="carregarHistorico(1)">Próxima ›</button>
+          </div>
+        </div>
+
+        <!-- ---------- LOGS ---------- -->
+        <div class="secao" id="aba-logs">
+          <h2>Erros de bipagem</h2>
+          <div class="filtros">
+            <div class="campo">
+              <label for="dataLogs">Data</label>
+              <input type="date" id="dataLogs" onchange="carregarLogs()">
+            </div>
+            <button class="btn icone" title="Atualizar" onclick="carregarLogs()">&#8635;</button>
+          </div>
+          <div class="carregando" id="carregaLogs">Buscando…</div>
+          <div class="rolagem">
+            <table>
+              <thead><tr>
+                <th>Hora</th><th>Amostra</th><th>Motivo</th><th>Etapa</th><th>Unidade</th><th>Operador</th>
+              </tr></thead>
+              <tbody id="corpoLogs"><tr><td colspan="6" class="vazio">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ================= MODAL DE EXCLUSÃO ================= -->
+<div class="fundo" id="modalExclusao">
+  <div class="modal">
+    <h3>⚠️ Exclusão de lançamento</h3>
+    <p id="resumoExclusao"></p>
+
+    <label class="opcao">
+      <input type="radio" name="escopo" value="etapa" checked>
+      <span><b>Somente esta etapa</b>
+        <small id="efeitoEtapa"></small></span>
+    </label>
+    <label class="opcao">
+      <input type="radio" name="escopo" value="amostra">
+      <span><b>Amostra inteira</b>
+        <small>Apaga todos os lançamentos desta amostra e ela some do painel.</small></span>
+    </label>
+
+    <label style="font-size:12px;font-weight:bold;color:#7F8C8D">Justificativa (obrigatória)</label>
+    <textarea id="justificativa" placeholder="Descreva o motivo da exclusão."></textarea>
+
+    <div class="acoes">
+      <button class="btn claro" onclick="fecharModal()">Cancelar</button>
+      <button class="btn perigo" id="btnConfirmar" onclick="confirmarExclusao()">Confirmar exclusão</button>
+    </div>
+  </div>
+</div>
+
+<footer><b>CHECKPOINT LAB — LABORATÓRIO DE ANÁLISES CLÍNICAS HSVP</b> | <span id="versaoRodape"></span></footer>
+
+<script>
+// =====================================================================
+// CHECKPOINT LAB — MÓDULO DE AUDITORIA
+// =====================================================================
+var APP_VERSION = "2.3.0";
+var APP_DATE = "17/09/2026";
+document.getElementById('versaoRodape').innerText = "Módulo Auditoria | Versão " + APP_VERSION + " (" + APP_DATE + ")";
+
+var firebaseConfig = {
+  apiKey: "AIzaSyAikasws2KhXt6OI7ClsjnUx3_bm8ul14c",
+  authDomain: "checkpoint-lab-hsvp.firebaseapp.com",
+  projectId: "checkpoint-lab-hsvp",
+  storageBucket: "checkpoint-lab-hsvp.firebasestorage.app",
+  messagingSenderId: "661764611363",
+  appId: "1:661764611363:web:76c104799421980453c096"
+};
+firebase.initializeApp(firebaseConfig);
+var db = firebase.firestore();
+
+var UNIDADES = {
+  URUGUAI:  { nome:"Laboratório URUGUAI",  cor:"#D6336C" },
+  SHOPPING: { nome:"Laboratório SHOPPING", cor:"#1C6DD0" },
+  TEIXEIRA: { nome:"Laboratório MATRIZ",   cor:"#1E9E5A" },
+  CES:      { nome:"Laboratório CES",      cor:"#8E44AD" }
+};
+
+var ETAPA_TRANSITO = "Em trânsito";
+var ETAPA_RECEBIDA = "Recebida";
+// ---------------------------------------------------------------------
+// PARÂMETROS (config/parametros no Firestore)
+// ---------------------------------------------------------------------
+var PARAM = {
+  temp_ideal_min: 2, temp_ideal_max: 8,
+  temp_limite_min: 1, temp_limite_max: 9,
+  alerta_min: 20, atraso_min: 30, janela_horas: 24
+};
+
+function carregarParametros(){
+  return db.collection("config").doc("parametros").get().then(function(doc){
+    if(!doc.exists) return;
+    var d = doc.data() || {};
+    for(var k in PARAM){
+      if(d[k] !== undefined && d[k] !== null && !isNaN(Number(d[k]))) PARAM[k] = Number(d[k]);
+    }
+  }).catch(function(){});
+}
+
+// "ok" (dentro do ideal), "limitrofe" (excursão leve) ou "desvio" (fora do aceitável)
+function nivelTemp(t){
+  if(t === null || t === undefined || isNaN(t)) return "ok";
+  t = Number(t);
+  if(t >= PARAM.temp_ideal_min && t <= PARAM.temp_ideal_max) return "ok";
+  if(t >= PARAM.temp_limite_min && t <= PARAM.temp_limite_max) return "limitrofe";
+  return "desvio";
+}
+
+
+// Nomes dos auditores por e-mail. Se o e-mail não estiver aqui,
+// o sistema usa a parte antes do @ como nome.
+var AUDITORES = {};
+
+var auditorLogado = null;
+
+// ---------------------------------------------------------------------
+// APOIO
+// ---------------------------------------------------------------------
+function agoraBR(){ return new Date().toLocaleString('pt-BR'); }
+function soNumeros(t){ return (t || "").replace(/\D/g,''); }
+function escapar(t){
+  return String(t === null || t === undefined ? "" : t)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function nomeUnidade(id){ return (UNIDADES[id] && UNIDADES[id].nome) || id || "—"; }
+function corUnidade(id){ return (UNIDADES[id] && UNIDADES[id].cor) || "#BDC3C7"; }
+
+function fmtTemp(t){
+  if(t === null || t === undefined || isNaN(t)) return "—";
+  return Number(t).toFixed(1).replace('.', ',') + " °C";
+}
+function foraFaixa(t){ return nivelTemp(t) !== "ok"; }
+// Selos de digitação manual (amostra e identificação do operador)
+function seloManualAmostra(ev){
+  if(!ev.entradaManual) return "";
+  var m = ev.motivoEntrada ? " — " + ev.motivoEntrada : "";
+  return ' <span class="selo-manual" title="Digitada manualmente' + escapar(m) + '">manual</span>';
+}
+function seloManualOperador(ev){
+  if(!ev.identificacaoManual) return "";
+  var m = ev.motivoIdentificacao ? " — " + ev.motivoIdentificacao : "";
+  return ' <span class="selo-manual" title="Matrícula digitada manualmente' + escapar(m) + '">manual</span>';
+}
+function temperaturaHTML(t){
+  var txt = fmtTemp(t), n = nivelTemp(t);
+  if(n === "ok") return txt;
+  return '<span class="' + (n === "limitrofe" ? "limitrofe" : "fora") + '">' + txt + ' ⚠</span>';
+}
+function fmtDuracao(ms){
+  if(ms === null || ms === undefined || isNaN(ms)) return "—";
+  if(ms < 0) ms = 0;
+  var min = Math.floor(ms / 60000);
+  if(min < 60) return min + " min";
+  var h = Math.floor(min / 60), m = min % 60;
+  if(h < 24) return h + "h " + (m < 10 ? "0" : "") + m + "min";
+  var d = Math.floor(h / 24);
+  return d + "d " + (h % 24) + "h";
+}
+function fmtDataHora(ordem, textoOriginal){
+  if(textoOriginal) return textoOriginal;
+  if(!ordem) return "—";
+  return new Date(ordem).toLocaleString('pt-BR');
+}
+function soHora(texto, ordem){
+  if(texto && texto.indexOf(" ") !== -1) return texto.split(" ")[1];
+  if(ordem) return new Date(ordem).toLocaleTimeString('pt-BR');
+  return "—";
+}
+function hojeISO(){
+  var d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function limitesDoDia(valorInput){
+  if(!valorInput) return null;
+  var ini = new Date(valorInput + "T00:00:00").getTime();
+  return { inicio: ini, fim: ini + 86399999 };
+}
+function toast(texto, tipo){
+  var t = document.getElementById('toast');
+  t.innerText = texto;
+  t.style.backgroundColor = (tipo === 'erro') ? '#E74C3C' : (tipo === 'aviso' ? '#F39C12' : '#27AE60');
+  t.className = 'mostrar';
+  setTimeout(function(){ t.className = ''; }, 3200);
+}
+function carregando(id, ligado){
+  document.getElementById(id).className = ligado ? 'carregando ativo' : 'carregando';
+}
+
+// ---------------------------------------------------------------------
+// LOGIN
+// ---------------------------------------------------------------------
+// Tempo sem uso até a tela ser bloqueada (minutos).
+var INATIVIDADE_MINUTOS = 10;
+
+var timerInatividade = null;
+var sessaoBloqueada = false;
+var processandoLogin = false;
+
+function mostrarErroLogin(texto){
+  var e = document.getElementById('erroLogin');
+  e.innerText = texto;
+  e.style.display = 'block';
+}
+
+// Lê a lista de auditores em config/perfis (campo "auditores").
+// Se o documento ainda não existir, o acesso é liberado com aviso na tela.
+function verificarPermissao(user){
+  return db.collection("config").doc("perfis").get().then(function(doc){
+    if(!doc.exists) return { ok:true, aviso:"Lista de auditores não configurada no banco." };
+    var lista = doc.data().auditores || [];
+    if(!lista.length) return { ok:true, aviso:"Lista de auditores está vazia no banco." };
+    var email = (user.email || "").toLowerCase();
+    var liberado = lista.some(function(e){ return String(e).trim().toLowerCase() === email; });
+    return { ok: liberado };
+  }).catch(function(){
+    return { ok:false, erro:true };
+  });
+}
+
+firebase.auth().onAuthStateChanged(function(user){
+  if(user){
+    tratarUsuario(user);
+  } else {
+    auditorLogado = null;
+    pararMonitorInatividade();
+    document.getElementById('telaLogin').style.display = 'block';
+    document.getElementById('painel').style.display = 'none';
+    document.getElementById('identificado').innerHTML = '';
+  }
+});
+
+// Valida domínio e permissão e abre o painel.
+// Usado tanto na entrada normal quanto no desbloqueio após inatividade.
+function tratarUsuario(user){
+  if(processandoLogin) return;
+  if(!sessaoBloqueada && auditorLogado && auditorLogado.email === user.email) return;
+  processandoLogin = true;
+
+  if(!emailDoDominio(user.email)){
+    processandoLogin = false;
+    firebase.auth().signOut().then(function(){
+      mostrarErroLogin("Use uma conta @" + DOMINIO_PERMITIDO + " para entrar.");
+    });
+    return;
+  }
+
+  verificarPermissao(user).then(function(r){
+    if(!r.ok){
+      processandoLogin = false;
+      firebase.auth().signOut().then(function(){
+        mostrarErroLogin(r.erro
+          ? "Não foi possível verificar suas permissões. Tente novamente."
+          : "Este usuário não tem permissão para acessar a Auditoria.");
+      });
+      return;
+    }
+    abrirPainel(user);
+    processandoLogin = false;
+    if(r.aviso) toast(r.aviso, 'aviso');
+  }).catch(function(){
+    processandoLogin = false;
+    mostrarErroLogin("Não foi possível verificar suas permissões. Tente novamente.");
+  });
+}
+
+function abrirPainel(user){
+  sessaoBloqueada = false;
+  var nome = AUDITORES[user.email] || user.displayName || user.email.split('@')[0].toUpperCase().replace(/[._]/g,' ');
+  auditorLogado = { email: user.email, nome: nome };
+  document.getElementById('erroLogin').style.display = 'none';
+  document.getElementById('telaLogin').style.display = 'none';
+  document.getElementById('painel').style.display = 'block';
+  document.getElementById('identificado').innerHTML =
+    '👤 ' + escapar(nome) + " <a href='#' onclick='fazerLogout();return false;'>[Sair]</a>";
+  document.getElementById('dataExclusao').value = hojeISO();
+  document.getElementById('dataLogs').value = hojeISO();
+  document.getElementById('buscaAmostra').focus();
+  carregarParametros();
+  iniciarMonitorInatividade();
+}
+
+var DOMINIO_PERMITIDO = "hsvp.com.br";
+
+function emailDoDominio(email){
+  email = (email || "").toLowerCase();
+  return email.slice(-(DOMINIO_PERMITIDO.length + 1)) === "@" + DOMINIO_PERMITIDO;
+}
+
+function fazerLogin(){
+  var btn = document.getElementById('btnLogin');
+  document.getElementById('erroLogin').style.display = 'none';
+  btn.innerText = "Abrindo o login…"; btn.disabled = true;
+
+  var provedor = new firebase.auth.GoogleAuthProvider();
+  provedor.setCustomParameters({ hd: DOMINIO_PERMITIDO, prompt: 'select_account' });
+
+  function liberarBotao(){
+    btn.innerText = "Entrar com a conta do hospital"; btn.disabled = false;
+  }
+
+  // Janela pop-up. Se o navegador bloquear, cai para o redirecionamento.
+  firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+    .then(function(){ return firebase.auth().signInWithPopup(provedor); })
+    .then(function(res){
+      liberarBotao();
+      // Desbloqueio após inatividade: a sessão do Firebase continua válida,
+      // então o retorno do pop-up é quem reabre o painel.
+      if(res && res.user) tratarUsuario(res.user);
+    })
+    .catch(function(erro){
+      var cod = erro && erro.code ? erro.code : "";
+      if(cod === 'auth/popup-blocked' || cod === 'auth/operation-not-supported-in-this-environment'){
+        mostrarErroLogin("O navegador bloqueou a janela de login. Redirecionando…");
+        firebase.auth().signInWithRedirect(provedor);
+        return;
+      }
+      liberarBotao();
+      if(cod === 'auth/popup-closed-by-user' || cod === 'auth/cancelled-popup-request'){
+        mostrarErroLogin("Login cancelado.");
+      } else {
+        mostrarErroLogin("Não foi possível entrar. Tente novamente.");
+      }
+    });
+}
+
+// Retorno do redirecionamento: só precisa informar falhas.
+firebase.auth().getRedirectResult().catch(function(){
+  mostrarErroLogin("Não foi possível concluir o login. Tente novamente.");
+});
+
+function fazerLogout(){ pararMonitorInatividade(); firebase.auth().signOut(); }
+
+// ---------------------------------------------------------------------
+// BLOQUEIO DA TELA POR INATIVIDADE
+// ---------------------------------------------------------------------
+// Passados INATIVIDADE_MINUTOS sem uso, o painel é fechado e a tela de
+// login volta com o aviso. A sessão do Firebase NÃO é encerrada, para não
+// derrubar o Operador e o Rastreamento abertos em outras abas.
+var EVENTOS_ATIVIDADE = ['mousedown','keydown','wheel','touchstart','scroll'];
+
+function iniciarMonitorInatividade(){
+  for(var i=0;i<EVENTOS_ATIVIDADE.length;i++)
+    document.addEventListener(EVENTOS_ATIVIDADE[i], registrarAtividade, true);
+  reiniciarContagem();
+}
+function pararMonitorInatividade(){
+  for(var i=0;i<EVENTOS_ATIVIDADE.length;i++)
+    document.removeEventListener(EVENTOS_ATIVIDADE[i], registrarAtividade, true);
+  clearTimeout(timerInatividade);
+}
+function registrarAtividade(){
+  if(sessaoBloqueada) return;
+  reiniciarContagem();
+}
+function reiniciarContagem(){
+  clearTimeout(timerInatividade);
+  timerInatividade = setTimeout(bloquearPorInatividade, INATIVIDADE_MINUTOS * 60 * 1000);
+}
+function bloquearPorInatividade(){
+  sessaoBloqueada = true;
+  pararMonitorInatividade();
+  auditorLogado = null;
+  document.getElementById('painel').style.display = 'none';
+  document.getElementById('telaLogin').style.display = 'block';
+  document.getElementById('identificado').innerHTML = '';
+  mostrarErroLogin("Sessão encerrada por inatividade.");
+}
+
+function abrirAba(id, btn){
+  var secoes = document.querySelectorAll('.secao');
+  for(var i=0;i<secoes.length;i++) secoes[i].classList.remove('ativa');
+  var botoes = document.querySelectorAll('.menu button');
+  for(var j=0;j<botoes.length;j++) botoes[j].classList.remove('ativo');
+  document.getElementById(id).classList.add('ativa');
+  btn.classList.add('ativo');
+  if(id === 'aba-exclusao') carregarEventos(0);
+  if(id === 'aba-historico') carregarHistorico(0);
+  if(id === 'aba-logs') carregarLogs();
+}
+
+// =====================================================================
+// ABA 1 — CICLO DE VIDA
+// =====================================================================
+function buscarCicloVida(){
+  var amostra = soNumeros(document.getElementById('buscaAmostra').value);
+  if(!amostra){ toast("Digite o número da amostra.", 'erro'); return; }
+
+  document.getElementById('buscaAmostra').value = amostra;
+  document.getElementById('resultadoCiclo').style.display = 'none';
+  carregando('carregaCiclo', true);
+
+  Promise.all([
+    db.collection("amostras_estado_atual").doc(amostra).get(),
+    db.collection("checkpoints_lab").where("amostra","==",amostra).get()
+  ]).then(function(res){
+    carregando('carregaCiclo', false);
+    var estado = res[0].exists ? res[0].data() : null;
+    var eventos = [];
+    res[1].forEach(function(d){ var e = d.data(); e._id = d.id; eventos.push(e); });
+    eventos.sort(function(a,b){ return (a.ordem||0) - (b.ordem||0); });
+
+    if(!estado && !eventos.length){
+      document.getElementById('resultadoCiclo').innerHTML =
+        '<div class="vazio">Nenhum registro encontrado para a amostra ' + escapar(amostra) + '.</div>';
+      document.getElementById('resultadoCiclo').style.display = 'block';
+      return;
+    }
+    desenharCicloVida(amostra, estado, eventos);
+  }).catch(function(e){
+    carregando('carregaCiclo', false);
+    console.error(e);
+    toast("Erro ao consultar o banco.", 'erro');
+  });
+}
+
+window.verAmostra = function(n){
+  document.getElementById('buscaAmostra').value = n;
+  var botoes = document.querySelectorAll('.menu button');
+  abrirAba('aba-ciclo', botoes[0]);
+  buscarCicloVida();
+  window.scrollTo({top:0, behavior:'smooth'});
+};
+
+function ultimoDaEtapa(eventos, etapa){
+  var achado = null;
+  for(var i=0;i<eventos.length;i++){
+    if(eventos[i].etapa === etapa && (!achado || (eventos[i].ordem||0) > (achado.ordem||0))) achado = eventos[i];
+  }
+  return achado;
+}
+
+function cartaoEtapa(titulo, ev, unidadeId){
+  if(!ev){
+    return '<div class="etapa ausente"><h3>' + titulo + '</h3>' +
+           '<span class="linha">Sem registro.</span></div>';
+  }
+  var uni = unidadeId || ev.unidadeBipagem;
+  return '<div class="etapa" style="border-left-color:' + corUnidade(uni) + '">' +
+         '<h3>' + titulo + '</h3>' +
+         '<span class="linha">🏥 ' + escapar(nomeUnidade(uni)) + '</span>' +
+         '<span class="linha">🕒 ' + escapar(fmtDataHora(ev.ordem, ev.data)) + '</span>' +
+         '<span class="linha">👤 ' + escapar(ev.nome || "—") + ' (' + escapar(ev.matricula || "—") + ')</span>' +
+         '<span class="linha">🌡 ' + temperaturaHTML(ev.temperatura) + '</span>' +
+         '<span class="linha">📦 Lote ' + escapar((ev.loteId || "—").substring(0,8)) + '</span>' +
+         '</div>';
+}
+
+function desenharCicloVida(amostra, estado, eventos){
+  var saida = ultimoDaEtapa(eventos, ETAPA_TRANSITO);
+  var receb = ultimoDaEtapa(eventos, ETAPA_RECEBIDA);
+  var status = estado ? estado.status : (receb ? ETAPA_RECEBIDA : (saida ? ETAPA_TRANSITO : "—"));
+  var excecao = estado ? !!estado.excecao : (!!receb && !saida);
+  var origem = (estado && estado.unidadeOrigem) || (saida && saida.unidadeBipagem) || (receb && receb.unidadeOrigem) || null;
+
+  var html = '<div class="cabeca">' +
+    '<span class="n">' + escapar(amostra) + '</span>' +
+    '<span class="pill ' + (status === ETAPA_RECEBIDA ? 'recebida' : 'transito') + '">' + escapar(status) + '</span>' +
+    (excecao ? '<span class="pill excecao">sem registro de saída</span>' : '') +
+    '<span style="font-size:12.5px;color:#7F8C8D">Origem: ' + escapar(nomeUnidade(origem)) + '</span>' +
+    '</div>';
+
+  var transitoMs = (saida && receb) ? ((receb.ordem||0) - (saida.ordem||0)) : null;
+  html += '<div class="etapas">' +
+            cartaoEtapa("Saída — em trânsito", saida, saida ? saida.unidadeBipagem : origem) +
+            '<div class="seta">🚚<b>' + (transitoMs !== null ? fmtDuracao(transitoMs) : '—') + '</b>em trânsito</div>' +
+            cartaoEtapa("Recebimento — MATRIZ", receb, receb ? receb.unidadeBipagem : "TEIXEIRA") +
+          '</div>';
+
+  if(eventos.length > 2){
+    html += '<div class="bloco-titulo">Todos os lançamentos (' + eventos.length + ')</div>' +
+            '<div class="rolagem"><table><thead><tr><th>Data</th><th>Etapa</th><th>Unidade</th><th>Operador</th><th>Temperatura</th><th>Lote</th></tr></thead><tbody>';
+    for(var i=0;i<eventos.length;i++){
+      var ev = eventos[i];
+      html += '<tr><td>' + escapar(fmtDataHora(ev.ordem, ev.data)) + '</td>' +
+              '<td>' + escapar(ev.etapa) + seloManualAmostra(ev) + '</td>' +
+              '<td>' + escapar(nomeUnidade(ev.unidadeBipagem)) + '</td>' +
+              '<td>' + escapar(ev.nome || "—") + seloManualOperador(ev) + '</td>' +
+              '<td>' + temperaturaHTML(ev.temperatura) + '</td>' +
+              '<td>' + escapar((ev.loteId || "—").substring(0,8)) + '</td></tr>';
+    }
+    html += '</tbody></table></div>';
+  }
+
+  html += '<div class="bloco-titulo">Remessas (caixas) desta amostra</div><div id="remessas"><div class="vazio">Carregando remessas…</div></div>';
+
+  var alvo = document.getElementById('resultadoCiclo');
+  alvo.innerHTML = html;
+  alvo.style.display = 'block';
+
+  var lotes = [];
+  for(var k=0;k<eventos.length;k++){
+    var id = eventos[k].loteId;
+    if(id && lotes.indexOf(id) === -1) lotes.push(id);
+  }
+  carregarRemessas(lotes, amostra);
+}
+
+function carregarRemessas(lotes, amostraAtual){
+  var alvo = document.getElementById('remessas');
+  if(!lotes.length){ alvo.innerHTML = '<div class="vazio">Nenhuma remessa vinculada.</div>'; return; }
+
+  var tarefas = lotes.map(function(loteId){
+    return Promise.all([
+      db.collection("lotes_bipagem").doc(loteId).get(),
+      db.collection("checkpoints_lab").where("loteId","==",loteId).get()
+    ]).then(function(r){
+      var lote = r[0].exists ? r[0].data() : {};
+      var amostras = [];
+      r[1].forEach(function(d){ var e = d.data(); if(amostras.indexOf(e.amostra) === -1) amostras.push(e.amostra); });
+      amostras.sort();
+      return { id: loteId, lote: lote, amostras: amostras };
+    });
+  });
+
+  Promise.all(tarefas).then(function(lista){
+    var html = "";
+    lista.forEach(function(r){
+      var l = r.lote;
+      html += '<div class="remessa" style="border-left:6px solid ' + corUnidade(l.unidade) + '">' +
+              '<div class="cab"><b>' + escapar(l.etapa || "—") + '</b> · ' + escapar(nomeUnidade(l.unidade)) +
+              ' · 🕒 ' + escapar(fmtDataHora(l.ordem, l.data)) +
+              ' · 👤 ' + escapar(l.nome || "—") +
+              ' · 🌡 ' + temperaturaHTML(l.temperatura) +
+              '<br>Lote ' + escapar(r.id.substring(0,8)) + ' · ' + r.amostras.length + ' amostra(s) gravada(s)' +
+              (l.qtdBloqueada ? ' · ' + l.qtdBloqueada + ' bloqueada(s)' : '') +
+              (l.qtdExcecao ? ' · ' + l.qtdExcecao + ' exceção(ões)' : '') +
+              '</div><div class="chips">';
+      r.amostras.forEach(function(n){
+        html += '<span class="chip' + (n === amostraAtual ? ' atual' : '') + '" onclick="verAmostra(\'' + escapar(n) + '\')">' + escapar(n) + '</span>';
+      });
+      html += '</div></div>';
+    });
+    document.getElementById('remessas').innerHTML = html;
+  }).catch(function(e){
+    console.error(e);
+    document.getElementById('remessas').innerHTML = '<div class="vazio">Não foi possível carregar as remessas.</div>';
+  });
+}
+
+// =====================================================================
+// ABA 2 — EXCLUSÃO DE LANÇAMENTOS
+// =====================================================================
+var pagEventos = 1, priEventos = null, ultEventos = null;
+
+function linhaEvento(id, ev){
+  var pill = (ev.etapa === ETAPA_RECEBIDA) ? 'recebida' : 'transito';
+  return '<tr id="linha-' + id + '">' +
+         '<td>' + escapar(soHora(ev.data, ev.ordem)) + '</td>' +
+         '<td class="amostra">' + escapar(ev.amostra) + seloManualAmostra(ev) + '</td>' +
+         '<td><span class="pill ' + pill + '">' + escapar(ev.etapa) + '</span>' + (ev.excecao ? ' <span class="pill excecao">exceção</span>' : '') + '</td>' +
+         '<td>' + escapar(nomeUnidade(ev.unidadeBipagem)) + '</td>' +
+         '<td>' + escapar(ev.nome || "—") + seloManualOperador(ev) + '</td>' +
+         '<td>' + temperaturaHTML(ev.temperatura) + '</td>' +
+         '<td>' + escapar((ev.loteId || "—").substring(0,8)) + '</td>' +
+         '<td><button class="btn perigo" onclick="abrirModal(\'' + id + '\',\'' + encodeURIComponent(JSON.stringify(ev)) + '\')">Excluir</button></td>' +
+         '</tr>';
+}
+
+function carregarEventos(dir){
+  var dia = limitesDoDia(document.getElementById('dataExclusao').value);
+  if(!dia){ toast("Escolha uma data.", 'erro'); return; }
+  var corpo = document.getElementById('corpoEventos');
+  var filtro = soNumeros(document.getElementById('filtroAmostra').value);
+  carregando('carregaEventos', true);
+
+  // Busca por amostra ignora a data e traz o histórico completo dela.
+  if(filtro){
+    document.getElementById('pagEventos').style.display = 'none';
+    db.collection("checkpoints_lab").where("amostra","==",filtro).get().then(function(res){
+      carregando('carregaEventos', false);
+      if(res.empty){
+        corpo.innerHTML = '<tr><td colspan="8" class="vazio">Nenhum lançamento para a amostra ' + escapar(filtro) + '.</td></tr>';
+        return;
+      }
+      var docs = [];
+      res.forEach(function(d){ docs.push({ id:d.id, ev:d.data() }); });
+      docs.sort(function(a,b){ return (b.ev.ordem||0) - (a.ev.ordem||0); });
+      var html = "";
+      docs.forEach(function(d){ html += linhaEvento(d.id, d.ev); });
+      corpo.innerHTML = html;
+    }).catch(function(e){ carregando('carregaEventos', false); console.error(e); toast("Erro na busca.", 'erro'); });
+    return;
+  }
+
+  var limite = parseInt(document.getElementById('limiteExclusao').value, 10) || 15;
+  var query = db.collection("checkpoints_lab")
+                .where("ordem", ">=", dia.inicio).where("ordem", "<=", dia.fim)
+                .orderBy("ordem", "desc");
+
+  if(dir === 1 && ultEventos){ query = query.startAfter(ultEventos).limit(limite); pagEventos++; }
+  else if(dir === -1 && priEventos){ query = query.endBefore(priEventos).limitToLast(limite); pagEventos--; }
+  else { query = query.limit(limite); pagEventos = 1; }
+
+  query.get().then(function(res){
+    carregando('carregaEventos', false);
+    document.getElementById('pagEventos').style.display = 'flex';
+    if(res.empty){
+      if(dir === 0) corpo.innerHTML = '<tr><td colspan="8" class="vazio">Nenhum lançamento nesta data.</td></tr>';
+      if(dir === 1) pagEventos--;
+      if(dir === -1) pagEventos++;
+    } else {
+      priEventos = res.docs[0];
+      ultEventos = res.docs[res.docs.length - 1];
+      var html = "";
+      res.forEach(function(d){ html += linhaEvento(d.id, d.data()); });
+      corpo.innerHTML = html;
+    }
+    document.getElementById('infoPagEventos').innerText = "Pág " + pagEventos;
+    document.getElementById('btnAntEventos').disabled = (pagEventos <= 1);
+    document.getElementById('btnProxEventos').disabled = (res.docs.length < limite);
+  }).catch(function(e){
+    carregando('carregaEventos', false);
+    console.error(e);
+    toast("Erro ao buscar lançamentos.", 'erro');
+  });
+}
+
+// ---------------------------------------------------------------------
+// MODAL
+// ---------------------------------------------------------------------
+var idExcluir = null, evExcluir = null;
+
+window.abrirModal = function(id, dados){
+  idExcluir = id;
+  evExcluir = JSON.parse(decodeURIComponent(dados));
+  document.getElementById('resumoExclusao').innerHTML =
+    'Amostra <b>' + escapar(evExcluir.amostra) + '</b> — etapa <b>' + escapar(evExcluir.etapa) + '</b>, ' +
+    escapar(nomeUnidade(evExcluir.unidadeBipagem)) + ', ' + escapar(fmtDataHora(evExcluir.ordem, evExcluir.data)) + '.';
+  document.getElementById('efeitoEtapa').innerText = (evExcluir.etapa === ETAPA_RECEBIDA)
+    ? "A amostra volta para Em trânsito no painel."
+    : "A amostra continua Recebida, mas passa a constar como exceção (sem registro de saída).";
+  document.getElementById('justificativa').value = "";
+  document.querySelector('input[name="escopo"][value="etapa"]').checked = true;
+  document.getElementById('modalExclusao').classList.add('aberto');
+};
+
+function fecharModal(){
+  document.getElementById('modalExclusao').classList.remove('aberto');
+  idExcluir = null; evExcluir = null;
+}
+
+function blocoEtapa(ev){
+  return {
+    unidade: ev.unidadeBipagem,
+    temperatura: (ev.temperatura === undefined ? null : ev.temperatura),
+    temperaturaForaFaixa: !!ev.temperaturaForaFaixa,
+    loteId: ev.loteId || null,
+    matricula: ev.matricula || null,
+    nome: ev.nome || null,
+    data: ev.data || null,
+    ordem: ev.ordem || null
+  };
+}
+
+// Reconstrói amostras_estado_atual a partir do que sobrou em checkpoints_lab.
+function reconstruirEstado(amostra){
+  return db.collection("checkpoints_lab").where("amostra","==",amostra).get().then(function(res){
+    if(res.empty) return db.collection("amostras_estado_atual").doc(amostra).delete();
+
+    var eventos = [];
+    res.forEach(function(d){ eventos.push(d.data()); });
+    var saida = ultimoDaEtapa(eventos, ETAPA_TRANSITO);
+    var receb = ultimoDaEtapa(eventos, ETAPA_RECEBIDA);
+    var ultimo = eventos[0];
+    eventos.forEach(function(e){ if((e.ordem||0) > (ultimo.ordem||0)) ultimo = e; });
+
+    var estado = {
+      amostra: amostra,
+      status: ultimo.etapa,
+      unidadeOrigem: saida ? saida.unidadeBipagem : (receb ? (receb.unidadeOrigem || null) : null),
+      excecao: (ultimo.etapa === ETAPA_RECEBIDA && !saida),
+      atualizadoEm: agoraBR(),
+      ordem: ultimo.ordem || Date.now()
+    };
+    if(saida) estado.saida = blocoEtapa(saida);
+    if(receb) estado.recebimento = blocoEtapa(receb);
+
+    // set sem merge: limpa o bloco da etapa que foi apagada.
+    return db.collection("amostras_estado_atual").doc(amostra).set(estado);
+  });
+}
+
+function confirmarExclusao(){
+  var just = document.getElementById('justificativa').value.trim();
+  if(just.length < 5){ toast("Justificativa obrigatória (mínimo 5 caracteres).", 'erro'); return; }
+
+  var escopo = document.querySelector('input[name="escopo"]:checked').value;
+  var amostra = evExcluir.amostra;
+  var btn = document.getElementById('btnConfirmar');
+  btn.innerText = "Excluindo…"; btn.disabled = true;
+
+  var idApagado = idExcluir;
+  var etapaApagada = evExcluir.etapa;
+  var operadorOriginal = evExcluir.nome || null;
+  var matriculaOriginal = evExcluir.matricula || null;
+
+  var apagar;
+  if(escopo === 'amostra'){
+    apagar = db.collection("checkpoints_lab").where("amostra","==",amostra).get().then(function(res){
+      var ids = [], tarefas = [];
+      res.forEach(function(d){
+        ids.push(d.id);
+        tarefas.push(db.collection("checkpoints_lab").doc(d.id).delete());
+      });
+      return Promise.all(tarefas).then(function(){ return ids; });
+    });
+  } else {
+    apagar = db.collection("checkpoints_lab").doc(idApagado).delete().then(function(){ return [idApagado]; });
+  }
+
+  apagar.then(function(ids){
+    return db.collection("historico_exclusoes").add({
+      amostra: amostra,
+      escopo: (escopo === 'amostra') ? "Amostra inteira" : "Somente esta etapa",
+      etapa: (escopo === 'amostra') ? "Todas" : etapaApagada,
+      qtdEventos: ids.length,
+      idsApagados: ids,
+      operadorOriginal: operadorOriginal,
+      matriculaOriginal: matriculaOriginal,
+      excluidoPorNome: auditorLogado ? auditorLogado.nome : "—",
+      excluidoPorEmail: auditorLogado ? auditorLogado.email : "—",
+      justificativa: just,
+      dataExclusao: agoraBR(),
+      ordemExclusao: Date.now()
+    });
+  }).then(function(){
+    if(escopo === 'amostra') return db.collection("amostras_estado_atual").doc(amostra).delete();
+    return reconstruirEstado(amostra);
+  }).then(function(){
+    btn.innerText = "Confirmar exclusão"; btn.disabled = false;
+    fecharModal();
+    if(escopo === 'amostra'){
+      carregarEventos(0);
+    } else {
+      var linha = document.getElementById('linha-' + idApagado);
+      if(linha) linha.parentNode.removeChild(linha);
+    }
+    toast("Exclusão registrada.", 'ok');
+  }).catch(function(e){
+    console.error(e);
+    btn.innerText = "Confirmar exclusão"; btn.disabled = false;
+    toast("Erro ao excluir.", 'erro');
+  });
+}
+
+// =====================================================================
+// ABA 3 — HISTÓRICO DE EXCLUSÕES
+// =====================================================================
+var pagHistorico = 1, priHistorico = null, ultHistorico = null;
+
+function carregarHistorico(dir){
+  var limite = parseInt(document.getElementById('limiteHistorico').value, 10) || 15;
+  var corpo = document.getElementById('corpoHistorico');
+  carregando('carregaHistorico', true);
+
+  var query = db.collection("historico_exclusoes").orderBy("ordemExclusao","desc");
+  if(dir === 1 && ultHistorico){ query = query.startAfter(ultHistorico).limit(limite); pagHistorico++; }
+  else if(dir === -1 && priHistorico){ query = query.endBefore(priHistorico).limitToLast(limite); pagHistorico--; }
+  else { query = query.limit(limite); pagHistorico = 1; }
+
+  query.get().then(function(res){
+    carregando('carregaHistorico', false);
+    document.getElementById('pagHistorico').style.display = 'flex';
+    if(res.empty){
+      if(dir === 0) corpo.innerHTML = '<tr><td colspan="7" class="vazio">Nenhuma exclusão registrada.</td></tr>';
+      if(dir === 1) pagHistorico--;
+      if(dir === -1) pagHistorico++;
+    } else {
+      priHistorico = res.docs[0];
+      ultHistorico = res.docs[res.docs.length - 1];
+      var html = "";
+      res.forEach(function(d){
+        var l = d.data();
+        html += '<tr><td>' + escapar(l.dataExclusao) + '</td>' +
+                '<td class="amostra">' + escapar(l.amostra) + '</td>' +
+                '<td>' + escapar(l.escopo) + (l.qtdEventos > 1 ? ' (' + l.qtdEventos + ')' : '') + '</td>' +
+                '<td>' + escapar(l.etapa) + '</td>' +
+                '<td>' + escapar(l.operadorOriginal || "—") + '</td>' +
+                '<td style="color:#E74C3C">' + escapar(l.excluidoPorNome) + '</td>' +
+                '<td><i>' + escapar(l.justificativa) + '</i></td></tr>';
+      });
+      corpo.innerHTML = html;
+    }
+    document.getElementById('infoPagHistorico').innerText = "Pág " + pagHistorico;
+    document.getElementById('btnAntHistorico').disabled = (pagHistorico <= 1);
+    document.getElementById('btnProxHistorico').disabled = (res.docs.length < limite);
+  }).catch(function(e){
+    carregando('carregaHistorico', false);
+    console.error(e);
+    toast("Erro ao carregar o histórico.", 'erro');
+  });
+}
+
+// =====================================================================
+// ABA 4 — ERROS DE BIPAGEM
+// =====================================================================
+function carregarLogs(){
+  var dia = limitesDoDia(document.getElementById('dataLogs').value);
+  if(!dia){ toast("Escolha uma data.", 'erro'); return; }
+  var corpo = document.getElementById('corpoLogs');
+  carregando('carregaLogs', true);
+
+  db.collection("logs_erros_bipagem")
+    .where("ordem", ">=", dia.inicio).where("ordem", "<=", dia.fim)
+    .orderBy("ordem","desc").get()
+    .then(function(res){
+      carregando('carregaLogs', false);
+      if(res.empty){ corpo.innerHTML = '<tr><td colspan="6" class="vazio">Nenhum erro registrado nesta data.</td></tr>'; return; }
+      var html = "";
+      res.forEach(function(d){
+        var ev = d.data();
+        html += '<tr><td>' + escapar(soHora(ev.data, ev.ordem)) + '</td>' +
+                '<td class="amostra">' + escapar(ev.amostra) + '</td>' +
+                '<td style="color:#E74C3C">' + escapar(ev.motivo) + '</td>' +
+                '<td>' + escapar(ev.etapa) + '</td>' +
+                '<td>' + escapar(nomeUnidade(ev.unidadeBipagem)) + '</td>' +
+                '<td>' + escapar(ev.nome || "—") + '</td></tr>';
+      });
+      corpo.innerHTML = html;
+    }).catch(function(e){
+      carregando('carregaLogs', false);
+      console.error(e);
+      toast("Erro ao buscar os logs.", 'erro');
+    });
+}
+
+// =====================================================================
+// INÍCIO
+// =====================================================================
+function atualizarRelogio(){
+  document.getElementById('relogio').innerText = new Date().toLocaleString('pt-BR');
+}
+window.onload = function(){
+  atualizarRelogio();
+  setInterval(atualizarRelogio, 1000);
+};
+</script>
+</body>
+</html>

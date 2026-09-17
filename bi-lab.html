@@ -1,0 +1,1452 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BI - Gestão — Checkpoint LAB</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📊</text></svg>">
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+  :root{
+    --rosa:#D6336C; --azul:#1C6DD0; --verde:#1E9E5A; --roxo:#8E44AD;
+    --erro:#E74C3C; --alerta:#F1C40F; --texto:#2C3E50; --cinza:#7F8C8D;
+  }
+  *{box-sizing:border-box}
+  body{font-family:'Segoe UI',Arial,sans-serif;margin:0;background:#ECF0F1;color:var(--texto);min-height:100vh;display:flex;flex-direction:column}
+
+  header{position:sticky;top:0;z-index:900;background:#fff;padding:9px 16px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;box-shadow:0 2px 4px rgba(0,0,0,.06);flex-shrink:0}
+  header h1{font-size:15px;margin:0;display:flex;align-items:baseline;gap:8px;white-space:nowrap}
+  header h1 a{color:inherit;text-decoration:none}
+  header h1 small{font-size:11px;color:var(--cinza);font-weight:normal}
+  .identificado{margin-left:auto;font-size:12px;color:var(--verde);font-weight:bold;white-space:nowrap}
+  .identificado a{color:var(--erro);text-decoration:none;margin-left:10px}
+
+  .modulos{display:flex;gap:6px;align-items:center;justify-content:center}
+  .modulos a,.modulos span{font-size:12.5px;text-decoration:none;color:var(--texto);padding:6px 12px;border-radius:7px;white-space:nowrap}
+  .modulos a:hover{background:#F0F3F5}
+  .modulos span.atual{background:var(--texto);color:#fff;font-weight:bold}
+
+
+  main{flex:1;padding:14px 16px}
+
+  .login{max-width:380px;margin:60px auto;background:#fff;border-radius:10px;padding:26px;box-shadow:0 3px 10px rgba(0,0,0,.09)}
+  .login h2{margin:0 0 4px;font-size:18px}
+  .login p{margin:0 0 18px;font-size:12.5px;color:var(--cinza)}
+  .login button{width:100%;border:none;background:var(--texto);color:#fff;border-radius:6px;padding:11px;font-size:14px;font-weight:bold;cursor:pointer}
+  .login .erro{display:none;color:var(--erro);font-size:13px;font-weight:bold;margin-top:12px;text-align:center}
+
+  #painel{display:none}
+
+  /* BARRA ÚNICA — ABAS + PERÍODO */
+  .barra-bi{background:#fff;border-radius:10px 10px 0 0;padding:8px 12px;box-shadow:0 2px 5px rgba(0,0,0,.07);
+            display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  .abas{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+  .abas button{border:none;background:none;padding:7px 12px;border-radius:7px;font-size:12.5px;color:var(--cinza);
+               cursor:pointer;font-family:inherit;white-space:nowrap}
+  .abas button:hover{background:#F0F3F5;color:var(--texto)}
+  .abas button.ativo{background:var(--texto);color:#fff;font-weight:bold}
+
+  .periodo{display:flex;gap:7px;align-items:center;margin-left:auto;flex-wrap:wrap}
+  .periodo input{padding:5px 8px;border:1px solid #DCE2E4;border-radius:6px;font-size:12.5px;font-family:inherit;color:var(--texto)}
+  .periodo input:focus{border-color:var(--azul);outline:none;background:#F4F9FF}
+  .periodo .ate{font-size:12px;color:var(--cinza)}
+  .atalho{border:1px solid #E5E9EB;background:#fff;border-radius:16px;padding:4px 11px;font-size:11.5px;color:var(--cinza);cursor:pointer;font-family:inherit;white-space:nowrap}
+  .atalho:hover{background:#F0F3F5;color:var(--texto)}
+  .atalho.ativo{background:#F0F3F5;border-color:#CFD6D9;color:var(--texto);font-weight:bold}
+  .aviso-periodo{font-size:11.5px;color:var(--cinza);text-align:right;padding:0 14px 8px;background:#fff}
+  .aviso-periodo b{color:var(--texto)}
+
+  .campo{display:flex;flex-direction:column;gap:3px}
+  .campo label{font-size:11px;font-weight:bold;color:var(--cinza)}
+  .campo input,.campo select{padding:8px 10px;border:2px solid #CCC;border-radius:6px;font-size:14px;font-family:inherit}
+  .campo input:focus,.campo select:focus{border-color:var(--azul);outline:none;background:#F4F9FF}
+
+  .btn{border:none;background:var(--texto);color:#fff;border-radius:6px;padding:9px 16px;font-size:13px;font-weight:bold;cursor:pointer;font-family:inherit}
+  .btn.claro{background:#95A5A6}
+  .btn.perigo{background:var(--erro)}
+  .btn.icone{background:#fff;color:var(--cinza);border:1px solid #E5E9EB;font-size:15px;padding:8px 11px;line-height:1}
+  .btn.icone:hover{background:#F0F3F5;color:var(--texto)}
+  .btn.mini{padding:5px 10px;font-size:11.5px}
+  .btn:disabled{background:#BDC3C7;cursor:default}
+
+  .conteudo{background:#fff;border-radius:0 0 10px 10px;padding:18px;box-shadow:0 2px 5px rgba(0,0,0,.07);min-height:420px}
+  .secao{display:none}
+  .secao.ativa{display:block}
+  .secao h2{margin:0 0 14px;font-size:17px;border-bottom:2px solid #ECF0F1;padding-bottom:9px}
+  .secao h3{font-size:13.5px;margin:20px 0 9px;color:var(--texto)}
+
+  .carregando{font-size:12.5px;color:var(--cinza);display:none;padding:4px 0}
+  .carregando.ativo{display:block}
+
+  /* CARTÕES */
+  .cartoes{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:6px}
+  .cartao{background:#F8FAFB;border:1px solid #ECF0F1;border-left:5px solid #BDC3C7;border-radius:8px;padding:11px 13px}
+  .cartao h4{margin:0 0 5px;font-size:11px;color:var(--cinza);font-weight:bold;text-transform:uppercase;letter-spacing:.3px}
+  .cartao .valor{font-size:25px;font-weight:bold;line-height:1.1}
+  .cartao .nota{font-size:11px;color:var(--cinza);margin-top:3px}
+
+  .graficos{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin-top:14px}
+  .caixa-grafico{border:1px solid #ECF0F1;border-radius:8px;padding:12px}
+  .caixa-grafico h4{margin:0 0 10px;font-size:12.5px;text-align:center;color:var(--texto)}
+  .alt-g{position:relative;height:250px}
+
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  .rolagem{overflow-x:auto;border:1px solid #ECF0F1;border-radius:8px}
+  th{background:#F4F6F7;text-align:left;padding:9px 10px;font-size:11px;color:var(--cinza);white-space:nowrap}
+  td{padding:9px 10px;border-top:1px solid #ECF0F1;vertical-align:middle}
+  tbody tr:hover{background:#FAFCFD}
+  td.num,th.num{text-align:right}
+  .amostra{font-weight:bold;letter-spacing:.4px}
+  .fora{color:var(--erro);font-weight:bold}
+  .limitrofe{color:#7D6608;background:#FCF3CF;padding:1px 7px;border-radius:12px;font-weight:bold}
+  .vazio{text-align:center;color:var(--cinza);padding:22px}
+  .selo-manual{background:#FCF3CF;color:#7D6608;font-size:11px;font-weight:bold;padding:1px 7px;border-radius:12px;margin-left:5px}
+  .ponto{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:middle}
+  .listas{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+
+  .pill{display:inline-block;font-size:10.5px;font-weight:bold;padding:2px 9px;border-radius:12px;color:#fff;white-space:nowrap}
+  .pill.transito{background:#34495E}
+  .pill.recebida{background:var(--verde)}
+  .pill.excecao{background:var(--erro)}
+  .pill.inativo{background:#95A5A6}
+
+  /* COLABORADORES */
+  .painel-colab{display:flex;flex-direction:column;gap:10px}
+  .bloco-colab{display:flex;flex-direction:column;min-height:0}
+  .bloco-colab .cab{display:flex;align-items:center;gap:10px;margin-bottom:7px}
+  .bloco-colab .cab h3{margin:0}
+  .bloco-colab .lista{overflow-y:auto;border:1px solid #ECF0F1;border-radius:8px}
+  .lista-ativos{height:52vh}
+  .lista-inativos{height:13vh}
+  .contador{font-size:11.5px;color:var(--cinza)}
+  .form-colab{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;background:#F8FAFB;border:1px solid #ECF0F1;border-radius:8px;padding:10px 12px;margin-bottom:12px}
+
+  /* MODAL */
+  .fundo{display:none;position:fixed;inset:0;background:rgba(44,62,80,.55);z-index:900;align-items:center;justify-content:center;padding:16px}
+  .fundo.aberto{display:flex}
+  .modal{background:#fff;border-radius:10px;padding:22px;max-width:430px;width:100%;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+  .modal h3{margin:0 0 10px;font-size:16px}
+  .modal p{font-size:13.5px;line-height:1.6;margin:0 0 14px}
+  .modal input{width:100%;padding:9px 11px;border:2px solid #CCC;border-radius:6px;font-size:14px;font-family:inherit;margin-bottom:10px}
+  .modal input:focus{border-color:var(--azul);outline:none;background:#F4F9FF}
+  .modal label{display:block;font-size:11px;font-weight:bold;color:var(--cinza);margin-bottom:4px}
+  .modal .acoes{display:flex;gap:9px;justify-content:flex-end;margin-top:8px}
+
+  footer{position:sticky;bottom:0;z-index:900;background:#ECF0F1;border-top:1px solid #DCE2E4;text-align:center;color:var(--cinza);font-size:11px;padding:10px}
+  footer b{color:var(--texto)}
+
+  #toast{visibility:hidden;opacity:0;position:fixed;left:50%;top:70px;transform:translateX(-50%);padding:12px 20px;border-radius:6px;color:#fff;font-size:15px;font-weight:bold;z-index:950;transition:opacity .2s;box-shadow:0 4px 10px rgba(0,0,0,.2)}
+  #toast.mostrar{visibility:visible;opacity:1}
+
+  @media (max-width:900px){ .aviso-periodo{margin-left:0;text-align:left;width:100%} }
+</style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<header>
+  <h1><a href="index.html" title="Página inicial">☑️ CHECKPOINT LAB 🔬</a><small id="relogio"></small></h1>
+  <nav class="modulos" id="barraModulos">
+    <a href="operador-lab.html">🧪 Operador</a>
+    <a href="kanban-lab.html">🚥 Rastreamento de Amostras</a>
+    <a href="auditoria-lab.html">🛡️ Auditoria</a>
+    <span class="atual">📊 BI - Gestão</span>
+  </nav>
+  <div class="identificado" id="identificado"></div>
+</header>
+
+<main>
+
+  <!-- ================= LOGIN ================= -->
+  <div class="login" id="telaLogin" style="display:none">
+    <h2>Acesso restrito</h2>
+    <p>Módulo de BI e gestão do Checkpoint LAB.</p>
+    <button id="btnLogin" onclick="fazerLogin()">Entrar com a conta do hospital</button>
+    <div class="erro" id="erroLogin"></div>
+  </div>
+
+  <!-- ================= PAINEL ================= -->
+  <div id="painel">
+
+    <!-- ---------- ABAS + PERÍODO ---------- -->
+    <div class="barra-bi">
+      <nav class="abas" id="barraAbas">
+        <button class="ativo" onclick="abrirAba('aba-visao', this)">Visão Geral</button>
+        <button onclick="abrirAba('aba-movimentacao', this)">Movimentação</button>
+        <button onclick="abrirAba('aba-slas', this)">SLAs</button>
+        <button onclick="abrirAba('aba-frio', this)">Cadeia Fria</button>
+        <button onclick="abrirAba('aba-produtividade', this)">Produtividade</button>
+        <button onclick="abrirAba('aba-colaboradores', this)">Colaboradores</button>
+      </nav>
+
+      <div class="periodo" id="grupoPeriodo">
+        <button class="atalho" id="atalho-ontem" onclick="atalhoPeriodo('ontem')">Ontem</button>
+        <button class="atalho" id="atalho-hoje" onclick="atalhoPeriodo('hoje')">Hoje</button>
+        <button class="atalho" id="atalho-7" onclick="atalhoPeriodo('7')">7 dias</button>
+        <button class="atalho" id="atalho-30" onclick="atalhoPeriodo('30')">30 dias</button>
+        <input type="date" id="dataInicio" onchange="periodoAlterado()" title="Data inicial">
+        <span class="ate">até</span>
+        <input type="date" id="dataFim" onchange="periodoAlterado()" title="Data final">
+      </div>
+    </div>
+    <div class="aviso-periodo" id="avisoPeriodo"></div>
+
+    <div class="conteudo">
+      <div class="carregando" id="carregaDados">Consultando o período…</div>
+
+      <!-- ---------- VISÃO GERAL ---------- -->
+      <div class="secao ativa" id="aba-visao">
+        <h2>Visão geral do período</h2>
+        <div class="cartoes" id="cartoesVisao"></div>
+        <h3>Qualidade dos registros</h3>
+        <div class="cartoes" id="cartoesQualidade"></div>
+        <div class="graficos">
+          <div class="caixa-grafico">
+            <h4>Amostras por unidade de origem</h4>
+            <div class="alt-g"><canvas id="gVisaoUnidade"></canvas></div>
+          </div>
+          <div class="caixa-grafico">
+            <h4>Bipagens por horário</h4>
+            <div class="alt-g"><canvas id="gVisaoHora"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---------- MOVIMENTAÇÃO ---------- -->
+      <div class="secao" id="aba-movimentacao">
+        <h2>Movimentação de amostras</h2>
+        <div class="caixa-grafico">
+          <h4>Evolução diária por unidade de origem (amostras enviadas)</h4>
+          <div class="alt-g" style="height:290px"><canvas id="gMovDia"></canvas></div>
+        </div>
+        <h3>Resumo por unidade</h3>
+        <div class="rolagem">
+          <table>
+            <thead><tr>
+              <th>Unidade de origem</th>
+              <th class="num">Enviadas</th>
+              <th class="num">Recebidas</th>
+              <th class="num">% recebida</th>
+              <th class="num">Remessas</th>
+              <th class="num">Média por remessa</th>
+            </tr></thead>
+            <tbody id="tabelaMovUnidade"></tbody>
+          </table>
+        </div>
+        <div class="listas" style="margin-top:18px">
+          <div>
+            <h3 style="margin-top:0">Dias de maior volume</h3>
+            <div class="rolagem">
+              <table><thead><tr><th>Data</th><th class="num">Amostras enviadas</th></tr></thead>
+              <tbody id="tabelaMovDias"></tbody></table>
+            </div>
+          </div>
+          <div>
+            <h3 style="margin-top:0">Horários de pico</h3>
+            <div class="rolagem">
+              <table><thead><tr><th>Faixa</th><th class="num">Bipagens</th></tr></thead>
+              <tbody id="tabelaMovHoras"></tbody></table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---------- SLAs ---------- -->
+      <div class="secao" id="aba-slas">
+        <h2>SLAs de trânsito (saída → recebimento)</h2>
+        <div class="cartoes" id="cartoesSLA"></div>
+        <div class="graficos">
+          <div class="caixa-grafico">
+            <h4>Distribuição por faixa de tempo</h4>
+            <div class="alt-g"><canvas id="gSlaFaixa"></canvas></div>
+          </div>
+          <div class="caixa-grafico">
+            <h4>Tempo médio por dia (minutos)</h4>
+            <div class="alt-g"><canvas id="gSlaDia"></canvas></div>
+          </div>
+        </div>
+        <h3>Resumo por unidade de origem</h3>
+        <div class="rolagem">
+          <table>
+            <thead><tr>
+              <th>Unidade de origem</th>
+              <th class="num">Amostras pareadas</th>
+              <th class="num">Média</th>
+              <th class="num">Mediana</th>
+              <th class="num">Mais rápida</th>
+              <th class="num">Mais lenta</th>
+              <th class="num">Acima do limite</th>
+            </tr></thead>
+            <tbody id="tabelaSlaUnidade"></tbody>
+          </table>
+        </div>
+        <div class="listas" style="margin-top:18px">
+          <div>
+            <h3 style="margin-top:0">10 mais rápidas</h3>
+            <div class="rolagem">
+              <table><thead><tr><th>Amostra</th><th>Origem</th><th class="num">Trânsito</th></tr></thead>
+              <tbody id="tabelaSlaRapidas"></tbody></table>
+            </div>
+          </div>
+          <div>
+            <h3 style="margin-top:0">10 mais lentas</h3>
+            <div class="rolagem">
+              <table><thead><tr><th>Amostra</th><th>Origem</th><th class="num">Trânsito</th></tr></thead>
+              <tbody id="tabelaSlaLentas"></tbody></table>
+            </div>
+          </div>
+        </div>
+        <p style="font-size:11.5px;color:var(--cinza);line-height:1.6;margin-top:16px">
+          Só entram no cálculo as amostras com saída <b>e</b> recebimento dentro do período consultado.
+          Amostras em exceção (recebidas sem registro de saída) ficam de fora.
+        </p>
+      </div>
+
+      <!-- ---------- CADEIA FRIA ---------- -->
+      <div class="secao" id="aba-frio">
+        <h2>Cadeia fria</h2>
+        <div class="cartoes" id="cartoesFrio"></div>
+        <div class="graficos">
+          <div class="caixa-grafico">
+            <h4>Situação das remessas por unidade</h4>
+            <div class="alt-g"><canvas id="gFrioUnidade"></canvas></div>
+          </div>
+          <div class="caixa-grafico">
+            <h4>Temperaturas registradas</h4>
+            <div class="alt-g"><canvas id="gFrioFaixa"></canvas></div>
+          </div>
+        </div>
+        <h3>Remessas fora da faixa ideal</h3>
+        <div class="rolagem">
+          <table>
+            <thead><tr>
+              <th>Data</th><th>Unidade</th><th>Etapa</th>
+              <th class="num">Temperatura</th><th>Situação</th>
+              <th class="num">Amostras</th><th>Responsável</th>
+            </tr></thead>
+            <tbody id="tabelaFrio"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ---------- PRODUTIVIDADE ---------- -->
+      <div class="secao" id="aba-produtividade">
+        <h2>Produtividade</h2>
+        <div class="caixa-grafico">
+          <h4>Bipagens por colaborador</h4>
+          <div class="alt-g" style="height:300px"><canvas id="gProdutividade"></canvas></div>
+        </div>
+        <h3>Detalhamento</h3>
+        <div class="rolagem">
+          <table>
+            <thead><tr>
+              <th>Colaborador</th><th>Matrícula</th>
+              <th class="num">Saídas</th><th class="num">Recebimentos</th>
+              <th class="num">Total</th><th class="num">Remessas</th>
+              <th class="num">Digitação manual</th>
+            </tr></thead>
+            <tbody id="tabelaProdutividade"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ---------- COLABORADORES ---------- -->
+      <div class="secao" id="aba-colaboradores">
+        <h2>Colaboradores do laboratório</h2>
+        <div class="form-colab">
+          <div class="campo">
+            <label for="novaMatricula">Matrícula</label>
+            <input type="text" id="novaMatricula" style="width:150px" inputmode="numeric" autocomplete="off">
+          </div>
+          <div class="campo" style="flex:1;min-width:220px">
+            <label for="novoNome">Nome</label>
+            <input type="text" id="novoNome" style="width:100%" autocomplete="off"
+                   onkeypress="if(event.key==='Enter') incluirColaborador()">
+          </div>
+          <button class="btn" onclick="incluirColaborador()">Incluir</button>
+        </div>
+        <div class="carregando" id="carregaColab">Carregando lista…</div>
+
+        <div class="painel-colab">
+          <div class="bloco-colab">
+            <div class="cab">
+              <h3 style="margin:0">Ativos</h3>
+              <span class="contador" id="contadorAtivos"></span>
+            </div>
+            <div class="lista lista-ativos">
+              <table>
+                <thead><tr><th>Matrícula</th><th>Nome</th><th style="width:150px">Ações</th></tr></thead>
+                <tbody id="tabelaAtivos"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="bloco-colab">
+            <div class="cab">
+              <h3 style="margin:0">Inativos</h3>
+              <span class="contador" id="contadorInativos"></span>
+            </div>
+            <div class="lista lista-inativos">
+              <table>
+                <thead><tr><th>Matrícula</th><th>Nome</th><th style="width:150px">Ações</th></tr></thead>
+                <tbody id="tabelaInativos"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <p style="font-size:11.5px;color:var(--cinza);line-height:1.6;margin-top:12px">
+          Inativar não apaga o cadastro: o colaborador deixa de ser reconhecido na bipagem, mas o histórico dele continua rastreável.
+        </p>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<!-- MODAL DE EDIÇÃO -->
+<div class="fundo" id="fundoModal">
+  <div class="modal">
+    <h3 id="tituloModal">Editar colaborador</h3>
+    <p id="textoModal"></p>
+    <div id="campoModal">
+      <label for="editaNome">Nome</label>
+      <input type="text" id="editaNome" onkeypress="if(event.key==='Enter') confirmarModal()">
+    </div>
+    <div class="acoes">
+      <button class="btn claro" onclick="fecharModal()">Cancelar</button>
+      <button class="btn" id="btnModal" onclick="confirmarModal()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<footer><b>CHECKPOINT LAB — LABORATÓRIO DE ANÁLISES CLÍNICAS HSVP</b> | <span id="versaoRodape"></span></footer>
+
+<script>
+// =====================================================================
+// CHECKPOINT LAB — MÓDULO BI - GESTÃO
+// =====================================================================
+var APP_VERSION = "1.2.0";
+var APP_DATE = "17/09/2026";
+document.getElementById('versaoRodape').innerText = "Módulo BI - Gestão | Versão " + APP_VERSION + " (" + APP_DATE + ")";
+
+var firebaseConfig = {
+  apiKey: "AIzaSyAikasws2KhXt6OI7ClsjnUx3_bm8ul14c",
+  authDomain: "checkpoint-lab-hsvp.firebaseapp.com",
+  projectId: "checkpoint-lab-hsvp",
+  storageBucket: "checkpoint-lab-hsvp.firebasestorage.app",
+  messagingSenderId: "661764611363",
+  appId: "1:661764611363:web:76c104799421980453c096"
+};
+firebase.initializeApp(firebaseConfig);
+var db = firebase.firestore();
+
+var UNIDADES = {
+  URUGUAI:  { nome:"Laboratório URUGUAI",  cor:"#D6336C" },
+  SHOPPING: { nome:"Laboratório SHOPPING", cor:"#1C6DD0" },
+  TEIXEIRA: { nome:"Laboratório MATRIZ",   cor:"#1E9E5A" },
+  CES:      { nome:"Laboratório CES",      cor:"#8E44AD" }
+};
+
+var ETAPA_TRANSITO = "Em trânsito";
+var ETAPA_RECEBIDA = "Recebida";
+
+var MAX_DIAS = 31;
+var MINUTO = 60000;
+
+// ---------------------------------------------------------------------
+// PARÂMETROS (config/parametros no Firestore)
+// ---------------------------------------------------------------------
+var PARAM = {
+  temp_ideal_min: 2, temp_ideal_max: 8,
+  temp_limite_min: 1, temp_limite_max: 9,
+  alerta_min: 20, atraso_min: 30, janela_horas: 24
+};
+
+function carregarParametros(){
+  return db.collection("config").doc("parametros").get().then(function(doc){
+    if(!doc.exists) return;
+    var d = doc.data() || {};
+    for(var k in PARAM){
+      if(d[k] !== undefined && d[k] !== null && !isNaN(Number(d[k]))) PARAM[k] = Number(d[k]);
+    }
+  }).catch(function(){});
+}
+
+// "ok" (dentro do ideal), "limitrofe" (excursão leve) ou "desvio" (fora do aceitável)
+function nivelTemp(t){
+  if(t === null || t === undefined || isNaN(t)) return "ok";
+  t = Number(t);
+  if(t >= PARAM.temp_ideal_min && t <= PARAM.temp_ideal_max) return "ok";
+  if(t >= PARAM.temp_limite_min && t <= PARAM.temp_limite_max) return "limitrofe";
+  return "desvio";
+}
+
+var gestorLogado = null;
+
+// ---------------------------------------------------------------------
+// APOIO
+// ---------------------------------------------------------------------
+function soNumeros(t){ return (t || "").replace(/\D/g,''); }
+function escapar(t){
+  return String(t === null || t === undefined ? "" : t)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function nomeUnidade(id){ return (UNIDADES[id] && UNIDADES[id].nome) || id || "—"; }
+function corUnidade(id){ return (UNIDADES[id] && UNIDADES[id].cor) || "#BDC3C7"; }
+
+function fmtTemp(t){
+  if(t === null || t === undefined || isNaN(t)) return "—";
+  return Number(t).toFixed(1).replace('.', ',') + " °C";
+}
+function fmtDuracao(ms){
+  if(ms === null || ms === undefined || isNaN(ms)) return "—";
+  if(ms < 0) ms = 0;
+  var min = Math.floor(ms / 60000);
+  if(min < 60) return min + " min";
+  var h = Math.floor(min / 60), m = min % 60;
+  if(h < 24) return h + "h " + (m < 10 ? "0" : "") + m + "min";
+  var d = Math.floor(h / 24);
+  return d + "d " + (h % 24) + "h";
+}
+function fmtNum(n){ return Number(n || 0).toLocaleString('pt-BR'); }
+function fmtPerc(parte, total){
+  if(!total) return "—";
+  return (parte * 100 / total).toFixed(1).replace('.', ',') + "%";
+}
+function diaISO(ms){
+  var d = new Date(ms);
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function diaBR(iso){
+  var p = String(iso).split('-');
+  return p[2] + '/' + p[1];
+}
+function hojeISO(){ return diaISO(Date.now()); }
+function ontemISO(){ return diaISO(Date.now() - 86400000); }
+function mediana(lista){
+  if(!lista.length) return null;
+  var c = lista.slice().sort(function(a,b){ return a-b; });
+  var meio = Math.floor(c.length / 2);
+  return (c.length % 2) ? c[meio] : Math.round((c[meio-1] + c[meio]) / 2);
+}
+function media(lista){
+  if(!lista.length) return null;
+  var s = 0;
+  for(var i=0;i<lista.length;i++) s += lista[i];
+  return Math.round(s / lista.length);
+}
+function toast(texto, tipo){
+  var t = document.getElementById('toast');
+  t.innerText = texto;
+  t.style.backgroundColor = (tipo === 'erro') ? '#E74C3C' : (tipo === 'aviso' ? '#F39C12' : '#27AE60');
+  t.className = 'mostrar';
+  setTimeout(function(){ t.className = ''; }, 3200);
+}
+function carregando(id, ligado){
+  document.getElementById(id).className = ligado ? 'carregando ativo' : 'carregando';
+}
+function cartao(titulo, valor, cor, nota){
+  return '<div class="cartao" style="border-left-color:' + cor + '">' +
+         '<h4>' + escapar(titulo) + '</h4>' +
+         '<div class="valor" style="color:' + cor + '">' + valor + '</div>' +
+         (nota ? '<div class="nota">' + nota + '</div>' : '') +
+         '</div>';
+}
+function linhaVazia(colunas, texto){
+  return '<tr><td class="vazio" colspan="' + colunas + '">' + (texto || "Nada encontrado no período.") + '</td></tr>';
+}
+
+// ---------------------------------------------------------------------
+// LOGIN
+// ---------------------------------------------------------------------
+var INATIVIDADE_MINUTOS = 10;
+var DOMINIO_PERMITIDO = "hsvp.com.br";
+
+var timerInatividade = null;
+var sessaoBloqueada = false;
+var processandoLogin = false;
+
+function mostrarErroLogin(texto){
+  var e = document.getElementById('erroLogin');
+  e.innerText = texto;
+  e.style.display = 'block';
+}
+function emailDoDominio(email){
+  email = (email || "").toLowerCase();
+  return email.slice(-(DOMINIO_PERMITIDO.length + 1)) === "@" + DOMINIO_PERMITIDO;
+}
+
+// Lê a lista de gestores em config/perfis (campo "gestores").
+function verificarPermissao(user){
+  return db.collection("config").doc("perfis").get().then(function(doc){
+    if(!doc.exists) return { ok:true, aviso:"Lista de gestores não configurada no banco." };
+    var lista = doc.data().gestores || [];
+    if(!lista.length) return { ok:true, aviso:"Lista de gestores está vazia no banco." };
+    var email = (user.email || "").toLowerCase();
+    var liberado = lista.some(function(e){ return String(e).trim().toLowerCase() === email; });
+    return { ok: liberado };
+  }).catch(function(){
+    return { ok:false, erro:true };
+  });
+}
+
+firebase.auth().onAuthStateChanged(function(user){
+  if(user){
+    tratarUsuario(user);
+  } else {
+    gestorLogado = null;
+    pararMonitorInatividade();
+    document.getElementById('telaLogin').style.display = 'block';
+    document.getElementById('painel').style.display = 'none';
+    document.getElementById('identificado').innerHTML = '';
+  }
+});
+
+// Valida domínio e permissão e abre o painel.
+// Usado tanto na entrada normal quanto no desbloqueio após inatividade.
+function tratarUsuario(user){
+  if(processandoLogin) return;
+  if(!sessaoBloqueada && gestorLogado && gestorLogado.email === user.email) return;
+  processandoLogin = true;
+
+  if(!emailDoDominio(user.email)){
+    processandoLogin = false;
+    firebase.auth().signOut().then(function(){
+      mostrarErroLogin("Use uma conta @" + DOMINIO_PERMITIDO + " para entrar.");
+    });
+    return;
+  }
+
+  verificarPermissao(user).then(function(r){
+    if(!r.ok){
+      processandoLogin = false;
+      firebase.auth().signOut().then(function(){
+        mostrarErroLogin(r.erro
+          ? "Não foi possível verificar suas permissões. Tente novamente."
+          : "Este usuário não tem permissão para acessar o BI - Gestão.");
+      });
+      return;
+    }
+    abrirPainel(user);
+    processandoLogin = false;
+    if(r.aviso) toast(r.aviso, 'aviso');
+  }).catch(function(){
+    processandoLogin = false;
+    mostrarErroLogin("Não foi possível verificar suas permissões. Tente novamente.");
+  });
+}
+
+function abrirPainel(user){
+  sessaoBloqueada = false;
+  var nome = user.displayName || user.email.split('@')[0].toUpperCase().replace(/[._]/g,' ');
+  gestorLogado = { email: user.email, nome: nome };
+  document.getElementById('erroLogin').style.display = 'none';
+  document.getElementById('telaLogin').style.display = 'none';
+  document.getElementById('painel').style.display = 'block';
+  document.getElementById('identificado').innerHTML =
+    '👤 ' + escapar(nome) + " <a href='#' onclick='fazerLogout();return false;'>[Sair]</a>";
+  iniciarMonitorInatividade();
+  carregarParametros().then(function(){
+    document.getElementById('dataInicio').value = ontemISO();
+    document.getElementById('dataFim').value = ontemISO();
+    document.getElementById('dataInicio').max = hojeISO();
+    document.getElementById('dataFim').max = hojeISO();
+    marcarAtalho('ontem');
+    carregarPeriodo(false);
+  });
+}
+
+function fazerLogin(){
+  var btn = document.getElementById('btnLogin');
+  document.getElementById('erroLogin').style.display = 'none';
+  btn.innerText = "Abrindo o login…"; btn.disabled = true;
+
+  var provedor = new firebase.auth.GoogleAuthProvider();
+  provedor.setCustomParameters({ hd: DOMINIO_PERMITIDO, prompt: 'select_account' });
+
+  function liberarBotao(){
+    btn.innerText = "Entrar com a conta do hospital"; btn.disabled = false;
+  }
+
+  firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+    .then(function(){ return firebase.auth().signInWithPopup(provedor); })
+    .then(function(res){
+      liberarBotao();
+      // Desbloqueio após inatividade: a sessão do Firebase continua válida,
+      // então o retorno do pop-up é quem reabre o painel.
+      if(res && res.user) tratarUsuario(res.user);
+    })
+    .catch(function(erro){
+      var cod = erro && erro.code ? erro.code : "";
+      if(cod === 'auth/popup-blocked' || cod === 'auth/operation-not-supported-in-this-environment'){
+        mostrarErroLogin("O navegador bloqueou a janela de login. Redirecionando…");
+        firebase.auth().signInWithRedirect(provedor);
+        return;
+      }
+      liberarBotao();
+      if(cod === 'auth/popup-closed-by-user' || cod === 'auth/cancelled-popup-request'){
+        mostrarErroLogin("Login cancelado.");
+      } else {
+        mostrarErroLogin("Não foi possível entrar. Tente novamente.");
+      }
+    });
+}
+
+firebase.auth().getRedirectResult().catch(function(){
+  mostrarErroLogin("Não foi possível concluir o login. Tente novamente.");
+});
+
+function fazerLogout(){ pararMonitorInatividade(); firebase.auth().signOut(); }
+
+// ---------------------------------------------------------------------
+// BLOQUEIO DA TELA POR INATIVIDADE
+// ---------------------------------------------------------------------
+// Passados INATIVIDADE_MINUTOS sem uso, o painel é fechado e a tela de
+// login volta com o aviso. A sessão do Firebase NÃO é encerrada, para não
+// derrubar o Operador e o Rastreamento abertos em outras abas.
+var EVENTOS_ATIVIDADE = ['mousedown','keydown','wheel','touchstart','scroll'];
+
+function iniciarMonitorInatividade(){
+  for(var i=0;i<EVENTOS_ATIVIDADE.length;i++)
+    document.addEventListener(EVENTOS_ATIVIDADE[i], registrarAtividade, true);
+  reiniciarContagem();
+}
+function pararMonitorInatividade(){
+  for(var i=0;i<EVENTOS_ATIVIDADE.length;i++)
+    document.removeEventListener(EVENTOS_ATIVIDADE[i], registrarAtividade, true);
+  clearTimeout(timerInatividade);
+}
+function registrarAtividade(){
+  if(sessaoBloqueada) return;
+  reiniciarContagem();
+}
+function reiniciarContagem(){
+  clearTimeout(timerInatividade);
+  timerInatividade = setTimeout(bloquearPorInatividade, INATIVIDADE_MINUTOS * 60 * 1000);
+}
+function bloquearPorInatividade(){
+  sessaoBloqueada = true;
+  pararMonitorInatividade();
+  gestorLogado = null;
+  document.getElementById('painel').style.display = 'none';
+  document.getElementById('telaLogin').style.display = 'block';
+  document.getElementById('identificado').innerHTML = '';
+  mostrarErroLogin("Sessão encerrada por inatividade.");
+}
+
+// ---------------------------------------------------------------------
+// ABAS
+// ---------------------------------------------------------------------
+function abrirAba(id, btn){
+  var secoes = document.querySelectorAll('.secao');
+  for(var i=0;i<secoes.length;i++) secoes[i].classList.remove('ativa');
+  var botoes = document.querySelectorAll('.abas button');
+  for(var j=0;j<botoes.length;j++) botoes[j].classList.remove('ativo');
+  document.getElementById(id).classList.add('ativa');
+  btn.classList.add('ativo');
+
+  var colab = (id === 'aba-colaboradores');
+  document.getElementById('grupoPeriodo').style.display = colab ? 'none' : 'flex';
+  document.getElementById('avisoPeriodo').style.display = colab ? 'none' : 'block';
+  if(colab && !colaboradoresCarregados) carregarColaboradores();
+}
+
+// =====================================================================
+// PERÍODO E CARGA DE DADOS
+// =====================================================================
+var dadosPeriodo = null;   // { eventos, lotes, erros }
+
+function marcarAtalho(tipo){
+  var botoes = document.querySelectorAll('.atalho');
+  for(var i=0; i<botoes.length; i++) botoes[i].classList.remove('ativo');
+  if(tipo){
+    var b = document.getElementById('atalho-' + tipo);
+    if(b) b.classList.add('ativo');
+  }
+}
+
+function atalhoPeriodo(tipo){
+  var fim = hojeISO(), ini = hojeISO();
+  if(tipo === 'ontem'){ ini = ontemISO(); fim = ontemISO(); }
+  else if(tipo === '7'){ ini = diaISO(Date.now() - 6*86400000); }
+  else if(tipo === '30'){ ini = diaISO(Date.now() - 29*86400000); }
+  document.getElementById('dataInicio').value = ini;
+  document.getElementById('dataFim').value = fim;
+  marcarAtalho(tipo);
+  carregarPeriodo(true);
+}
+
+function periodoAlterado(){ marcarAtalho(null); carregarPeriodo(false); }
+
+function validarPeriodo(){
+  var ini = document.getElementById('dataInicio').value;
+  var fim = document.getElementById('dataFim').value;
+  if(!ini || !fim){ toast("Informe as duas datas.", 'erro'); return null; }
+  var i = new Date(ini + "T00:00:00").getTime();
+  var f = new Date(fim + "T00:00:00").getTime();
+  if(f < i){ toast("A data final é anterior à inicial.", 'erro'); return null; }
+  var dias = Math.round((f - i) / 86400000) + 1;
+  if(dias > MAX_DIAS){
+    toast("O período máximo é de " + MAX_DIAS + " dias. Ajuste as datas.", 'erro');
+    return null;
+  }
+  return { inicio: i, fim: f + 86399999, dias: dias, iniISO: ini, fimISO: fim };
+}
+
+function carregarPeriodo(manual){
+  if(!gestorLogado) return;
+  var p = validarPeriodo();
+  if(!p) return;
+
+  carregando('carregaDados', true);
+  document.getElementById('avisoPeriodo').innerHTML =
+    'Período: <b>' + p.dias + (p.dias > 1 ? ' dias' : ' dia') + '</b> · máximo ' + MAX_DIAS + ' dias';
+
+  var faixa = function(colecao){
+    return db.collection(colecao)
+             .where("ordem", ">=", p.inicio).where("ordem", "<=", p.fim)
+             .orderBy("ordem", "asc").get();
+  };
+
+  Promise.all([ faixa("checkpoints_lab"), faixa("lotes_bipagem"), faixa("logs_erros_bipagem") ])
+    .then(function(res){
+      var eventos = [], lotes = [], erros = [];
+      res[0].forEach(function(d){ eventos.push(d.data()); });
+      res[1].forEach(function(d){ var o = d.data(); o.id = d.id; lotes.push(o); });
+      res[2].forEach(function(d){ erros.push(d.data()); });
+      dadosPeriodo = { eventos: eventos, lotes: lotes, erros: erros, periodo: p };
+      renderizarTudo();
+      carregando('carregaDados', false);
+      if(manual) toast("Dados atualizados.", 'ok');
+    })
+    .catch(function(e){
+      carregando('carregaDados', false);
+      console.error("Consulta:", e);
+      toast("Não foi possível consultar o período.", 'erro');
+    });
+}
+
+// ---------------------------------------------------------------------
+// CONSOLIDAÇÃO
+// ---------------------------------------------------------------------
+function consolidar(){
+  var ev = dadosPeriodo.eventos;
+  var r = {
+    enviadas: 0, recebidas: 0, excecoes: 0, manuais: 0, idManual: 0,
+    porUnidade: {},      // origem -> { enviadas, recebidas }
+    porDia: {},          // iso -> { origem: qtd }
+    porHora: new Array(24),
+    saidas: {},          // amostra -> { ordem, origem }
+    pares: [],           // { amostra, origem, ms, dia }
+    dias: [], origens: []
+  };
+  for(var h=0; h<24; h++) r.porHora[h] = 0;
+
+  function garanteUnidade(u){
+    if(!r.porUnidade[u]) r.porUnidade[u] = { enviadas:0, recebidas:0 };
+  }
+
+  for(var i=0; i<ev.length; i++){
+    var e = ev[i];
+    var dia = diaISO(e.ordem);
+    var hora = new Date(e.ordem).getHours();
+    r.porHora[hora]++;
+    if(e.entradaManual) r.manuais++;
+    if(e.identificacaoManual) r.idManual++;
+    if(e.excecao) r.excecoes++;
+
+    var origem = e.unidadeOrigem || e.unidadeBipagem || "—";
+    garanteUnidade(origem);
+
+    if(e.etapa === ETAPA_RECEBIDA){
+      r.recebidas++;
+      r.porUnidade[origem].recebidas++;
+      var s = r.saidas[e.amostra];
+      if(s && e.ordem > s.ordem){
+        r.pares.push({ amostra: e.amostra, origem: s.origem, ms: e.ordem - s.ordem, dia: diaISO(e.ordem) });
+      }
+    } else {
+      r.enviadas++;
+      r.porUnidade[origem].enviadas++;
+      if(!r.saidas[e.amostra]) r.saidas[e.amostra] = { ordem: e.ordem, origem: origem };
+      if(!r.porDia[dia]) r.porDia[dia] = {};
+      r.porDia[dia][origem] = (r.porDia[dia][origem] || 0) + 1;
+    }
+  }
+
+  // eixo de dias completo do período
+  var d = new Date(dadosPeriodo.periodo.inicio);
+  while(d.getTime() <= dadosPeriodo.periodo.fim){
+    r.dias.push(diaISO(d.getTime()));
+    d = new Date(d.getTime() + 86400000);
+  }
+  for(var u in r.porUnidade) r.origens.push(u);
+  r.origens.sort();
+
+  r.emTransito = Math.max(0, r.enviadas - r.pares.length);
+  return r;
+}
+
+// ---------------------------------------------------------------------
+// GRÁFICOS
+// ---------------------------------------------------------------------
+var graficos = {};
+
+function desenhar(id, config){
+  var el = document.getElementById(id);
+  if(!el) return;
+  if(graficos[id]){ graficos[id].destroy(); }
+  graficos[id] = new Chart(el.getContext('2d'), config);
+}
+
+var OPCOES_BASE = {
+  responsive: true, maintainAspectRatio: false,
+  plugins: { legend: { labels: { font: { size: 11 } } } },
+  scales: { y: { beginAtZero: true, ticks: { precision: 0, font:{size:11} } }, x: { ticks:{ font:{size:11} } } }
+};
+
+function renderizarTudo(){
+  var c = consolidar();
+  renderVisao(c);
+  renderMovimentacao(c);
+  renderSLA(c);
+  renderFrio();
+  renderProdutividade();
+}
+
+// =====================================================================
+// ABA 1 — VISÃO GERAL
+// =====================================================================
+function renderVisao(c){
+  document.getElementById('cartoesVisao').innerHTML =
+    cartao("Amostras enviadas", fmtNum(c.enviadas), "#34495E") +
+    cartao("Amostras recebidas", fmtNum(c.recebidas), "#1E9E5A") +
+    cartao("Sem recebimento", fmtNum(c.emTransito), "#F39C12", "Enviadas sem par no período") +
+    cartao("Remessas", fmtNum(dadosPeriodo.lotes.length), "#1C6DD0");
+
+  var desvios = 0, limitrofes = 0;
+  for(var i=0; i<dadosPeriodo.lotes.length; i++){
+    var n = nivelTemp(dadosPeriodo.lotes[i].temperatura);
+    if(n === "desvio") desvios++;
+    else if(n === "limitrofe") limitrofes++;
+  }
+
+  document.getElementById('cartoesQualidade').innerHTML =
+    cartao("Desvios de temperatura", fmtNum(desvios), "#E74C3C", fmtNum(limitrofes) + " limítrofe(s)") +
+    cartao("Exceções", fmtNum(c.excecoes), "#E74C3C", "Recebidas sem registro de saída") +
+    cartao("Bloqueios de bipagem", fmtNum(dadosPeriodo.erros.length), "#F39C12") +
+    cartao("Amostras digitadas", fmtNum(c.manuais), "#8E44AD", "Sem leitura do código") +
+    cartao("Matrícula digitada", fmtNum(c.idManual), "#8E44AD", "Sem leitura do crachá");
+
+  var rotulos = [], env = [], rec = [], cores = [];
+  for(var j=0; j<c.origens.length; j++){
+    var u = c.origens[j];
+    rotulos.push(nomeUnidade(u));
+    env.push(c.porUnidade[u].enviadas);
+    rec.push(c.porUnidade[u].recebidas);
+    cores.push(corUnidade(u));
+  }
+  desenhar('gVisaoUnidade', {
+    type: 'bar',
+    data: { labels: rotulos, datasets: [
+      { label: 'Enviadas', data: env, backgroundColor: cores },
+      { label: 'Recebidas', data: rec, backgroundColor: '#BDC3C7' }
+    ]},
+    options: OPCOES_BASE
+  });
+
+  var horas = [], valores = [];
+  for(var h=0; h<24; h++){ horas.push(String(h).padStart(2,'0') + "h"); valores.push(c.porHora[h]); }
+  desenhar('gVisaoHora', {
+    type: 'line',
+    data: { labels: horas, datasets: [{
+      label: 'Bipagens', data: valores, borderColor: '#34495E',
+      backgroundColor: 'rgba(52,73,94,.12)', fill: true, tension: .3, pointRadius: 2
+    }]},
+    options: OPCOES_BASE
+  });
+}
+
+// =====================================================================
+// ABA 2 — MOVIMENTAÇÃO
+// =====================================================================
+function renderMovimentacao(c){
+  var conjuntos = [];
+  for(var i=0; i<c.origens.length; i++){
+    var u = c.origens[i], serie = [];
+    for(var d=0; d<c.dias.length; d++){
+      serie.push((c.porDia[c.dias[d]] && c.porDia[c.dias[d]][u]) || 0);
+    }
+    conjuntos.push({ label: nomeUnidade(u), data: serie, backgroundColor: corUnidade(u), borderColor: corUnidade(u) });
+  }
+  var rotulos = c.dias.map(diaBR);
+  desenhar('gMovDia', {
+    type: c.dias.length > 10 ? 'line' : 'bar',
+    data: { labels: rotulos, datasets: conjuntos },
+    options: OPCOES_BASE
+  });
+
+  // remessas por unidade
+  var remessas = {};
+  for(var l=0; l<dadosPeriodo.lotes.length; l++){
+    var lt = dadosPeriodo.lotes[l];
+    if(lt.etapa === ETAPA_RECEBIDA) continue;
+    var uu = lt.unidade || "—";
+    if(!remessas[uu]) remessas[uu] = { qtd:0, amostras:0 };
+    remessas[uu].qtd++;
+    remessas[uu].amostras += Number(lt.qtdGravada || lt.qtdBipada || 0);
+  }
+
+  var html = "";
+  for(var j=0; j<c.origens.length; j++){
+    var o = c.origens[j], dados = c.porUnidade[o];
+    var rem = remessas[o] || { qtd:0, amostras:0 };
+    var mediaRem = rem.qtd ? (rem.amostras / rem.qtd).toFixed(1).replace('.', ',') : "—";
+    html += '<tr>' +
+      '<td><span class="ponto" style="background:' + corUnidade(o) + '"></span>' + escapar(nomeUnidade(o)) + '</td>' +
+      '<td class="num">' + fmtNum(dados.enviadas) + '</td>' +
+      '<td class="num">' + fmtNum(dados.recebidas) + '</td>' +
+      '<td class="num">' + fmtPerc(dados.recebidas, dados.enviadas) + '</td>' +
+      '<td class="num">' + fmtNum(rem.qtd) + '</td>' +
+      '<td class="num">' + mediaRem + '</td>' +
+      '</tr>';
+  }
+  document.getElementById('tabelaMovUnidade').innerHTML = html || linhaVazia(6);
+
+  // top dias
+  var listaDias = [];
+  for(var dd in c.porDia){
+    var soma = 0;
+    for(var k in c.porDia[dd]) soma += c.porDia[dd][k];
+    listaDias.push({ dia: dd, total: soma });
+  }
+  listaDias.sort(function(a,b){ return b.total - a.total; });
+  var htmlD = "";
+  for(var x=0; x<Math.min(5, listaDias.length); x++){
+    htmlD += '<tr><td>' + diaBR(listaDias[x].dia) + '</td><td class="num">' + fmtNum(listaDias[x].total) + '</td></tr>';
+  }
+  document.getElementById('tabelaMovDias').innerHTML = htmlD || linhaVazia(2);
+
+  // top horas
+  var listaHoras = [];
+  for(var h=0; h<24; h++) listaHoras.push({ h:h, total:c.porHora[h] });
+  listaHoras.sort(function(a,b){ return b.total - a.total; });
+  var htmlH = "";
+  for(var y=0; y<5; y++){
+    if(!listaHoras[y] || !listaHoras[y].total) break;
+    htmlH += '<tr><td>' + String(listaHoras[y].h).padStart(2,'0') + 'h às ' +
+             String(listaHoras[y].h).padStart(2,'0') + 'h59</td>' +
+             '<td class="num">' + fmtNum(listaHoras[y].total) + '</td></tr>';
+  }
+  document.getElementById('tabelaMovHoras').innerHTML = htmlH || linhaVazia(2);
+}
+
+// =====================================================================
+// ABA 3 — SLAs
+// =====================================================================
+function renderSLA(c){
+  var pares = c.pares;
+  var limite = PARAM.atraso_min * MINUTO;
+  var alerta = PARAM.alerta_min * MINUTO;
+  var todos = pares.map(function(p){ return p.ms; });
+
+  var ate = 0, entre = 0, acima = 0;
+  for(var i=0; i<pares.length; i++){
+    if(pares[i].ms < alerta) ate++;
+    else if(pares[i].ms < limite) entre++;
+    else acima++;
+  }
+
+  document.getElementById('cartoesSLA').innerHTML =
+    cartao("Amostras pareadas", fmtNum(pares.length), "#34495E", "Com saída e recebimento") +
+    cartao("Tempo médio", pares.length ? fmtDuracao(media(todos)) : "—", "#1C6DD0") +
+    cartao("Mediana", pares.length ? fmtDuracao(mediana(todos)) : "—", "#1C6DD0") +
+    cartao("Acima de " + PARAM.atraso_min + " min", fmtNum(acima), "#E74C3C", fmtPerc(acima, pares.length) + " do total");
+
+  desenhar('gSlaFaixa', {
+    type: 'bar',
+    data: { labels: ["Até " + PARAM.alerta_min + " min", PARAM.alerta_min + " a " + PARAM.atraso_min + " min", "Acima de " + PARAM.atraso_min + " min"],
+      datasets: [{ label: 'Amostras', data: [ate, entre, acima], backgroundColor: ['#1E9E5A','#F1C40F','#E74C3C'] }]},
+    options: OPCOES_BASE
+  });
+
+  var porDia = {};
+  for(var j=0; j<pares.length; j++){
+    if(!porDia[pares[j].dia]) porDia[pares[j].dia] = [];
+    porDia[pares[j].dia].push(pares[j].ms);
+  }
+  var serie = c.dias.map(function(d){
+    return porDia[d] ? Math.round(media(porDia[d]) / MINUTO) : null;
+  });
+  desenhar('gSlaDia', {
+    type: 'line',
+    data: { labels: c.dias.map(diaBR), datasets: [{
+      label: 'Minutos', data: serie, borderColor: '#1C6DD0',
+      backgroundColor: 'rgba(28,109,208,.12)', fill: true, tension: .3, spanGaps: true, pointRadius: 3
+    }]},
+    options: OPCOES_BASE
+  });
+
+  // por unidade
+  var porUnidade = {};
+  for(var k=0; k<pares.length; k++){
+    var u = pares[k].origem;
+    if(!porUnidade[u]) porUnidade[u] = [];
+    porUnidade[u].push(pares[k].ms);
+  }
+  var html = "";
+  for(var o in porUnidade){
+    var l = porUnidade[o].slice().sort(function(a,b){ return a-b; });
+    var fora = l.filter(function(v){ return v >= limite; }).length;
+    html += '<tr>' +
+      '<td><span class="ponto" style="background:' + corUnidade(o) + '"></span>' + escapar(nomeUnidade(o)) + '</td>' +
+      '<td class="num">' + fmtNum(l.length) + '</td>' +
+      '<td class="num">' + fmtDuracao(media(l)) + '</td>' +
+      '<td class="num">' + fmtDuracao(mediana(l)) + '</td>' +
+      '<td class="num">' + fmtDuracao(l[0]) + '</td>' +
+      '<td class="num">' + fmtDuracao(l[l.length-1]) + '</td>' +
+      '<td class="num' + (fora ? ' fora' : '') + '">' + fmtNum(fora) + '</td>' +
+      '</tr>';
+  }
+  document.getElementById('tabelaSlaUnidade').innerHTML = html || linhaVazia(7);
+
+  var ordenados = pares.slice().sort(function(a,b){ return a.ms - b.ms; });
+  function listar(lista){
+    var h = "";
+    for(var i=0; i<lista.length; i++){
+      var p = lista[i];
+      h += '<tr><td class="amostra">' + escapar(p.amostra) + '</td>' +
+           '<td><span class="ponto" style="background:' + corUnidade(p.origem) + '"></span>' + escapar(nomeUnidade(p.origem)) + '</td>' +
+           '<td class="num' + (p.ms >= limite ? ' fora' : '') + '">' + fmtDuracao(p.ms) + '</td></tr>';
+    }
+    return h || linhaVazia(3);
+  }
+  document.getElementById('tabelaSlaRapidas').innerHTML = listar(ordenados.slice(0, 10));
+  document.getElementById('tabelaSlaLentas').innerHTML = listar(ordenados.slice(-10).reverse());
+}
+
+// =====================================================================
+// ABA 4 — CADEIA FRIA
+// =====================================================================
+function renderFrio(){
+  var lotes = dadosPeriodo.lotes;
+  var contagem = { ok:0, limitrofe:0, desvio:0, sem:0 };
+  var porUnidade = {};
+  var temperaturas = [];
+  var foraFaixa = [];
+
+  for(var i=0; i<lotes.length; i++){
+    var lt = lotes[i];
+    var t = lt.temperatura;
+    if(t === null || t === undefined || isNaN(t)){ contagem.sem++; continue; }
+    var n = nivelTemp(t);
+    contagem[n]++;
+    temperaturas.push(Number(t));
+    var u = lt.unidade || "—";
+    if(!porUnidade[u]) porUnidade[u] = { ok:0, limitrofe:0, desvio:0 };
+    porUnidade[u][n]++;
+    if(n !== "ok") foraFaixa.push(lt);
+  }
+
+  var totalComTemp = contagem.ok + contagem.limitrofe + contagem.desvio;
+  document.getElementById('cartoesFrio').innerHTML =
+    cartao("Remessas na faixa ideal", fmtNum(contagem.ok), "#1E9E5A", fmtPerc(contagem.ok, totalComTemp)) +
+    cartao("Limítrofes", fmtNum(contagem.limitrofe), "#F39C12", fmtPerc(contagem.limitrofe, totalComTemp)) +
+    cartao("Desvios", fmtNum(contagem.desvio), "#E74C3C", fmtPerc(contagem.desvio, totalComTemp)) +
+    cartao("Sem temperatura", fmtNum(contagem.sem), "#95A5A6", "Registros anteriores ao controle");
+
+  var rotulos = [], sOk = [], sLim = [], sDes = [];
+  for(var u2 in porUnidade){
+    rotulos.push(nomeUnidade(u2));
+    sOk.push(porUnidade[u2].ok);
+    sLim.push(porUnidade[u2].limitrofe);
+    sDes.push(porUnidade[u2].desvio);
+  }
+  var opcoesEmpilhado = JSON.parse(JSON.stringify(OPCOES_BASE));
+  opcoesEmpilhado.scales.x.stacked = true;
+  opcoesEmpilhado.scales.y.stacked = true;
+  desenhar('gFrioUnidade', {
+    type: 'bar',
+    data: { labels: rotulos, datasets: [
+      { label:'Ideal', data:sOk, backgroundColor:'#1E9E5A' },
+      { label:'Limítrofe', data:sLim, backgroundColor:'#F1C40F' },
+      { label:'Desvio', data:sDes, backgroundColor:'#E74C3C' }
+    ]},
+    options: opcoesEmpilhado
+  });
+
+  // distribuição por faixa de 1 grau
+  var faixas = {}, chaves = [];
+  for(var t2=0; t2<temperaturas.length; t2++){
+    var base = Math.floor(temperaturas[t2]);
+    if(!faixas[base]){ faixas[base] = 0; chaves.push(base); }
+    faixas[base]++;
+  }
+  chaves.sort(function(a,b){ return a-b; });
+  desenhar('gFrioFaixa', {
+    type: 'bar',
+    data: { labels: chaves.map(function(k){ return k + " a " + (k+1) + " °C"; }),
+      datasets: [{ label:'Remessas', data: chaves.map(function(k){ return faixas[k]; }),
+        backgroundColor: chaves.map(function(k){
+          var n = nivelTemp(k + 0.5);
+          return n === "ok" ? '#1E9E5A' : (n === "limitrofe" ? '#F1C40F' : '#E74C3C');
+        }) }]},
+    options: OPCOES_BASE
+  });
+
+  foraFaixa.sort(function(a,b){ return b.ordem - a.ordem; });
+  var html = "";
+  for(var f=0; f<foraFaixa.length; f++){
+    var r = foraFaixa[f], nv = nivelTemp(r.temperatura);
+    html += '<tr>' +
+      '<td>' + escapar(r.data || new Date(r.ordem).toLocaleString('pt-BR')) + '</td>' +
+      '<td><span class="ponto" style="background:' + corUnidade(r.unidade) + '"></span>' + escapar(nomeUnidade(r.unidade)) + '</td>' +
+      '<td>' + escapar(r.etapa || "—") + '</td>' +
+      '<td class="num ' + (nv === "desvio" ? 'fora' : '') + '">' + fmtTemp(r.temperatura) + '</td>' +
+      '<td>' + (nv === "desvio" ? '<span class="pill excecao">Desvio</span>' : '<span class="limitrofe">Limítrofe</span>') + '</td>' +
+      '<td class="num">' + fmtNum(r.qtdGravada !== undefined ? r.qtdGravada : r.qtdBipada) + '</td>' +
+      '<td>' + escapar(r.nome || "—") + '</td>' +
+      '</tr>';
+  }
+  document.getElementById('tabelaFrio').innerHTML = html || linhaVazia(7, "Nenhuma remessa fora da faixa ideal no período.");
+}
+
+// =====================================================================
+// ABA 5 — PRODUTIVIDADE
+// =====================================================================
+function renderProdutividade(){
+  var pessoas = {};
+  var ev = dadosPeriodo.eventos;
+
+  function garante(mat, nome){
+    if(!pessoas[mat]) pessoas[mat] = { nome: nome || "—", saidas:0, recebimentos:0, manual:0, lotes:{} };
+    else if(nome && pessoas[mat].nome === "—") pessoas[mat].nome = nome;
+    return pessoas[mat];
+  }
+
+  for(var i=0; i<ev.length; i++){
+    var e = ev[i];
+    var p = garante(e.matricula || "—", e.nome);
+    if(e.etapa === ETAPA_RECEBIDA) p.recebimentos++; else p.saidas++;
+    if(e.identificacaoManual) p.manual++;
+    if(e.loteId) p.lotes[e.loteId] = true;
+  }
+
+  var lista = [];
+  for(var m in pessoas){
+    var d = pessoas[m];
+    var total = d.saidas + d.recebimentos;
+    var remessas = 0;
+    for(var l in d.lotes) remessas++;
+    lista.push({ matricula:m, nome:d.nome, saidas:d.saidas, recebimentos:d.recebimentos,
+                 total: total, remessas: remessas, manual: d.manual });
+  }
+  lista.sort(function(a,b){ return b.total - a.total; });
+
+  var topo = lista.slice(0, 15);
+  desenhar('gProdutividade', {
+    type: 'bar',
+    data: { labels: topo.map(function(p){ return p.nome; }), datasets: [
+      { label:'Saídas', data: topo.map(function(p){ return p.saidas; }), backgroundColor:'#34495E' },
+      { label:'Recebimentos', data: topo.map(function(p){ return p.recebimentos; }), backgroundColor:'#1E9E5A' }
+    ]},
+    options: OPCOES_BASE
+  });
+
+  var html = "";
+  for(var j=0; j<lista.length; j++){
+    var r = lista[j];
+    html += '<tr>' +
+      '<td>' + escapar(r.nome) + (j === 0 && r.total ? ' 🏆' : '') + '</td>' +
+      '<td>' + escapar(r.matricula) + '</td>' +
+      '<td class="num">' + fmtNum(r.saidas) + '</td>' +
+      '<td class="num">' + fmtNum(r.recebimentos) + '</td>' +
+      '<td class="num"><b>' + fmtNum(r.total) + '</b></td>' +
+      '<td class="num">' + fmtNum(r.remessas) + '</td>' +
+      '<td class="num">' + (r.manual ? fmtNum(r.manual) + ' <span class="selo-manual">manual</span>' : '—') + '</td>' +
+      '</tr>';
+  }
+  document.getElementById('tabelaProdutividade').innerHTML = html || linhaVazia(7);
+}
+
+// =====================================================================
+// ABA 6 — COLABORADORES
+// =====================================================================
+var colaboradoresCarregados = false;
+var listaColaboradores = {};
+var modalAlvo = null, modalAcao = null;
+
+function carregarColaboradores(){
+  carregando('carregaColab', true);
+  db.collection("config").doc("colaboradores").get().then(function(doc){
+    listaColaboradores = (doc.exists && doc.data().lista) ? doc.data().lista : {};
+    colaboradoresCarregados = true;
+    carregando('carregaColab', false);
+    renderColaboradores();
+  }).catch(function(e){
+    carregando('carregaColab', false);
+    console.error("Colaboradores:", e);
+    toast("Não foi possível carregar a lista.", 'erro');
+  });
+}
+
+function renderColaboradores(){
+  var ativos = [], inativos = [];
+  for(var m in listaColaboradores){
+    var c = listaColaboradores[m] || {};
+    var reg = { matricula:m, nome: c.nome || "—", ativo: c.ativo !== false };
+    if(reg.ativo) ativos.push(reg); else inativos.push(reg);
+  }
+  function porNome(a,b){ return String(a.nome).localeCompare(String(b.nome), 'pt-BR'); }
+  ativos.sort(porNome); inativos.sort(porNome);
+
+  function linhas(lista, ativo){
+    var h = "";
+    for(var i=0; i<lista.length; i++){
+      var r = lista[i];
+      h += '<tr>' +
+        '<td>' + escapar(r.matricula) + '</td>' +
+        '<td>' + escapar(r.nome) + (ativo ? '' : ' <span class="pill inativo">inativo</span>') + '</td>' +
+        '<td>' +
+          '<button class="btn mini claro" onclick="abrirEdicao(\'' + escapar(r.matricula) + '\')">Editar</button> ' +
+          (ativo
+            ? '<button class="btn mini perigo" onclick="abrirInativacao(\'' + escapar(r.matricula) + '\')">Inativar</button>'
+            : '<button class="btn mini" onclick="reativarColaborador(\'' + escapar(r.matricula) + '\')">Reativar</button>') +
+        '</td>' +
+        '</tr>';
+    }
+    return h;
+  }
+
+  document.getElementById('tabelaAtivos').innerHTML = linhas(ativos, true) || linhaVazia(3, "Nenhum colaborador ativo.");
+  document.getElementById('tabelaInativos').innerHTML = linhas(inativos, false) || linhaVazia(3, "Nenhum colaborador inativo.");
+  document.getElementById('contadorAtivos').innerText = ativos.length + (ativos.length === 1 ? " pessoa" : " pessoas");
+  document.getElementById('contadorInativos').innerText = inativos.length + (inativos.length === 1 ? " pessoa" : " pessoas");
+}
+
+function gravarColaborador(matricula, dados){
+  var pacote = { lista: {} };
+  pacote.lista[matricula] = dados;
+  return db.collection("config").doc("colaboradores").set(pacote, { merge:true });
+}
+
+// Trilha das alterações de cadastro. A falha no log não desfaz a gravação
+// do colaborador: apenas fica o registro no console.
+function registrarLog(matricula, acao, detalhe){
+  db.collection("logs_colaboradores").add({
+    matricula: matricula,
+    acao: acao,
+    detalhe: detalhe || "",
+    responsavelEmail: gestorLogado ? gestorLogado.email : "",
+    responsavelNome: gestorLogado ? gestorLogado.nome : "",
+    modulo: "BI - Gestão",
+    data: new Date().toLocaleString('pt-BR'),
+    ordem: Date.now()
+  }).catch(function(e){ console.error("Log colaborador:", e); });
+}
+
+function incluirColaborador(){
+  var mat = soNumeros(document.getElementById('novaMatricula').value);
+  var nome = (document.getElementById('novoNome').value || "").trim();
+  if(!mat){ toast("Informe a matrícula.", 'erro'); return; }
+  if(!nome){ toast("Informe o nome.", 'erro'); return; }
+  if(listaColaboradores[mat]){ toast("Esta matrícula já está cadastrada.", 'erro'); return; }
+
+  gravarColaborador(mat, { nome: nome, ativo: true }).then(function(){
+    listaColaboradores[mat] = { nome: nome, ativo: true };
+    registrarLog(mat, "Inclusão", nome);
+    document.getElementById('novaMatricula').value = "";
+    document.getElementById('novoNome').value = "";
+    document.getElementById('novaMatricula').focus();
+    renderColaboradores();
+    toast("Colaborador incluído.", 'ok');
+  }).catch(function(e){
+    console.error("Incluir:", e);
+    toast("Não foi possível gravar.", 'erro');
+  });
+}
+
+function abrirEdicao(matricula){
+  modalAlvo = matricula; modalAcao = 'editar';
+  var c = listaColaboradores[matricula] || {};
+  document.getElementById('tituloModal').innerText = "Editar colaborador";
+  document.getElementById('tituloModal').style.color = "#2C3E50";
+  document.getElementById('textoModal').innerText = "Matrícula " + matricula + ".";
+  document.getElementById('campoModal').style.display = 'block';
+  document.getElementById('editaNome').value = c.nome || "";
+  document.getElementById('btnModal').innerText = "Salvar";
+  document.getElementById('btnModal').className = "btn";
+  document.getElementById('fundoModal').classList.add('aberto');
+  setTimeout(function(){ document.getElementById('editaNome').focus(); }, 100);
+}
+
+function abrirInativacao(matricula){
+  modalAlvo = matricula; modalAcao = 'inativar';
+  var c = listaColaboradores[matricula] || {};
+  document.getElementById('tituloModal').innerText = "Inativar colaborador";
+  document.getElementById('tituloModal').style.color = "#E74C3C";
+  document.getElementById('textoModal').innerText =
+    (c.nome || matricula) + " deixará de ser reconhecido na bipagem. O histórico é preservado e a reativação pode ser feita a qualquer momento.";
+  document.getElementById('campoModal').style.display = 'none';
+  document.getElementById('btnModal').innerText = "Inativar";
+  document.getElementById('btnModal').className = "btn perigo";
+  document.getElementById('fundoModal').classList.add('aberto');
+}
+
+function fecharModal(){
+  document.getElementById('fundoModal').classList.remove('aberto');
+  modalAlvo = null; modalAcao = null;
+}
+
+function confirmarModal(){
+  if(!modalAlvo) return;
+  var mat = modalAlvo;
+
+  if(modalAcao === 'editar'){
+    var nome = (document.getElementById('editaNome').value || "").trim();
+    if(!nome){ toast("Informe o nome.", 'erro'); return; }
+    var anterior = listaColaboradores[mat].nome;
+    gravarColaborador(mat, { nome: nome }).then(function(){
+      listaColaboradores[mat].nome = nome;
+      registrarLog(mat, "Edição", "de \"" + anterior + "\" para \"" + nome + "\"");
+      fecharModal(); renderColaboradores();
+      toast("Cadastro atualizado.", 'ok');
+    }).catch(function(){ toast("Não foi possível gravar.", 'erro'); });
+    return;
+  }
+
+  gravarColaborador(mat, { ativo: false }).then(function(){
+    listaColaboradores[mat].ativo = false;
+    registrarLog(mat, "Inativação", listaColaboradores[mat].nome);
+    fecharModal(); renderColaboradores();
+    toast("Colaborador inativado.", 'aviso');
+  }).catch(function(){ toast("Não foi possível gravar.", 'erro'); });
+}
+
+function reativarColaborador(matricula){
+  gravarColaborador(matricula, { ativo: true }).then(function(){
+    listaColaboradores[matricula].ativo = true;
+    registrarLog(matricula, "Reativação", listaColaboradores[matricula].nome);
+    renderColaboradores();
+    toast("Colaborador reativado.", 'ok');
+  }).catch(function(){ toast("Não foi possível gravar.", 'erro'); });
+}
+
+// =====================================================================
+// RELÓGIO
+// =====================================================================
+function atualizarRelogio(){
+  document.getElementById('relogio').innerText = new Date().toLocaleString('pt-BR');
+}
+window.onload = function(){
+  atualizarRelogio();
+  setInterval(atualizarRelogio, 1000);
+};
+</script>
+</body>
+</html>
